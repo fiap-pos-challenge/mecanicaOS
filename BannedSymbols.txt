@@ -1,0 +1,17 @@
+P:System.DateTime.Now;Use TimeProvider.GetUtcNow()
+P:System.DateTime.UtcNow;Use TimeProvider.GetUtcNow()
+P:System.DateTime.Today;Use TimeProvider.GetUtcNow()
+P:System.DateTimeOffset.Now;Use TimeProvider.GetUtcNow()
+P:System.DateTimeOffset.UtcNow;Use TimeProvider.GetUtcNow()
+M:System.Math.Round(System.Decimal);Rounding is done manually by Money
+M:System.Math.Round(System.Decimal,System.Int32);Rounding is done manually by Money
+M:System.Math.Round(System.Decimal,System.MidpointRounding);Rounding is done manually by Money
+M:System.Math.Round(System.Decimal,System.Int32,System.MidpointRounding);Rounding is done manually by Money
+M:System.Math.Round(System.Double);Rounding is done manually by Money
+M:System.Math.Round(System.Double,System.Int32);Rounding is done manually by Money
+M:System.Math.Round(System.Double,System.MidpointRounding);Rounding is done manually by Money
+M:System.Math.Round(System.Double,System.Int32,System.MidpointRounding);Rounding is done manually by Money
+T:System.MidpointRounding;Rounding is done manually by Money
+M:System.NotImplementedException.#ctor;Do not ship unimplemented code
+M:System.NotImplementedException.#ctor(System.String);Do not ship unimplemented code
+M:System.ArgumentNullException.ThrowIfNull(System.Object,System.String);Nullable reference types already guard constructor arguments

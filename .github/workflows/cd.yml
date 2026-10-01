@@ -1,0 +1,146 @@
+name: CD
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: cd-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  publish-image:
+    name: publish-image
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      packages: write
+    outputs:
+      image: ${{ steps.image.outputs.name }}
+      sha_tag: ${{ steps.image.outputs.sha_tag }}
+    steps:
+      - name: Record start time
+        run: echo "JOB_STARTED_AT=$(date +%s)" >> "$GITHUB_ENV"
+
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Resolve image name
+        id: image
+        run: |
+          # GHCR exige nome em minúsculas; o repositório tem letras maiúsculas.
+          name="ghcr.io/${GITHUB_REPOSITORY,,}"
+          echo "name=${name}" >> "$GITHUB_OUTPUT"
+          echo "sha_tag=sha-${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract image metadata
+        id: meta
+        uses: docker/metadata-action@v6
+        with:
+          images: ${{ steps.image.outputs.name }}
+          tags: |
+            type=sha,format=short
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=raw,value=latest,enable={{is_default_branch}}
+
+      - name: Build and push image
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Write job summary
+        if: always()
+        env:
+          IMAGE_TAGS: ${{ steps.meta.outputs.tags }}
+        run: |
+          duration=$(( $(date +%s) - JOB_STARTED_AT ))
+          {
+            echo "### Imagem publicada no GHCR"
+            echo ""
+            echo "| Resultado | Duração |"
+            echo "|---|---|"
+            echo "| ${{ job.status == 'success' && '✅ publicada' || '❌ falhou' }} | $((duration / 60))m $((duration % 60))s |"
+            echo ""
+            echo "Tags:"
+            echo '```'
+            echo "${IMAGE_TAGS}"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  smoke-test:
+    name: smoke-test
+    needs: publish-image
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      packages: read
+    env:
+      API_IMAGE: ${{ needs.publish-image.outputs.image }}:${{ needs.publish-image.outputs.sha_tag }}
+    steps:
+      - name: Record start time
+        run: echo "JOB_STARTED_AT=$(date +%s)" >> "$GITHUB_ENV"
+
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Start stack with the published image
+        run: docker compose up --detach --no-build --wait --wait-timeout 300
+
+      - name: Call health check
+        run: |
+          set -euo pipefail
+          status=$(curl --silent --output /tmp/health.txt --write-out '%{http_code}' http://localhost:8080/health)
+          echo "HEALTH_STATUS=${status}" >> "$GITHUB_ENV"
+          cat /tmp/health.txt
+          test "$status" = "200"
+          grep -q Healthy /tmp/health.txt
+
+      - name: Show container logs on failure
+        if: failure()
+        run: docker compose logs --no-color
+
+      - name: Stop stack
+        if: always()
+        run: docker compose down --volumes
+
+      - name: Write job summary
+        if: always()
+        run: |
+          duration=$(( $(date +%s) - JOB_STARTED_AT ))
+          {
+            echo "### Smoke test"
+            echo ""
+            echo "| Imagem | /health | Resultado | Duração |"
+            echo "|---|---|---|---|"
+            echo "| \`${API_IMAGE}\` | ${HEALTH_STATUS:-n/d} | ${{ job.status == 'success' && '✅ healthy' || '❌ falhou' }} | $((duration / 60))m $((duration % 60))s |"
+          } >> "$GITHUB_STEP_SUMMARY"

@@ -1,0 +1,95 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [develop, main]
+  push:
+    branches: [develop, main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: write
+
+concurrency:
+  group: ci-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+env:
+  DOTNET_NOLOGO: "true"
+  DOTNET_CLI_TELEMETRY_OPTOUT: "true"
+  COVERAGE_THRESHOLD: "85"
+
+jobs:
+  build-and-test:
+    name: build-and-test
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v6
+        with:
+          global-json-file: global.json
+
+      - name: Restore
+        run: |
+          dotnet restore Oficina.slnx
+          dotnet tool restore
+
+      - name: Build
+        run: dotnet build Oficina.slnx --configuration Release --no-restore -warnaserror
+
+      # Os testes funcionais sobem um SQL Server com Testcontainers (o Docker já existe no runner).
+      - name: Test with coverage
+        run: |
+          for project in UnitTests ContractTests FunctionalTests; do
+            dotnet test --project "tests/Oficina.${project}/Oficina.${project}.csproj" \
+              --configuration Release --no-build \
+              --results-directory "TestResults/${project}" \
+              --coverlet --coverlet-output-format cobertura \
+              --coverlet-include "[Oficina.Api]*" --coverlet-include "[Oficina.Application]*" \
+              --coverlet-include "[Oficina.Domain]*" --coverlet-include "[Oficina.Infrastructure]*" \
+              --coverlet-exclude-by-file "**/Program.cs" --coverlet-exclude-by-file "**/Migrations/*.cs"
+          done
+
+      - name: Coverage report
+        if: always()
+        run: >-
+          dotnet reportgenerator
+          "-reports:TestResults/**/*.cobertura.*.xml"
+          "-targetdir:coveragereport"
+          "-reporttypes:Html;Cobertura;MarkdownSummaryGithub"
+          "-assemblyfilters:+Oficina.Api;+Oficina.Application;+Oficina.Domain;+Oficina.Infrastructure"
+          "-filefilters:-**/Program.cs;-**/Migrations/**"
+
+      - name: Coverage summary
+        if: always()
+        run: |
+          if [ -f coveragereport/SummaryGithub.md ]; then
+            cat coveragereport/SummaryGithub.md >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Comment coverage on pull request
+        if: always() && github.event_name == 'pull_request'
+        uses: marocchino/sticky-pull-request-comment@v3
+        with:
+          header: coverage
+          path: coveragereport/SummaryGithub.md
+
+      - name: Upload coverage report
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: coverage-report
+          path: coveragereport
+          retention-days: 14
+
+      - name: Enforce minimum coverage
+        run: |
+          rate=$(grep -o 'line-rate="[0-9.]*"' coveragereport/Cobertura.xml | head -1 | grep -o '[0-9.]*')
+          percent=$(awk -v rate="$rate" 'BEGIN { printf "%.2f", rate * 100 }')
+          echo "Line coverage: ${percent}% (minimum ${COVERAGE_THRESHOLD}%)"
+          awk -v value="$percent" -v minimum="$COVERAGE_THRESHOLD" 'BEGIN { exit (value + 0 < minimum + 0) }'
