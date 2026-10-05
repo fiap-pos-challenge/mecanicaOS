@@ -1,0 +1,51 @@
+name: oficina
+
+# Ambiente de desenvolvimento: os valores abaixo são só para uso local e não servem para produção.
+services:
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: oficina-sqlserver
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_PID: Developer
+      MSSQL_SA_PASSWORD: Oficina@Dev123
+    ports:
+      - "1433:1433"
+    volumes:
+      - sqlserver-data:/var/opt/mssql
+    networks:
+      - oficina
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P \"$$MSSQL_SA_PASSWORD\" -C -b -Q 'SELECT 1' -o /dev/null"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
+    restart: unless-stopped
+
+  # Em Development a API cria o banco, aplica as migrations e cria o Admin de teste na subida.
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: ${API_IMAGE:-oficina-api:local}
+    container_name: oficina-api
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ConnectionStrings__Oficina: Server=sqlserver,1433;Database=oficina;User Id=sa;Password=Oficina@Dev123;Encrypt=True;TrustServerCertificate=True
+    ports:
+      - "8080:8080"
+    networks:
+      - oficina
+    restart: unless-stopped
+
+networks:
+  oficina:
+    name: oficina-network
+
+volumes:
+  sqlserver-data:
+    name: oficina-sqlserver-data

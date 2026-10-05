@@ -10,15 +10,15 @@ As convenções de código, testes, Git e CI estão em [padrao-desenvolvimento.m
 
 | Tema | Decisão |
 |---|---|
-| Arquitetura | Monólito em camadas, 4 projetos, CQRS leve (sem MediatR) |
+| Arquitetura | Monólito em camadas (Clean Architecture), 4 projetos em `src/` e 3 de teste. CQRS com **MediatR 12.5.0** (última versão Apache-2.0) |
 | Domínio | Rico, sem classes anêmicas. As regras ficam em agregados, VOs e domain services |
-| Validação | No domínio, sem FluentValidation |
-| Idioma | Código, rotas, banco e testes em inglês. Commits, docs e mensagens de erro em português |
+| Validação | Entrada com FluentValidation (pipeline behavior do MediatR). Regras de negócio no domínio |
+| Idioma | Código, rotas, banco e testes em inglês. Commits, docs e mensagens ao usuário (catálogos) em português. Zero comentários no código |
 | Mapeamento | Riok.Mapperly. Não existe pasta `Api/Mappers` |
 | Injeção de dependência | `AddDomain`, `AddApplication`, `AddInfrastructure` e `AddPresentation`, todos em `Api/Extensions` |
-| Banco | PostgreSQL 16. Schema criado pelo EF Core sem migrations. Dados inseridos direto no banco |
-| Swagger | Documentado só com XML comments |
-| Testes | xUnit com Assert puro e NSubstitute. Integração com Testcontainers |
+| Banco | SQL Server 2022. Schema por EF Core Migrations, nomes em camelCase, soft delete e auditoria (`createdAt`, `updatedAt`, `deletedAt`) em todas as entidades |
+| Swagger | Documentado por metadados de endpoint (`[EndpointSummary]`, `[EndpointDescription]`, `[Tags]`, `[ProducesResponseType]`), disponível só em Development. Snapshot do OpenAPI versionado |
+| Testes | xUnit v3 (Microsoft.Testing.Platform) com Assert puro e NSubstitute. Unitários, de contrato e funcionais (Testcontainers MsSql). Cobertura mínima de 85% sobre `src/` |
 | Git | Git flow com merge commit, sem squash |
 
 ## 2. Stack
@@ -57,53 +57,48 @@ A composição da injeção de dependência fica na Api. Por isso as implementa�
 
 ## 4. Estrutura de diretórios
 
+> Atualizado na Etapa 2: solution com **7 projetos**, organização por contexto e por tipo de artefato. `Oficina.IntegrationTests` deixou de existir: os testes de persistência ficam em `Oficina.FunctionalTests/Persistence/`.
+
 ```
 mecanicaOS/
 ├─ src/
-│  ├─ Oficina.Api/
-│  │  ├─ Controllers/
-│  │  │  ├─ Admin/        ServiceOrders, Customers, Vehicles, Services, Parts, Metrics
-│  │  │  ├─ Public/       ServiceOrderTracking, Estimates
-│  │  │  └─ AuthController.cs
-│  │  ├─ Extensions/      DomainExtensions, ApplicationExtensions, InfrastructureExtensions,
-│  │  │                   PresentationExtensions, WebApplicationExtensions
-│  │  ├─ ExceptionHandling/GlobalExceptionHandler.cs
-│  │  ├─ Authorization/Policies.cs
+│  ├─ Oficina.Api/                 (01 - apresentação)
+│  │  ├─ Authorization/  Contracts/<Context>/  ExceptionHandling/  Extensions/
+│  │  ├─ Controllers/Admin/  Controllers/Public/  Controllers/Auth/
 │  │  └─ Program.cs
-│  ├─ Oficina.Application/
-│  │  ├─ Common/          IUnitOfWork, ICurrentUser, INotifier, IPasswordHasher, ITokenGenerator,
-│  │  │                   PagedResult<T>, NotFoundException
-│  │  ├─ ServiceOrders/   Commands/<Caso>/ (Command + UseCase), Queries/, ServiceOrderMapper.cs
-│  │  ├─ Customers/  Catalog/  Identity/
-│  │  └─ Inventory/       ..., EventHandlers/DeductStockOnEstimateApproved.cs
-│  ├─ Oficina.Domain/
-│  │  ├─ Common/          Entity, AggregateRoot, ValueObject, IDomainEvent, Money, Quantity, exceções
-│  │  ├─ ServiceOrders/   ServiceOrder, ServiceItem, PartItem, Estimate, StatusHistory,
-│  │  │                   ServiceOrderStatus, Events/, Services/ServiceOrderOpeningPolicy.cs
-│  │  ├─ Customers/       Customer, Vehicle, Document, LicensePlate, Email, Phone, VehicleYear,
-│  │  │                   Services/RegistrationDeletionPolicy.cs
-│  │  ├─ Catalog/         Service
-│  │  ├─ Inventory/       Part, PartType, StockMovement, InsufficientStockException
-│  │  └─ Identity/        User, Role
-│  └─ Oficina.Infrastructure/
-│     ├─ Persistence/     OficinaDbContext, UnitOfWork, Configurations/<Context>/
-│     ├─ Repositories/<Context>/
-│     ├─ Queries/<Context>/
-│     ├─ Events/DomainEventDispatcher.cs
-│     ├─ Security/        JwtTokenGenerator, BCryptPasswordHasher, ApprovalTokenGenerator
-│     └─ Notifications/LogNotifier.cs
+│  ├─ Oficina.Application/         (02 - casos de uso / CQRS)
+│  │  ├─ Abstractions/   Persistence/ (IUnitOfWork), Security/ (ICurrentUser, IPasswordHasher,
+│  │  │                  ITokenGenerator, IApprovalTokenGenerator), Notifications/ (INotifier),
+│  │  │                  Messaging/ (IDomainEventHandler<T>)
+│  │  ├─ Common/         Behaviors/, Pagination/, Validation/
+│  │  └─ <Context>/      Commands/<Case>/ (Command, Handler, Validator),
+│  │                     Queries/<Case>/ (Query, Handler, Validator), Queries/I<Context>Queries,
+│  │                     Dtos/, Mappers/, Messages/, EventHandlers/
+│  ├─ Oficina.Domain/              (03 - domínio)
+│  │  ├─ Common/         Entities/, ValueObjects/, Results/, Events/, Interfaces/, Errors/
+│  │  └─ <Context>/      ServiceOrders | Customers | Catalog | Inventory | Identity
+│  │     └─ Entities/  ValueObjects/  Enums/  Events/  Errors/  Services/  Repositories/ (só interfaces)
+│  └─ Oficina.Infrastructure/      (04 - persistência, segurança, integrações)
+│     ├─ Persistence/    DbContext, UnitOfWork, Interceptors/, Configurations/<Context>/,
+│     │                  Migrations/, Errors/
+│     ├─ Repositories/<Context>/   Queries/<Context>/   Messaging/Outbox/
+│     └─ Security/   Notifications/
 ├─ tests/
-│  ├─ Oficina.UnitTests/          Builders/, Domain/<Context>/, Application/<Context>/
-│  └─ Oficina.IntegrationTests/   Infrastructure/, Flows/, Security/
+│  ├─ Oficina.ContractTests/       (05 - contrato da API: OpenAPI, JSON, ProblemDetails, autorização)
+│  ├─ Oficina.FunctionalTests/     (06 - fluxos ponta a ponta e persistência real, Testcontainers MsSql)
+│  └─ Oficina.UnitTests/           (07 - domínio e application, TDD)
+│     (os testes espelham a estrutura de src/, com Builders/ e Fixtures/ compartilhados)
 ├─ docs/           enunciado/, arquitetura/, ddd/, evidencias/, seguranca/
 ├─ instructions/   arquitetura.md, padrao-desenvolvimento.md
-├─ .github/        workflows/ci.yml, pull_request_template.md
+├─ docker/sql/     init-database.sql
+├─ .github/        workflows/ (ci.yml, cd.yml), scripts/, pull_request_template.md
 ├─ .config/dotnet-tools.json
-├─ Dockerfile  docker-compose.yml  .env.example  .editorconfig  BannedSymbols.txt
-└─ global.json  Directory.Build.props  Directory.Packages.props  Oficina.slnx  README.md
+├─ Dockerfile  docker-compose.yml  .editorconfig  .gitattributes  .gitignore  .dockerignore
+└─ BannedSymbols.txt  global.json  nuget.config  Directory.Build.props  Directory.Packages.props
+   Oficina.slnx  README.md
 ```
 
-As pastas só são criadas junto com o primeiro arquivo. Não se usa `.gitkeep`.
+Um tipo por arquivo, nome do arquivo igual ao do tipo, namespace igual ao caminho da pasta. As pastas só são criadas junto com o primeiro arquivo. Não se usa `.gitkeep`.
 
 ## 5. Domínio
 
@@ -259,7 +254,7 @@ O cliente não faz login. Ele acompanha a OS pelo número mais o CPF/CNPJ e resp
 **Segurança**
 - A chave do JWT vem de variável de ambiente.
 - As policies são definidas por perfil, com `FallbackPolicy` exigindo autenticação. Rotas públicas usam `[AllowAnonymous]` explícito.
-- A configuração usa Options pattern com `ValidateOnStart`, no formato `Jwt__Secret`. Toda variável nova entra no `.env.example`.
+- A configuração usa Options pattern com `ValidateOnStart`, no formato `Jwt__Secret`. Em Development, os valores ficam no `appsettings.Development.json`.
 
 **Logs**
 - `ILogger` com template estruturado e saída JSON no console.
@@ -274,7 +269,7 @@ O cliente não faz login. Ele acompanha a OS pelo número mais o CPF/CNPJ e resp
 3. `Domain/Common` (bases, `Money`, `Quantity`, exceções) e `Application/Common` (portas).
 4. `OficinaDbContext`, `UnitOfWork`, dispatcher de eventos e `EnsureCreated`.
 5. `Api/Extensions`, handler global, Swagger com XML e Bearer, JWT, policies e `/health`.
-6. Dockerfile, docker-compose (API + Postgres com healthcheck) e `.env.example`.
+6. Dockerfile e docker-compose (API + SQL Server com healthcheck).
 7. Infraestrutura de testes (factory, Testcontainers, Respawn) com um teste de fumaça por projeto.
 8. `ci.yml` completo.
 
@@ -287,3 +282,39 @@ Depois disso, cada contexto entra seguindo os épicos E3 a E7.
 - Rate limiting nas rotas públicas, que só entra se sobrar tempo.
 
 O acesso de demonstração será feito com o admin inserido manualmente no banco. O README explica como gerar o hash BCrypt.
+
+## 13. Mudanças da Etapa 3
+
+Consolida também as decisões da Etapa 2. Esta seção prevalece sobre o texto anterior deste documento, onde houver diferença.
+
+| Tema | Mudança |
+|---|---|
+| Banco | PostgreSQL → **SQL Server 2022**: `xmin` → `rowversion` (propriedade sombra), sequence do SQL Server para o número da OS, índices únicos filtrados (`deletedAt IS NULL`), tradução de `SqlException` |
+| Persistência | `EnsureCreated` → **EF Core Migrations**. Soft delete obrigatório com global query filter e auditoria por `SaveChangesInterceptor` usando `TimeProvider`. Nomes em **camelCase** |
+| Aplicação | CQRS com **MediatR 12.5.0** e FluentValidation em pipeline behavior. **Result pattern** (`Result`, `Result<T>`, `Error`) para erros esperados; exceção só para o inesperado |
+| Mensageria | Sem broker: eventos de domínio gravados no **Outbox** na mesma transação, processados por `BackgroundService` e entregues ao `LogNotifier` |
+| Rotas | `/api/admin/**` (equipe, JWT, policy por endpoint), `/api/public/**` (cliente sem login) e `/api/auth/**`. **Nenhum dado pessoal na URL:** a consulta pública da OS é `POST /api/public/service-orders/lookup`, e a busca de cliente por documento é `POST /api/admin/customers/search`. `GET /api/auth/me` devolve o usuário logado |
+| Erros | ProblemDetails (RFC 9457) com `code`, `traceId` e `errors`. Erro 500 sem stack trace. Mensagens só nos catálogos `…Errors`, `…Messages` e `ProblemTitles` |
+| Domínio | Termos `Quote` (orçamento) e `WaitingApproval` (aguardando aprovação). Sem rascunho, sem aceite parcial e sem pagamento. Sem inicializadores; obrigatório não anulável; estado interno criado em todos os construtores |
+| Estrutura | 7 projetos: `Oficina.Api`, `Oficina.Application`, `Oficina.Domain`, `Oficina.Infrastructure`, `Oficina.ContractTests`, `Oficina.FunctionalTests` e `Oficina.UnitTests` (ver §4) |
+| Segurança | `FallbackPolicy` autenticada, uma policy por endpoint, CORS por configuração e rate limiting no login (5 por minuto por IP) |
+| Usuários | Em Development, a API cria na subida o Admin de teste (`admin@oficina.local`), se ele ainda não existir. O Admin cadastra Atendentes e Mecânicos pela API |
+| Front-end | Contrato estável para um cliente Angular: JSON camelCase, enums como string, datas ISO 8601 UTC, paginação `{ items, page, pageSize, totalItems }` e CORS para `http://localhost:4200` em desenvolvimento |
+| Qualidade | Zero comentários no código (checado no CI) e cobertura mínima de 85% sobre `src/` |
+
+## 14. Estado ao fim da Etapa 3
+
+O que está implementado e testado no código. Onde houver diferença, esta seção prevalece sobre as anteriores.
+
+| Tema | Como ficou |
+|---|---|
+| Módulos com API | Identidade (login, `me`, usuários) e Clientes. OS, catálogo, estoque e rotas públicas têm o domínio pronto e entram nas próximas etapas |
+| Rotas | `POST /api/auth/login` (anônimo, 5 tentativas por minuto por IP), `GET /api/auth/me`, `/api/admin/customers` (Admin e Atendente; exclusão só Admin) e `/api/admin/users` (só Admin), com busca por `POST …/search` e o dado no corpo |
+| Erros | Result pattern de ponta a ponta. Mapeamento: Validation 400, Unauthorized 401, Forbidden 403, NotFound 404, Conflict 409, BusinessRule 422, inesperado 500; HTTP 413 e 429. Não existem as exceções `DomainValidationException`, `NotFoundException` e `BusinessRuleException` da §6: exceção só para o inesperado (`GlobalExceptionHandler`) |
+| Mapeamento | Mapperly converte entidade em DTO. Como os value objects são gravados por conversores do EF Core, a consulta faz a paginação no SQL (`OFFSET/FETCH`), materializa com `AsNoTracking` e só então mapeia; não há projeção `IQueryable` |
+| Nomes no banco | camelCase por uma convenção própria do EF Core (`IModelFinalizingConvention`), sem o pacote `EFCore.NamingConventions` |
+| Swagger | Swashbuckle só em Development, com esquema Bearer, documentado por atributos (`EndpointSummary`, `EndpointDescription`, `Tags`, `ProducesResponseType`), sem XML comments. Snapshot versionado em `tests/Oficina.ContractTests/OpenApi/Snapshots/openapi.json` |
+| JWT | HS256 com `sub`, `role` e `jti` (sem nome nem e-mail). `MapInboundClaims = false`, `RoleClaimType = "role"`, `ClockSkew` de 30 s. Chave só por variável de ambiente (`Jwt__Secret`, mínimo de 32 caracteres) |
+| Senha | BCrypt fator 12, política de 8 a 64 caracteres com maiúscula, minúscula, número e símbolo. Login com e-mail inexistente compara com um hash fictício (mesmo tempo de resposta) |
+| Docker | `sqlserver` (healthcheck) e `api` (Development: cria o banco, aplica as migrations e cria o Admin de teste na subida). Rede `oficina-network`, volume `oficina-sqlserver-data`, API na porta 8080, credenciais só de desenvolvimento no `docker-compose.yml` |
+| Testes | Unitários (domínio, handlers, validators, behaviors), de contrato (OpenAPI, JSON, ProblemDetails, autorização, dado pessoal na URL) e funcionais (SQL Server real com Testcontainers e Respawn, API ponta a ponta, matriz de perfis) |
