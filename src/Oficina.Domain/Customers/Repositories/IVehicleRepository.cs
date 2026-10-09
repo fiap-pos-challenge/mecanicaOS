@@ -8,5 +8,7 @@ public interface IVehicleRepository
 
     Task<bool> AnyForCustomerAsync(Guid customerId, CancellationToken cancellationToken);
 
+    Task<Vehicle?> GetByLicensePlate(string licensePlate, CancellationToken cancellationToken);
+
     void Add(Vehicle vehicle);
 }

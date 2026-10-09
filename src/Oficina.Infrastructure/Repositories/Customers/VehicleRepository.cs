@@ -14,4 +14,7 @@ public sealed class VehicleRepository(OficinaDbContext context) : IVehicleReposi
         context.Vehicles.AnyAsync(vehicle => vehicle.CustomerId == customerId, cancellationToken);
 
     public void Add(Vehicle vehicle) => context.Vehicles.Add(vehicle);
+
+    public Task<Vehicle?> GetByLicensePlate(string licensePlate, CancellationToken cancellationToken)=>
+        context.Vehicles.SingleOrDefaultAsync(vehicle => vehicle.LicensePlate.Value == licensePlate, cancellationToken);
 }

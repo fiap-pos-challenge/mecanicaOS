@@ -33,4 +33,9 @@ public static class VehicleErrors
         "vehicle.hasOpenServiceOrder",
         "Não é possível excluir o veículo porque ele possui ordem de serviço em aberto.",
         ErrorType.Conflict);
+
+    public static readonly Error DuplicatedLicensePlate = new(
+        "vehicle.duplicatedLicensePlate",
+        "Já existe um veículo cadastrado com essa placa no sistema.",
+        ErrorType.Conflict);
 }
