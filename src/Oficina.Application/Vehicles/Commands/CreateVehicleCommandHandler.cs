@@ -16,11 +16,6 @@ public sealed class CreateVehicleCommandHandler(IVehicleRepository vehicles, ICu
     public async Task<Result<VehicleDto>> Handle(CreateVehicleCommand command, CancellationToken cancellationToken)
     {
 
-    if (await vehicles.GetByLicensePlate(command.Plate, cancellationToken) is not null)
-    {
-        return VehicleErrors.DuplicatedLicensePlate;
-    }
-
     if (await customers.GetByIdAsync(command.CustomerId, cancellationToken) is null)
     {
         return CustomerErrors.NotFound;
@@ -32,6 +27,11 @@ public sealed class CreateVehicleCommandHandler(IVehicleRepository vehicles, ICu
     if ((licensePlate.Error ?? vehicleYear.Error) is {} invalidData)
     {
         return invalidData;
+    }
+
+    if (await vehicles.GetByLicensePlate(licensePlate.Value, cancellationToken) is not null)
+    {
+        return VehicleErrors.DuplicatedLicensePlate;
     }
 
     Result<Vehicle> vehicle = Vehicle.Create(command.CustomerId, licensePlate.Value, command.Brand, command.Model, vehicleYear.Value, TimeProvider.System.GetLocalNow());

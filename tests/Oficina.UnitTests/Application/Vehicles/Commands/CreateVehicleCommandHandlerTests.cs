@@ -6,6 +6,7 @@ using Oficina.Domain.Common.Results;
 using Oficina.Domain.Customers.Entities;
 using Oficina.Domain.Customers.Errors;
 using Oficina.Domain.Customers.Repositories;
+using Oficina.Domain.Customers.ValueObjects;
 
 namespace Oficina.UnitTests.Application.Vehicles.Commands;
 
@@ -41,10 +42,11 @@ public sealed class CreateVehicleCommandHandlerTests
     [Fact]
     public async Task Handle_VehicleAlreadyExistWithLicensePlate_ReturnsDuplicatedVehicle()
     {
-        _vehicles.GetByLicensePlate(Arg.Any<string>(), Arg.Any<CancellationToken>())
+
+        _vehicles.GetByLicensePlate(Arg.Any<LicensePlate>(), Arg.Any<CancellationToken>())
             .Returns(VehicleTestData.Vehicle());
 
-        var result = await _handler.Handle(Command(), CancellationToken.None);
+        var result = await _handler.Handle(Command() with{CustomerId = _customer.Id}, CancellationToken.None);
 
         Assert.Equal(VehicleErrors.DuplicatedLicensePlate, result.Error);
         _vehicles.DidNotReceive().Add(Arg.Any<Vehicle>());
