@@ -30,6 +30,8 @@ public sealed class AuthorizationMatrixTests(SqlServerFixture database) : ApiTes
         { "POST", $"/api/admin/users/{AnyId}/reactivate", null, nameof(AdminOnly) },
         { "POST", "/api/admin/users/search", """{"email":"novo@oficina.com"}""", nameof(AdminOnly) },
         { "POST", "/api/admin/vehicles", null, nameof(AdminOrAttendant) },
+        { "GET", $"/api/admin/vehicles/{AnyId}", null, nameof(AdminOrAttendant) },
+        { "GET", "/api/admin/vehicles", null, nameof(AdminOrAttendant) },
     };
 
     [Theory]

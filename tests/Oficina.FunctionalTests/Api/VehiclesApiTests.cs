@@ -32,5 +32,8 @@ public sealed class VehiclesApiTests(SqlServerFixture database) : ApiTestBase(da
 ;
         var vehicleFound = await admin.GetAsync($"/api/admin/vehicles/{id}", CancellationToken);
         Assert.NotNull(vehicleFound);
+
+        var vehiclesList = await admin.GetAsync($"/api/admin/vehicles?page=1&pageSize=10", CancellationToken);
+        Assert.NotNull(vehiclesList);
     }
 }

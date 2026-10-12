@@ -4,9 +4,10 @@ using Microsoft.AspNetCore.Mvc;
 using Oficina.Api.Authorization;
 using Oficina.Api.Contracts.Vehicles;
 using Oficina.Api.ExceptionHandling;
-using Oficina.Application.Customers.Queries.GetCustomerById;
 using Oficina.Application.Vehicles.Commands.CreateVehicle;
 using Oficina.Application.Vehicles.Dto;
+using Oficina.Application.Vehicles.Queries.GetById;
+using Oficina.Application.Vehicles.Queries.ListVehicles;
 using Oficina.Domain.Customers.Entities;
 
 namespace Oficina.Api.Controllers.Admin;
@@ -16,6 +17,19 @@ namespace Oficina.Api.Controllers.Admin;
 [ProducesResponseType<ProblemDetails>(StatusCodes.Status403Forbidden, ProblemResponses.ContentType)]
 public sealed class VehiclesController(ISender sender) : ApiControllerBase
 {
+    [HttpGet("")]
+    [Authorize(Policy = Policies.AdminOrAttendant)]
+    [EndpointSummary("List paged vehicles")]
+    [EndpointDescription("Returns a list of paged vehicles")]
+    [ProducesResponseType(typeof(Vehicle), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
+    public async Task<IActionResult> GetPagedVehicles([FromQuery] int page, [FromQuery] int pageSize, CancellationToken cancellationToken)
+    {
+        var query = new ListVehiclesQuery(page, pageSize);
+        return Respond(await sender.Send(query, cancellationToken));
+    }
 
     [HttpGet("{id}")]
     [Authorize(Policy = Policies.AdminOrAttendant)]
@@ -27,7 +41,7 @@ public sealed class VehiclesController(ISender sender) : ApiControllerBase
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> GetVehicleById([FromRoute] Guid id, CancellationToken cancellationToken)
     {
-        var query = new GetCustomerByIdQuery(id);
+        var query = new GetVehicleByIdQuery(id);
         return Respond(await sender.Send(query, cancellationToken));
     }
 
