@@ -1,5 +1,5 @@
 using MediatR;
-using Oficina.Application.Vehicles.Dto;
+using Oficina.Application.Vehicles.Dtos;
 using Oficina.Domain.Common.Results;
 
 namespace Oficina.Application.Vehicles.Commands.CreateVehicle;

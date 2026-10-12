@@ -1,7 +1,6 @@
 using MediatR;
 using Oficina.Application.Abstractions.Persistence;
-using Oficina.Application.Vehicles.Commands.CreateVehicle;
-using Oficina.Application.Vehicles.Dto;
+using Oficina.Application.Vehicles.Dtos;
 using Oficina.Application.Vehicles.Mappers;
 using Oficina.Domain.Common.Results;
 using Oficina.Domain.Customers.Entities;
@@ -9,7 +8,7 @@ using Oficina.Domain.Customers.Errors;
 using Oficina.Domain.Customers.Repositories;
 using Oficina.Domain.Customers.ValueObjects;
 
-namespace Oficina.Application.Vehicles.Commands;
+namespace Oficina.Application.Vehicles.Commands.CreateVehicle;
 
 public sealed class CreateVehicleCommandHandler(IVehicleRepository vehicles, ICustomerRepository customers, IUnitOfWork unitOfWork) : IRequestHandler<CreateVehicleCommand, Result<VehicleDto>>
 {

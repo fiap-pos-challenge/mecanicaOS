@@ -65,7 +65,7 @@ public static class InfrastructureExtensions
         services.AddScoped<IServiceOrderRepository, ServiceOrderRepository>();
         services.AddScoped<ICustomerQueries, CustomerQueries>();
         services.AddScoped<IUserQueries, UserQueries>();
-        services.AddScoped<IVehiclesQueries, VehicleQueries>();
+        services.AddScoped<IVehicleQueries, VehicleQueries>();
 
         services.AddHttpContextAccessor();
         services.AddScoped<ICurrentUser, HttpCurrentUser>();

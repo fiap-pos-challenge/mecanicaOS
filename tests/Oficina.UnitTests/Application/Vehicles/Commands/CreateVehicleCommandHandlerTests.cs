@@ -1,6 +1,5 @@
 using NSubstitute;
 using Oficina.Application.Abstractions.Persistence;
-using Oficina.Application.Vehicles.Commands;
 using Oficina.Application.Vehicles.Commands.CreateVehicle;
 using Oficina.Domain.Common.Results;
 using Oficina.Domain.Customers.Entities;

@@ -1,3 +1,4 @@
+using Oficina.Application.Vehicles.Dtos;
 using Oficina.Domain.Customers.Entities;
 using Oficina.Domain.Customers.ValueObjects;
 
@@ -18,4 +19,19 @@ public static class VehicleTestData
         model,
         VehicleYear(),
         TimeProvider.System.GetLocalNow()).Value;
+
+    public static VehicleDetailDto VehicleDetail()
+    {
+        var vehicle = Vehicle();
+        return new VehicleDetailDto(
+            vehicle.Id,
+            vehicle.Model,
+            vehicle.Brand,
+            vehicle.LicensePlate.Value,
+            vehicle.Year.Value,
+            new VehicleOwnerDto(vehicle.CustomerId, CustomerTestData.Customer().Name),
+            new List<VehicleServiceOrderSummaryDto>(),
+            TimeProvider.System.GetUtcNow(),
+            null);
+    }
 }

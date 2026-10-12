@@ -8,7 +8,7 @@ using Oficina.Domain.Customers.Repositories;
 
 namespace Oficina.UnitTests.Application.Vehicles.Commands;
 
-public class UpdateVehicleCommandHandlerTests
+public sealed class UpdateVehicleCommandHandlerTests
 {
     private readonly IVehicleRepository _repository = Substitute.For<IVehicleRepository>();
     private readonly UpdateVehicleCommandHandler _handler;
@@ -48,6 +48,17 @@ public class UpdateVehicleCommandHandlerTests
         var result = await _handler.Handle(Command() with { Model = "Hyundai", Brand = "HB20", Year = 1800}, CancellationToken.None);
 
         Assert.Equal(VehicleErrors.InvalidYear.Code, result.Error!.Code);
+        await _unitOfWork.DidNotReceive().CommitAsync(Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task Handle_YearAfterNextYear_ReturnsInvalidYearWithoutCommit()
+    {
+        var farFutureYear = TimeProvider.System.GetUtcNow().Year + 2;
+
+        var result = await _handler.Handle(Command() with { Year = farFutureYear }, CancellationToken.None);
+
+        Assert.Equal(VehicleErrors.InvalidYear, result.Error);
         await _unitOfWork.DidNotReceive().CommitAsync(Arg.Any<CancellationToken>());
     }
 

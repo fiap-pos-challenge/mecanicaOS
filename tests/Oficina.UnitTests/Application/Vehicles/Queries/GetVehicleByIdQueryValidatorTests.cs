@@ -1,10 +1,10 @@
-using Oficina.Application.Vehicles.Queries.GetById;
+using Oficina.Application.Vehicles.Queries.GetVehicleById;
 
 namespace Oficina.UnitTests.Application.Vehicles.Queries;
 
 public sealed class GetVehicleByIdQueryValidatorTests
 {
-    private readonly GetVehicleByIdValidator _validator = new();
+    private readonly GetVehicleByIdQueryValidator _validator = new();
 
     [Fact]
     public void Validate_WithId_HasNoErrors()

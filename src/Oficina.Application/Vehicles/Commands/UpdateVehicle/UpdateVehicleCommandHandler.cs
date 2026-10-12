@@ -1,6 +1,6 @@
 using MediatR;
 using Oficina.Application.Abstractions.Persistence;
-using Oficina.Application.Vehicles.Dto;
+using Oficina.Application.Vehicles.Dtos;
 using Oficina.Application.Vehicles.Mappers;
 using Oficina.Domain.Common.Results;
 using Oficina.Domain.Customers.Errors;
@@ -9,7 +9,7 @@ using Oficina.Domain.Customers.ValueObjects;
 
 namespace Oficina.Application.Vehicles.Commands.UpdateVehicle;
 
-public class UpdateVehicleCommandHandler(IVehicleRepository repository, IUnitOfWork unitOfWork) : IRequestHandler<UpdateVehicleCommand, Result<VehicleDto>>
+public sealed class UpdateVehicleCommandHandler(IVehicleRepository repository, IUnitOfWork unitOfWork) : IRequestHandler<UpdateVehicleCommand, Result<VehicleDto>>
 {
     public async Task<Result<VehicleDto>> Handle(UpdateVehicleCommand request, CancellationToken cancellationToken)
     {
@@ -20,13 +20,21 @@ public class UpdateVehicleCommandHandler(IVehicleRepository repository, IUnitOfW
         }
 
         var year = VehicleYear.Create(request.Year);
-        if (year.Error is not null)
+        if (year.Error is { } invalidYear)
         {
-            return year.Error;
+            return invalidYear;
         }
 
-        vehicle.ChangeDetails(request.Brand, request.Model, year.Value, TimeProvider.System.GetUtcNow());
-        await unitOfWork.CommitAsync(cancellationToken);
+        if (vehicle.ChangeDetails(request.Brand, request.Model, year.Value, TimeProvider.System.GetUtcNow()).Error is { } invalidDetails)
+        {
+            return invalidDetails;
+        }
+
+        if ((await unitOfWork.CommitAsync(cancellationToken)).Error is { } commitError)
+        {
+            return commitError;
+        }
+
         return vehicle.ToDto();
     }
 }

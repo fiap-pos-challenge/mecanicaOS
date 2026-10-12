@@ -1,7 +1,7 @@
 using MediatR;
-using Oficina.Application.Vehicles.Dto;
+using Oficina.Application.Vehicles.Dtos;
 using Oficina.Domain.Common.Results;
 
-namespace Oficina.Application.Vehicles.Queries.GetById;
+namespace Oficina.Application.Vehicles.Queries.GetVehicleById;
 
-public sealed record GetVehicleByIdQuery(Guid Id) : IRequest<Result<VehicleDto>>;
+public sealed record GetVehicleByIdQuery(Guid Id) : IRequest<Result<VehicleDetailDto>>;

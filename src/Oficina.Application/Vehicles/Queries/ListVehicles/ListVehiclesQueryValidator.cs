@@ -1,13 +1,15 @@
 using FluentValidation;
 using Oficina.Application.Common.Validation;
+using Oficina.Application.Vehicles.Validation;
 
 namespace Oficina.Application.Vehicles.Queries.ListVehicles;
 
-public class ListVehicleQueryValidator : AbstractValidator<ListVehiclesQuery>
+public sealed class ListVehiclesQueryValidator : AbstractValidator<ListVehiclesQuery>
 {
-    public ListVehicleQueryValidator()
+    public ListVehiclesQueryValidator()
     {
         RuleFor(query => query.Page).ValidPage();
         RuleFor(query => query.PageSize).ValidPageSize();
+        RuleFor(query => query.Plate).ValidOptionalPlate();
     }
 }

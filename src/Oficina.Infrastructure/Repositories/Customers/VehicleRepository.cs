@@ -16,8 +16,8 @@ public sealed class VehicleRepository(OficinaDbContext context) : IVehicleReposi
 
     public void Add(Vehicle vehicle) => context.Vehicles.Add(vehicle);
 
-    public Task<Vehicle?> GetByLicensePlate(LicensePlate licensePlate, CancellationToken cancellationToken)=>
-        context.Vehicles.SingleOrDefaultAsync(vehicle => vehicle.LicensePlate == licensePlate, cancellationToken);
+    public Task<Vehicle?> GetByLicensePlate(LicensePlate licensePlate, CancellationToken cancellationToken) =>
+        context.Vehicles.IgnoreQueryFilters().SingleOrDefaultAsync(vehicle => vehicle.LicensePlate == licensePlate, cancellationToken);
 
     public void Remove(Vehicle vehicle) =>
         context.Vehicles.Remove(vehicle);

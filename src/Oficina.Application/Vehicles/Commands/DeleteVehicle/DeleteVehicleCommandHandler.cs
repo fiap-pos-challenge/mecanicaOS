@@ -7,7 +7,7 @@ using Oficina.Domain.Customers.Services;
 
 namespace Oficina.Application.Vehicles.Commands.DeleteVehicle;
 
-public class DeleteVehicleCommandHandler(IVehicleRepository vehicles, RegistrationDeletionPolicy deletionPolicy,
+public sealed class DeleteVehicleCommandHandler(IVehicleRepository vehicles, RegistrationDeletionPolicy deletionPolicy,
     IUnitOfWork unitOfWork) : IRequestHandler<DeleteVehicleCommand, Result>
 {
     public async Task<Result> Handle(DeleteVehicleCommand request, CancellationToken cancellationToken)

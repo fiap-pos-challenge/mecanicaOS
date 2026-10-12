@@ -3,7 +3,7 @@ using Oficina.Application.Vehicles.Validation;
 
 namespace Oficina.Application.Vehicles.Commands.UpdateVehicle;
 
-public class UpdateVehicleCommandValidator : AbstractValidator<UpdateVehicleCommand>
+public sealed class UpdateVehicleCommandValidator : AbstractValidator<UpdateVehicleCommand>
 {
     public UpdateVehicleCommandValidator()
     {

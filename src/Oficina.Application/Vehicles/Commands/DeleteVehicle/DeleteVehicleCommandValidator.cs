@@ -4,9 +4,8 @@ using Oficina.Domain.Common.Errors;
 
 namespace Oficina.Application.Vehicles.Commands.DeleteVehicle;
 
-public class DeleteVehicleCommandValidator : AbstractValidator<DeleteVehicleCommand>
+public sealed class DeleteVehicleCommandValidator : AbstractValidator<DeleteVehicleCommand>
 {
     public DeleteVehicleCommandValidator() =>
         RuleFor(command => command.Id).NotEmpty().WithError(CommonErrors.RequiredField);
-
 }

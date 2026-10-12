@@ -1,4 +1,4 @@
-namespace Oficina.Application.Vehicles.Dto;
+namespace Oficina.Application.Vehicles.Dtos;
 
 public sealed record VehicleDto(
     Guid Id,
