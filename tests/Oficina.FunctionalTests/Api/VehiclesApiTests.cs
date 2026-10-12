@@ -24,16 +24,21 @@ public sealed class VehiclesApiTests(SqlServerFixture database) : ApiTestBase(da
     {
         var admin = await ClientAsync(Role.Admin);
         var customerCreated = await admin.PostAsJsonAsync("/api/admin/customers", NewCustomer, CancellationToken);
-        var id = (await ReadJsonAsync(customerCreated)).GetProperty("id").GetGuid();
+        var customerId = (await ReadJsonAsync(customerCreated)).GetProperty("id").GetGuid();
 
-        var request = new CreateVehicleRequest("AAA9999","Fiat", "Uno", 2026, id);
+        var request = new CreateVehicleRequest("AAA9999","Fiat", "Uno", 2026, customerId);
         var vehicleCreated = await admin.PostAsJsonAsync("/api/admin/vehicles", request, CancellationToken);
+        var vehicleId = (await ReadJsonAsync(vehicleCreated)).GetProperty("id").GetGuid();
         Assert.Equal(HttpStatusCode.Created, vehicleCreated.StatusCode);
 ;
-        var vehicleFound = await admin.GetAsync($"/api/admin/vehicles/{id}", CancellationToken);
-        Assert.NotNull(vehicleFound);
+        var vehicleFound = await admin.GetAsync($"/api/admin/vehicles/{vehicleId}", CancellationToken);
+        Assert.Equal(HttpStatusCode.OK, vehicleFound.StatusCode);
 
         var vehiclesList = await admin.GetAsync($"/api/admin/vehicles?page=1&pageSize=10", CancellationToken);
-        Assert.NotNull(vehiclesList);
+        Assert.Equal(HttpStatusCode.OK, vehiclesList.StatusCode);
+
+        var updateVehicleRequest = new UpdateVehicleRequest("Hyundai", "HB20", 2025);
+        var updatedVehicle = await admin.PutAsJsonAsync($"/api/admin/vehicles/{vehicleId}", updateVehicleRequest, CancellationToken);
+        Assert.Equal(HttpStatusCode.NoContent, updatedVehicle.StatusCode);
     }
 }

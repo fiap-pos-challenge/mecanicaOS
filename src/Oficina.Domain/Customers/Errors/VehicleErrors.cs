@@ -12,7 +12,7 @@ public static class VehicleErrors
     public static readonly Error NotFound = new (
         "vehicle.notFound",
         "Veículo não encontrado.",
-        ErrorType.Validation);
+        ErrorType.NotFound);
 
     public static readonly Error InvalidLicensePlate = new(
         "vehicle.invalidLicensePlate",

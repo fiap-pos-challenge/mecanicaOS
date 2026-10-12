@@ -5,6 +5,7 @@ using Oficina.Api.Authorization;
 using Oficina.Api.Contracts.Vehicles;
 using Oficina.Api.ExceptionHandling;
 using Oficina.Application.Vehicles.Commands.CreateVehicle;
+using Oficina.Application.Vehicles.Commands.UpdateVehicle;
 using Oficina.Application.Vehicles.Dto;
 using Oficina.Application.Vehicles.Queries.GetById;
 using Oficina.Application.Vehicles.Queries.ListVehicles;
@@ -28,7 +29,7 @@ public sealed class VehiclesController(ISender sender) : ApiControllerBase
     public async Task<IActionResult> GetPagedVehicles([FromQuery] int page, [FromQuery] int pageSize, CancellationToken cancellationToken)
     {
         var query = new ListVehiclesQuery(page, pageSize);
-        return Respond(await sender.Send(query, cancellationToken));
+        return Respond(await sender.Send(query, cancellationToken), Ok);
     }
 
     [HttpGet("{id}")]
@@ -42,7 +43,22 @@ public sealed class VehiclesController(ISender sender) : ApiControllerBase
     public async Task<IActionResult> GetVehicleById([FromRoute] Guid id, CancellationToken cancellationToken)
     {
         var query = new GetVehicleByIdQuery(id);
-        return Respond(await sender.Send(query, cancellationToken));
+        return Respond(await sender.Send(query, cancellationToken), Ok);
+    }
+
+    [HttpPut("{id}")]
+    [Authorize(Policy = Policies.AdminOrAttendant)]
+    [EndpointSummary("Allow to update vehicle")]
+    [EndpointDescription("Update vehicle year, brand and model.")]
+    [ProducesResponseType<VehicleDto>(StatusCodes.Status201Created)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status403Forbidden, ProblemResponses.ContentType)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status400BadRequest, ProblemResponses.ContentType)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound, ProblemResponses.ContentType)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status409Conflict, ProblemResponses.ContentType)]
+    public async Task<IActionResult> UpdateVehicle([FromRoute] Guid id, [FromBody] UpdateVehicleRequest request, CancellationToken cancellationToken)
+    {
+        var command = new UpdateVehicleCommand(id,request.Model, request.Brand, request.Year);
+        return Respond(await sender.Send(command, cancellationToken));
     }
 
     [HttpPost]

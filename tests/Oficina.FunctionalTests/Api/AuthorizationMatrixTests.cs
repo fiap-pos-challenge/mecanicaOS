@@ -29,9 +29,10 @@ public sealed class AuthorizationMatrixTests(SqlServerFixture database) : ApiTes
         { "POST", $"/api/admin/users/{AnyId}/deactivate", null, nameof(AdminOnly) },
         { "POST", $"/api/admin/users/{AnyId}/reactivate", null, nameof(AdminOnly) },
         { "POST", "/api/admin/users/search", """{"email":"novo@oficina.com"}""", nameof(AdminOnly) },
-        { "POST", "/api/admin/vehicles", null, nameof(AdminOrAttendant) },
+        { "POST", "/api/admin/vehicles", """{"brand":"Fiat","model":"Uno","year": 2025,"customerId":"03df7661-6e42-4d05-bb81-e7aa3b1e0286"}""", nameof(AdminOrAttendant) },
         { "GET", $"/api/admin/vehicles/{AnyId}", null, nameof(AdminOrAttendant) },
         { "GET", "/api/admin/vehicles", null, nameof(AdminOrAttendant) },
+        { "PUT", $"/api/admin/vehicles/{AnyId}", """{"brand":"Hyundai","model":"HB20","year": 2026}""", nameof(AdminOrAttendant) },
     };
 
     [Theory]
