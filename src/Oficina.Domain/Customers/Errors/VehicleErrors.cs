@@ -9,6 +9,11 @@ public static class VehicleErrors
         "Informe o cliente dono do veículo.",
         ErrorType.Validation);
 
+    public static readonly Error NotFound = new (
+        "vehicle.notFound",
+        "Veículo não encontrado.",
+        ErrorType.Validation);
+
     public static readonly Error InvalidLicensePlate = new(
         "vehicle.invalidLicensePlate",
         "Informe uma placa válida no formato antigo (ABC1234) ou Mercosul (ABC1D23).",

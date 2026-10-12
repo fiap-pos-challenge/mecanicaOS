@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Oficina.Domain.Customers.Entities;
 using Oficina.Domain.Customers.Repositories;
+using Oficina.Domain.Customers.ValueObjects;
 using Oficina.Infrastructure.Persistence;
 
 namespace Oficina.Infrastructure.Repositories.Customers;
@@ -15,6 +16,6 @@ public sealed class VehicleRepository(OficinaDbContext context) : IVehicleReposi
 
     public void Add(Vehicle vehicle) => context.Vehicles.Add(vehicle);
 
-    public Task<Vehicle?> GetByLicensePlate(string licensePlate, CancellationToken cancellationToken)=>
-        context.Vehicles.SingleOrDefaultAsync(vehicle => vehicle.LicensePlate.Value == licensePlate, cancellationToken);
+    public Task<Vehicle?> GetByLicensePlate(LicensePlate licensePlate, CancellationToken cancellationToken)=>
+        context.Vehicles.SingleOrDefaultAsync(vehicle => vehicle.LicensePlate == licensePlate, cancellationToken);
 }

@@ -23,14 +23,14 @@ public sealed class VehiclesApiTests(SqlServerFixture database) : ApiTestBase(da
     public async Task Handle_VehicleCreationWithValidArguments_Returns201Created()
     {
         var admin = await ClientAsync(Role.Admin);
-        using var customerCreated = await admin.PostAsJsonAsync("/api/admin/customers", NewCustomer, CancellationToken);
+        var customerCreated = await admin.PostAsJsonAsync("/api/admin/customers", NewCustomer, CancellationToken);
         var id = (await ReadJsonAsync(customerCreated)).GetProperty("id").GetGuid();
 
         var request = new CreateVehicleRequest("AAA9999","Fiat", "Uno", 2026, id);
         var vehicleCreated = await admin.PostAsJsonAsync("/api/admin/vehicles", request, CancellationToken);
-
         Assert.Equal(HttpStatusCode.Created, vehicleCreated.StatusCode);
-
+;
+        var vehicleFound = await admin.GetAsync($"/api/admin/vehicles/{id}", CancellationToken);
+        Assert.NotNull(vehicleFound);
     }
-
 }

@@ -4,8 +4,10 @@ using Microsoft.AspNetCore.Mvc;
 using Oficina.Api.Authorization;
 using Oficina.Api.Contracts.Vehicles;
 using Oficina.Api.ExceptionHandling;
+using Oficina.Application.Customers.Queries.GetCustomerById;
 using Oficina.Application.Vehicles.Commands.CreateVehicle;
 using Oficina.Application.Vehicles.Dto;
+using Oficina.Domain.Customers.Entities;
 
 namespace Oficina.Api.Controllers.Admin;
 
@@ -14,6 +16,20 @@ namespace Oficina.Api.Controllers.Admin;
 [ProducesResponseType<ProblemDetails>(StatusCodes.Status403Forbidden, ProblemResponses.ContentType)]
 public sealed class VehiclesController(ISender sender) : ApiControllerBase
 {
+
+    [HttpGet("{id}")]
+    [Authorize(Policy = Policies.AdminOrAttendant)]
+    [EndpointSummary("vehicle")]
+    [EndpointDescription("Returns an existant vehicle")]
+    [ProducesResponseType(typeof(Vehicle), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
+    public async Task<IActionResult> GetVehicleById([FromRoute] Guid id, CancellationToken cancellationToken)
+    {
+        var query = new GetCustomerByIdQuery(id);
+        return Respond(await sender.Send(query, cancellationToken));
+    }
 
     [HttpPost]
     [Authorize(Policy = Policies.AdminOrAttendant)]
@@ -27,6 +43,6 @@ public sealed class VehiclesController(ISender sender) : ApiControllerBase
     public async Task<IActionResult> CreateVehicle([FromBody] CreateVehicleRequest request, CancellationToken cancellationToken)
     {
         var command = new CreateVehicleCommand(request.CustomerId,request.Plate, request.Brand, request.Model, request.Year);
-        return Respond(await sender.Send(command, cancellationToken), vehicle => CreatedAtAction($"api/admin/vehicles/{vehicle.Id}",new {id = vehicle.Id}, vehicle));
+        return Respond(await sender.Send(command, cancellationToken), vehicle => CreatedAtAction(nameof(GetVehicleById),new {id = vehicle.Id}, vehicle));
     }
 }
