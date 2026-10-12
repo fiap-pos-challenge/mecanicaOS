@@ -40,5 +40,8 @@ public sealed class VehiclesApiTests(SqlServerFixture database) : ApiTestBase(da
         var updateVehicleRequest = new UpdateVehicleRequest("Hyundai", "HB20", 2025);
         var updatedVehicle = await admin.PutAsJsonAsync($"/api/admin/vehicles/{vehicleId}", updateVehicleRequest, CancellationToken);
         Assert.Equal(HttpStatusCode.NoContent, updatedVehicle.StatusCode);
+
+        var deletedVehicle = await admin.DeleteAsync($"/api/admin/vehicles/{vehicleId}", CancellationToken);
+        Assert.Equal(HttpStatusCode.NoContent, deletedVehicle.StatusCode);
     }
 }

@@ -5,11 +5,11 @@ using Oficina.Api.Authorization;
 using Oficina.Api.Contracts.Vehicles;
 using Oficina.Api.ExceptionHandling;
 using Oficina.Application.Vehicles.Commands.CreateVehicle;
+using Oficina.Application.Vehicles.Commands.DeleteVehicle;
 using Oficina.Application.Vehicles.Commands.UpdateVehicle;
 using Oficina.Application.Vehicles.Dto;
 using Oficina.Application.Vehicles.Queries.GetById;
 using Oficina.Application.Vehicles.Queries.ListVehicles;
-using Oficina.Domain.Customers.Entities;
 
 namespace Oficina.Api.Controllers.Admin;
 
@@ -22,7 +22,7 @@ public sealed class VehiclesController(ISender sender) : ApiControllerBase
     [Authorize(Policy = Policies.AdminOrAttendant)]
     [EndpointSummary("List paged vehicles")]
     [EndpointDescription("Returns a list of paged vehicles")]
-    [ProducesResponseType(typeof(Vehicle), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(List<VehicleDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status403Forbidden)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
@@ -36,7 +36,7 @@ public sealed class VehiclesController(ISender sender) : ApiControllerBase
     [Authorize(Policy = Policies.AdminOrAttendant)]
     [EndpointSummary("vehicle")]
     [EndpointDescription("Returns an existant vehicle")]
-    [ProducesResponseType(typeof(Vehicle), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(VehicleDto), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status403Forbidden)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
@@ -50,7 +50,7 @@ public sealed class VehiclesController(ISender sender) : ApiControllerBase
     [Authorize(Policy = Policies.AdminOrAttendant)]
     [EndpointSummary("Allow to update vehicle")]
     [EndpointDescription("Update vehicle year, brand and model.")]
-    [ProducesResponseType<VehicleDto>(StatusCodes.Status201Created)]
+    [ProducesResponseType(typeof(VehicleDto), StatusCodes.Status204NoContent)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status403Forbidden, ProblemResponses.ContentType)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status400BadRequest, ProblemResponses.ContentType)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound, ProblemResponses.ContentType)]
@@ -58,6 +58,21 @@ public sealed class VehiclesController(ISender sender) : ApiControllerBase
     public async Task<IActionResult> UpdateVehicle([FromRoute] Guid id, [FromBody] UpdateVehicleRequest request, CancellationToken cancellationToken)
     {
         var command = new UpdateVehicleCommand(id,request.Model, request.Brand, request.Year);
+        return Respond(await sender.Send(command, cancellationToken));
+    }
+
+    [HttpDelete("{id}")]
+    [Authorize(Policy = Policies.AdminOrAttendant)]
+    [EndpointSummary("Allow to delete vehicle")]
+    [EndpointDescription("Delete existant vehicle.")]
+    [ProducesResponseType(typeof(VehicleDto), StatusCodes.Status204NoContent)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status403Forbidden, ProblemResponses.ContentType)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status400BadRequest, ProblemResponses.ContentType)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound, ProblemResponses.ContentType)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status409Conflict, ProblemResponses.ContentType)]
+    public async Task<IActionResult> DeleteVehicle([FromRoute] Guid id, CancellationToken cancellationToken)
+    {
+        var command = new DeleteVehicleCommand(id);
         return Respond(await sender.Send(command, cancellationToken));
     }
 

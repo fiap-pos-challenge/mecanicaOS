@@ -12,4 +12,6 @@ public interface IVehicleRepository
     Task<Vehicle?> GetByLicensePlate(LicensePlate licensePlate, CancellationToken cancellationToken);
 
     void Add(Vehicle vehicle);
+
+    void Remove(Vehicle vehicle);
 }

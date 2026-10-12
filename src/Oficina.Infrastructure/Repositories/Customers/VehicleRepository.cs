@@ -18,4 +18,7 @@ public sealed class VehicleRepository(OficinaDbContext context) : IVehicleReposi
 
     public Task<Vehicle?> GetByLicensePlate(LicensePlate licensePlate, CancellationToken cancellationToken)=>
         context.Vehicles.SingleOrDefaultAsync(vehicle => vehicle.LicensePlate == licensePlate, cancellationToken);
+
+    public void Remove(Vehicle vehicle) =>
+        context.Vehicles.Remove(vehicle);
 }

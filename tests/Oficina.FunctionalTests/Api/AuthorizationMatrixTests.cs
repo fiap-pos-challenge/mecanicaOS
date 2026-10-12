@@ -33,6 +33,8 @@ public sealed class AuthorizationMatrixTests(SqlServerFixture database) : ApiTes
         { "GET", $"/api/admin/vehicles/{AnyId}", null, nameof(AdminOrAttendant) },
         { "GET", "/api/admin/vehicles", null, nameof(AdminOrAttendant) },
         { "PUT", $"/api/admin/vehicles/{AnyId}", """{"brand":"Hyundai","model":"HB20","year": 2026}""", nameof(AdminOrAttendant) },
+        { "DELETE", $"/api/admin/vehicles/{AnyId}", null, nameof(AdminOrAttendant) },
+
     };
 
     [Theory]
