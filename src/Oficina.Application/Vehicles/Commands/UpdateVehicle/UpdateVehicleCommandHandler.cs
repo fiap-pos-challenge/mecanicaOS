@@ -9,7 +9,8 @@ using Oficina.Domain.Customers.ValueObjects;
 
 namespace Oficina.Application.Vehicles.Commands.UpdateVehicle;
 
-public sealed class UpdateVehicleCommandHandler(IVehicleRepository repository, IUnitOfWork unitOfWork) : IRequestHandler<UpdateVehicleCommand, Result<VehicleDto>>
+public sealed class UpdateVehicleCommandHandler(IVehicleRepository repository, IUnitOfWork unitOfWork, TimeProvider timeProvider)
+    : IRequestHandler<UpdateVehicleCommand, Result<VehicleDto>>
 {
     public async Task<Result<VehicleDto>> Handle(UpdateVehicleCommand request, CancellationToken cancellationToken)
     {
@@ -25,7 +26,7 @@ public sealed class UpdateVehicleCommandHandler(IVehicleRepository repository, I
             return invalidYear;
         }
 
-        if (vehicle.ChangeDetails(request.Brand, request.Model, year.Value, TimeProvider.System.GetUtcNow()).Error is { } invalidDetails)
+        if (vehicle.ChangeDetails(request.Brand, request.Model, year.Value, timeProvider.GetUtcNow()).Error is { } invalidDetails)
         {
             return invalidDetails;
         }

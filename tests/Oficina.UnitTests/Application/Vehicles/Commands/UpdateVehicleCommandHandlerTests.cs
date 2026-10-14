@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Time.Testing;
 using NSubstitute;
 using Oficina.Application.Abstractions.Persistence;
 using Oficina.Application.Vehicles.Commands.UpdateVehicle;
@@ -13,13 +14,14 @@ public sealed class UpdateVehicleCommandHandlerTests
     private readonly IVehicleRepository _repository = Substitute.For<IVehicleRepository>();
     private readonly UpdateVehicleCommandHandler _handler;
     private readonly IUnitOfWork _unitOfWork = Substitute.For<IUnitOfWork>();
+    private readonly FakeTimeProvider _timeProvider = new(DateTimeOffset.Parse("2026-06-15T00:00:00Z"));
     private readonly Vehicle _vehicle = VehicleTestData.Vehicle();
 
     public UpdateVehicleCommandHandlerTests()
     {
         _repository.GetByIdAsync(_vehicle.Id, Arg.Any<CancellationToken>()).Returns(_vehicle);
         _unitOfWork.CommitAsync(Arg.Any<CancellationToken>()).Returns(Result.Success());
-        _handler = new UpdateVehicleCommandHandler(_repository, _unitOfWork);
+        _handler = new UpdateVehicleCommandHandler(_repository, _unitOfWork, _timeProvider);
     }
 
     [Fact]
@@ -54,7 +56,7 @@ public sealed class UpdateVehicleCommandHandlerTests
     [Fact]
     public async Task Handle_YearAfterNextYear_ReturnsInvalidYearWithoutCommit()
     {
-        var farFutureYear = TimeProvider.System.GetUtcNow().Year + 2;
+        var farFutureYear = _timeProvider.GetUtcNow().Year + 2;
 
         var result = await _handler.Handle(Command() with { Year = farFutureYear }, CancellationToken.None);
 

@@ -10,7 +10,11 @@ using Oficina.Domain.Customers.ValueObjects;
 
 namespace Oficina.Application.Vehicles.Commands.CreateVehicle;
 
-public sealed class CreateVehicleCommandHandler(IVehicleRepository vehicles, ICustomerRepository customers, IUnitOfWork unitOfWork) : IRequestHandler<CreateVehicleCommand, Result<VehicleDto>>
+public sealed class CreateVehicleCommandHandler(
+    IVehicleRepository vehicles,
+    ICustomerRepository customers,
+    IUnitOfWork unitOfWork,
+    TimeProvider timeProvider) : IRequestHandler<CreateVehicleCommand, Result<VehicleDto>>
 {
     public async Task<Result<VehicleDto>> Handle(CreateVehicleCommand command, CancellationToken cancellationToken)
     {
@@ -33,7 +37,7 @@ public sealed class CreateVehicleCommandHandler(IVehicleRepository vehicles, ICu
         return VehicleErrors.DuplicatedLicensePlate;
     }
 
-    Result<Vehicle> vehicle = Vehicle.Create(command.CustomerId, licensePlate.Value, command.Brand, command.Model, vehicleYear.Value, TimeProvider.System.GetLocalNow());
+    Result<Vehicle> vehicle = Vehicle.Create(command.CustomerId, licensePlate.Value, command.Brand, command.Model, vehicleYear.Value, timeProvider.GetUtcNow());
 
     if (vehicle.Error is {} invalidVehicle)
     {

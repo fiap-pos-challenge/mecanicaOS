@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Time.Testing;
 using NSubstitute;
 using Oficina.Application.Abstractions.Persistence;
 using Oficina.Application.Vehicles.Commands.CreateVehicle;
@@ -14,6 +15,7 @@ public sealed class CreateVehicleCommandHandlerTests
     private readonly IVehicleRepository _vehicles = Substitute.For<IVehicleRepository>();
     private readonly ICustomerRepository _customers = Substitute.For<ICustomerRepository>();
     private readonly IUnitOfWork _unitOfWork = Substitute.For<IUnitOfWork>();
+    private readonly FakeTimeProvider _timeProvider = new(DateTimeOffset.Parse("2026-06-15T00:00:00Z"));
     private readonly Customer _customer = CustomerTestData.Customer();
     private readonly CreateVehicleCommandHandler _handler;
 
@@ -21,7 +23,7 @@ public sealed class CreateVehicleCommandHandlerTests
     {
         _unitOfWork.CommitAsync(Arg.Any<CancellationToken>()).Returns(Result.Success());
         _customers.GetByIdAsync(_customer.Id, Arg.Any<CancellationToken>()).Returns(CustomerTestData.Customer());
-        _handler = new CreateVehicleCommandHandler(_vehicles, _customers, _unitOfWork);
+        _handler = new CreateVehicleCommandHandler(_vehicles, _customers, _unitOfWork, _timeProvider);
     }
 
     [Fact]
