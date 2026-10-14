@@ -8,7 +8,8 @@ Back-end de uma oficina mecânica, feito no Tech Challenge da Pós Tech SOAT (So
 Hoje o projeto tem:
 - o domínio completo (clientes, veículos, serviços, peças, estoque e ordem de serviço);
 - as 12 tabelas criadas por migrations;
-- a API de login e de cadastro de clientes e usuários, com JWT e perfis.
+- a API de login e de cadastro de clientes e usuários, com JWT e perfis;
+- a API do catálogo de serviços (cadastro, alteração, desativação e reativação).
 
 Ele está pronto para o grupo criar as demais APIs.
 
@@ -155,6 +156,12 @@ Fora de Development, a API não cria o Admin de teste e não publica o Swagger. 
 | `PUT /api/admin/customers/{id}` | Admin, Attendant | 200 |
 | `POST /api/admin/customers/search` | Admin, Attendant | 200 (CPF/CNPJ no corpo) |
 | `DELETE /api/admin/customers/{id}` | Admin | 204 |
+| `GET /api/admin/services?page=1&pageSize=20&includeInactive=false` | Admin, Attendant | 200 com `{ items, page, pageSize, totalItems }` (só ativos, a não ser com `includeInactive=true`) |
+| `POST /api/admin/services` | Admin | 201 |
+| `GET /api/admin/services/{id}` | Admin, Attendant | 200 (ativo ou inativo, indicado em `isActive`) |
+| `PUT /api/admin/services/{id}` | Admin | 200 (serviço inativo recebe 409; reative antes de alterar) |
+| `POST /api/admin/services/{id}/deactivate` | Admin | 204 |
+| `POST /api/admin/services/{id}/reactivate` | Admin | 204 |
 | `GET /api/admin/users` | Admin | 200 |
 | `POST /api/admin/users` | Admin | 201 |
 | `GET /api/admin/users/{id}` | Admin | 200 |
@@ -190,6 +197,7 @@ instructions/               convenções do grupo (arquitetura e padrão de dese
 - **CQRS:** um command ou query por caso de uso, cada um com validator (FluentValidation) e handler.
 - **Result pattern:** erros esperados voltam como `Result` com um `Error` dos catálogos (`…Errors`), com código estável e mensagem em português. Exceção só para erro inesperado.
 - **Soft delete e auditoria:** "excluir" preenche `deletedAt`. As colunas `createdAt` e `updatedAt` são preenchidas por um interceptor do EF Core. As consultas ignoram os registros excluídos.
+- **Desativar não é excluir:** desativar (usuários e serviços) só muda `isActive` para `false`. O registro continua consultável e pode ser reativado. Serviço inativo sai da listagem padrão, não pode ser alterado nem incluído em ordem de serviço, e os itens que já estão nas ordens continuam como estão.
 - **Nomes:** código, rotas, JSON, tabelas e colunas em inglês e camelCase; mensagens ao usuário e README em português.
 - **Dado pessoal nunca na URL:** buscas por CPF/CNPJ ou e-mail usam `POST …/search` com o dado no corpo.
 - **Sem comentários no código:** os nomes explicam o código, e as explicações ficam neste README e em `instructions/`.
@@ -200,10 +208,9 @@ Detalhes das convenções: [instructions/arquitetura.md](instructions/arquitetur
 
 O domínio e as tabelas já existem. Faltam as APIs de:
 - veículos;
-- serviços;
 - peças e estoque;
 - ordens de serviço (abertura, diagnóstico, orçamento, aprovação, execução, finalização e entrega);
 - consulta pública da OS pelo cliente;
 - métricas.
 
-Siga o padrão de Customers e Users: command ou query, validator e handler na Application; controller fino na API; testes nos três projetos.
+Siga o padrão de Customers, Users e Services: command ou query, validator e handler na Application; controller fino na API; testes nos três projetos.
