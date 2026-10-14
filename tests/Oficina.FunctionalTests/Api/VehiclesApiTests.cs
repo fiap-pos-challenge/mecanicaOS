@@ -1,5 +1,6 @@
 using System.Net;
 using System.Net.Http.Json;
+using System.Text.Json;
 using Oficina.Api.Contracts.Vehicles;
 using Oficina.Domain.Identity.Enums;
 using Oficina.FunctionalTests.Fixtures;
@@ -204,6 +205,43 @@ public sealed class VehiclesApiTests(SqlServerFixture database) : ApiTestBase(da
             HttpStatusCode.Conflict,
             "vehicle.hasOpenServiceOrder");
         Assert.Equal(HttpStatusCode.OK, (await admin.GetAsync($"/api/admin/vehicles/{vehicleId}", CancellationToken)).StatusCode);
+    }
+
+    [Fact]
+    public async Task GetById_WithServiceOrders_ReturnsHistoryFromNewestToOldest()
+    {
+        var admin = await ClientAsync(Role.Admin);
+        var customerId = await CreateCustomerAsync(admin);
+        using var created = await admin.PostAsJsonAsync("/api/admin/vehicles", new CreateVehicleRequest("BRA2E19", "Fiat", "Uno", 2026, customerId), CancellationToken);
+        var vehicleId = (await ReadJsonAsync(created)).GetProperty("id").GetGuid();
+
+        await using (var context = Database.CreateContext(TimeProvider.System))
+        {
+            var service = TestData.Service();
+            var deliveredOrder = TestData.ServiceOrder(customerId, vehicleId, 1);
+            deliveredOrder.StartDiagnosis(null, TestData.Today.AddMinutes(10));
+            deliveredOrder.AddServiceItem(service, 1);
+            deliveredOrder.SendQuote(TestData.Token(), null, TestData.Today.AddMinutes(30));
+            deliveredOrder.ApproveQuote(null, TestData.Today.AddHours(1));
+            deliveredOrder.Complete(null, TestData.Today.AddHours(3));
+            deliveredOrder.Deliver(null, TestData.Today.AddHours(4));
+
+            context.Services.Add(service);
+            context.ServiceOrders.Add(deliveredOrder);
+            context.ServiceOrders.Add(TestData.ServiceOrder(customerId, vehicleId, 2));
+            await CommitAsync(context);
+        }
+
+        var history = (await ReadJsonAsync(await admin.GetAsync($"/api/admin/vehicles/{vehicleId}", CancellationToken)))
+            .GetProperty("serviceOrders").EnumerateArray().ToArray();
+
+        Assert.Equal(2, history.Length);
+        Assert.Equal(2, history[0].GetProperty("number").GetInt64());
+        Assert.Equal("Received", history[0].GetProperty("status").GetString());
+        Assert.Equal(JsonValueKind.Null, history[0].GetProperty("completedAt").ValueKind);
+        Assert.Equal(1, history[1].GetProperty("number").GetInt64());
+        Assert.Equal("Delivered", history[1].GetProperty("status").GetString());
+        Assert.NotEqual(JsonValueKind.Null, history[1].GetProperty("completedAt").ValueKind);
     }
 
     [Fact]
