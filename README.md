@@ -8,7 +8,7 @@ Back-end de uma oficina mecânica, feito no Tech Challenge da Pós Tech SOAT (So
 Hoje o projeto tem:
 - o domínio completo (clientes, veículos, serviços, peças, estoque e ordem de serviço);
 - as 12 tabelas criadas por migrations;
-- a API de login e de cadastro de clientes e usuários, com JWT e perfis.
+- a API de login e de cadastro de clientes, veículos e usuários, com JWT e perfis.
 
 Ele está pronto para o grupo criar as demais APIs.
 
@@ -155,6 +155,11 @@ Fora de Development, a API não cria o Admin de teste e não publica o Swagger. 
 | `PUT /api/admin/customers/{id}` | Admin, Attendant | 200 |
 | `POST /api/admin/customers/search` | Admin, Attendant | 200 (CPF/CNPJ no corpo) |
 | `DELETE /api/admin/customers/{id}` | Admin | 204 |
+| `GET /api/admin/vehicles?page=1&pageSize=20&plate=` | Admin, Attendant, Mechanic | 200 com `{ items, page, pageSize, totalItems }` (`plate` filtra pela placa exata) |
+| `POST /api/admin/vehicles` | Admin, Attendant | 201 |
+| `GET /api/admin/vehicles/{id}` | Admin, Attendant, Mechanic | 200 com dono (id e nome) e histórico de ordens de serviço |
+| `PUT /api/admin/vehicles/{id}` | Admin, Attendant | 200 |
+| `DELETE /api/admin/vehicles/{id}` | Admin | 204 |
 | `GET /api/admin/users` | Admin | 200 |
 | `POST /api/admin/users` | Admin | 201 |
 | `GET /api/admin/users/{id}` | Admin | 200 |
@@ -199,11 +204,10 @@ Detalhes das convenções: [instructions/arquitetura.md](instructions/arquitetur
 ## Próximos passos (para o grupo)
 
 O domínio e as tabelas já existem. Faltam as APIs de:
-- veículos;
 - serviços;
 - peças e estoque;
 - ordens de serviço (abertura, diagnóstico, orçamento, aprovação, execução, finalização e entrega);
 - consulta pública da OS pelo cliente;
 - métricas.
 
-Siga o padrão de Customers e Users: command ou query, validator e handler na Application; controller fino na API; testes nos três projetos.
+Siga o padrão de Customers, Vehicles e Users: command ou query, validator e handler na Application; controller fino na API; testes nos três projetos.
