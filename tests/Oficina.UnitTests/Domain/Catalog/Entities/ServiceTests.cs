@@ -55,6 +55,12 @@ public sealed class ServiceTests
     }
 
     [Fact]
+    public void Create_WithZeroPrice_ReturnsInvalidBasePrice()
+    {
+        Assert.Equal(CatalogErrors.InvalidBasePrice, Service.Create("Alinhamento", null, Money.Zero, 30).Error);
+    }
+
+    [Fact]
     public void ChangeDetails_WithValidData_UpdatesNameDescriptionAndTime()
     {
         var service = Service.Create("Alinhamento", null, Price, 30).Value;
@@ -86,9 +92,47 @@ public sealed class ServiceTests
         var service = Service.Create("Alinhamento", null, Price, 30).Value;
         var newPrice = Money.Create(180m).Value;
 
-        service.ChangePrice(newPrice);
+        var result = service.ChangePrice(newPrice);
 
+        Assert.True(result.IsSuccess);
         Assert.Equal(newPrice, service.BasePrice);
+    }
+
+    [Fact]
+    public void ChangePrice_WithZeroPrice_KeepsPreviousPrice()
+    {
+        var service = Service.Create("Alinhamento", null, Price, 30).Value;
+
+        var result = service.ChangePrice(Money.Zero);
+
+        Assert.Equal(CatalogErrors.InvalidBasePrice, result.Error);
+        Assert.Equal(Price, service.BasePrice);
+    }
+
+    [Fact]
+    public void ChangeDetails_InactiveService_ReturnsCannotChangeInactiveAndKeepsData()
+    {
+        var service = Service.Create("Alinhamento", null, Price, 30).Value;
+        service.Deactivate();
+
+        var result = service.ChangeDetails("Alinhamento 3D", "Com balanceamento", 40);
+
+        Assert.Equal(CatalogErrors.CannotChangeInactive, result.Error);
+        Assert.Equal("Alinhamento", service.Name);
+        Assert.Null(service.Description);
+        Assert.Equal(30, service.EstimatedMinutes);
+    }
+
+    [Fact]
+    public void ChangePrice_InactiveService_ReturnsCannotChangeInactiveAndKeepsPrice()
+    {
+        var service = Service.Create("Alinhamento", null, Price, 30).Value;
+        service.Deactivate();
+
+        var result = service.ChangePrice(Money.Create(180m).Value);
+
+        Assert.Equal(CatalogErrors.CannotChangeInactive, result.Error);
+        Assert.Equal(Price, service.BasePrice);
     }
 
     [Fact]

@@ -3,6 +3,7 @@ using Microsoft.Extensions.Options;
 using Oficina.Application.Abstractions.Notifications;
 using Oficina.Application.Abstractions.Persistence;
 using Oficina.Application.Abstractions.Security;
+using Oficina.Application.Catalog.Queries;
 using Oficina.Application.Customers.Queries;
 using Oficina.Application.Users.Queries;
 using Oficina.Domain.Catalog.Repositories;
@@ -15,6 +16,7 @@ using Oficina.Infrastructure.Notifications;
 using Oficina.Infrastructure.Persistence;
 using Oficina.Infrastructure.Persistence.Interceptors;
 using Oficina.Infrastructure.Persistence.Seeding;
+using Oficina.Infrastructure.Queries.Catalog;
 using Oficina.Infrastructure.Queries.Customers;
 using Oficina.Infrastructure.Queries.Identity;
 using Oficina.Infrastructure.Repositories.Catalog;
@@ -62,6 +64,7 @@ public static class InfrastructureExtensions
         services.AddScoped<IUserRepository, UserRepository>();
         services.AddScoped<IServiceOrderRepository, ServiceOrderRepository>();
         services.AddScoped<ICustomerQueries, CustomerQueries>();
+        services.AddScoped<IServiceQueries, ServiceQueries>();
         services.AddScoped<IUserQueries, UserQueries>();
 
         services.AddHttpContextAccessor();
