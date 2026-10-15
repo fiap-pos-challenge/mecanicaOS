@@ -10,7 +10,13 @@ namespace Oficina.ContractTests.Authorization;
 [Collection(nameof(ContractCollection))]
 public sealed class RouteAuthorizationTests(ContractApiFactory factory)
 {
-    private static readonly string[] AnonymousAllowlist = { "api/auth/login", "health" };
+    private static readonly string[] AnonymousAllowlist =
+    {
+        "api/auth/login",
+        "health",
+        "api/public/service-orders/lookup",
+        "api/public/quotes/{token}/approve",
+    };
 
     [Fact]
     public void FallbackPolicy_RequiresAnAuthenticatedUser()
