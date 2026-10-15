@@ -9,6 +9,11 @@ public static class VehicleErrors
         "Informe o cliente dono do veículo.",
         ErrorType.Validation);
 
+    public static readonly Error NotFound = new (
+        "vehicle.notFound",
+        "Veículo não encontrado.",
+        ErrorType.NotFound);
+
     public static readonly Error InvalidLicensePlate = new(
         "vehicle.invalidLicensePlate",
         "Informe uma placa válida no formato antigo (ABC1234) ou Mercosul (ABC1D23).",
@@ -32,5 +37,10 @@ public static class VehicleErrors
     public static readonly Error HasOpenServiceOrder = new(
         "vehicle.hasOpenServiceOrder",
         "Não é possível excluir o veículo porque ele possui ordem de serviço em aberto.",
+        ErrorType.Conflict);
+
+    public static readonly Error DuplicatedLicensePlate = new(
+        "vehicle.duplicatedLicensePlate",
+        "Já existe um veículo cadastrado com essa placa no sistema.",
         ErrorType.Conflict);
 }
