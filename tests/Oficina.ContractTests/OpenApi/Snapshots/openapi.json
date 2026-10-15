@@ -2602,16 +2602,6 @@
         },
         "additionalProperties": false
       },
-      "ServiceOrderStatus": {
-        "enum": [
-          "Received",
-          "InDiagnosis",
-          "WaitingApproval",
-          "InProgress",
-          "Completed",
-          "Delivered"
-        ],
-        "type": "string"
       "ServiceDto": {
         "type": "object",
         "properties": {
@@ -2674,6 +2664,17 @@
           }
         },
         "additionalProperties": false
+      },
+      "ServiceOrderStatus": {
+        "enum": [
+          "Received",
+          "InDiagnosis",
+          "WaitingApproval",
+          "InProgress",
+          "Completed",
+          "Delivered"
+        ],
+        "type": "string"
       },
       "UpdateCustomerRequest": {
         "type": "object",
