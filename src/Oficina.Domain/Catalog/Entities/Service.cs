@@ -32,7 +32,7 @@ public sealed class Service : AggregateRoot
 
     public static Result<Service> Create(string name, string? description, Money basePrice, int estimatedMinutes)
     {
-        if (FindDetailsError(name, estimatedMinutes) is { } error)
+        if ((FindDetailsError(name, estimatedMinutes) ?? FindPriceError(basePrice)) is { } error)
         {
             return error;
         }
@@ -42,7 +42,7 @@ public sealed class Service : AggregateRoot
 
     public Result ChangeDetails(string name, string? description, int estimatedMinutes)
     {
-        if (FindDetailsError(name, estimatedMinutes) is { } error)
+        if ((FindInactiveError() ?? FindDetailsError(name, estimatedMinutes)) is { } error)
         {
             return error;
         }
@@ -53,7 +53,16 @@ public sealed class Service : AggregateRoot
         return Result.Success();
     }
 
-    public void ChangePrice(Money basePrice) => BasePrice = basePrice;
+    public Result ChangePrice(Money basePrice)
+    {
+        if ((FindInactiveError() ?? FindPriceError(basePrice)) is { } error)
+        {
+            return error;
+        }
+
+        BasePrice = basePrice;
+        return Result.Success();
+    }
 
     public Result Deactivate()
     {
@@ -91,6 +100,11 @@ public sealed class Service : AggregateRoot
 
         return null;
     }
+
+    private Error? FindInactiveError() => IsActive ? null : CatalogErrors.CannotChangeInactive;
+
+    private static Error? FindPriceError(Money basePrice) =>
+        basePrice.Amount <= 0 ? CatalogErrors.InvalidBasePrice : null;
 
     private static string? NormalizeDescription(string? description) =>
         string.IsNullOrWhiteSpace(description) ? null : description.Trim();
