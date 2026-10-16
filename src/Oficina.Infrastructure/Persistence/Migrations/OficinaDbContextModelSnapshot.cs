@@ -77,6 +77,18 @@ namespace Oficina.Infrastructure.Persistence.Migrations
                         .HasColumnType("uniqueidentifier")
                         .HasColumnName("id");
 
+                    b.Property<bool>("ConsentEmail")
+                        .HasColumnType("bit")
+                        .HasColumnName("consentEmail");
+
+                    b.Property<DateTimeOffset?>("ConsentUpdatedAt")
+                        .HasColumnType("datetimeoffset")
+                        .HasColumnName("consentUpdatedAt");
+
+                    b.Property<bool>("ConsentWhatsApp")
+                        .HasColumnType("bit")
+                        .HasColumnName("consentWhatsApp");
+
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("datetimeoffset")
                         .HasColumnName("createdAt");
@@ -211,9 +223,17 @@ namespace Oficina.Infrastructure.Persistence.Migrations
                         .HasColumnType("nvarchar(160)")
                         .HasColumnName("email");
 
+                    b.Property<int>("FailedLoginAttempts")
+                        .HasColumnType("int")
+                        .HasColumnName("failedLoginAttempts");
+
                     b.Property<bool>("IsActive")
                         .HasColumnType("bit")
                         .HasColumnName("isActive");
+
+                    b.Property<DateTimeOffset?>("LockoutEndAt")
+                        .HasColumnType("datetimeoffset")
+                        .HasColumnName("lockoutEndAt");
 
                     b.Property<string>("Name")
                         .IsRequired()
@@ -222,7 +242,6 @@ namespace Oficina.Infrastructure.Persistence.Migrations
                         .HasColumnName("name");
 
                     b.Property<string>("PasswordHash")
-                        .IsRequired()
                         .HasMaxLength(255)
                         .HasColumnType("nvarchar(255)")
                         .HasColumnName("passwordHash");
@@ -247,6 +266,57 @@ namespace Oficina.Infrastructure.Persistence.Migrations
                         .HasFilter("[deletedAt] IS NULL");
 
                     b.ToTable("users", (string)null);
+                });
+
+            modelBuilder.Entity("Oficina.Domain.Identity.Entities.UserInvitation", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("id");
+
+                    b.Property<DateTimeOffset?>("AcceptedAt")
+                        .HasColumnType("datetimeoffset")
+                        .HasColumnName("acceptedAt");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetimeoffset")
+                        .HasColumnName("createdAt");
+
+                    b.Property<Guid?>("CreatedBy")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("createdBy");
+
+                    b.Property<DateTimeOffset>("ExpiresAt")
+                        .HasColumnType("datetimeoffset")
+                        .HasColumnName("expiresAt");
+
+                    b.Property<DateTimeOffset?>("RevokedAt")
+                        .HasColumnType("datetimeoffset")
+                        .HasColumnName("revokedAt");
+
+                    b.Property<string>("TokenHash")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .IsUnicode(false)
+                        .HasColumnType("char(64)")
+                        .HasColumnName("tokenHash")
+                        .IsFixedLength();
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("userId");
+
+                    b.HasKey("Id")
+                        .HasName("pk_userInvitations");
+
+                    b.HasIndex("TokenHash")
+                        .IsUnique()
+                        .HasDatabaseName("ux_userInvitations_tokenHash");
+
+                    b.HasIndex("UserId")
+                        .HasDatabaseName("ix_userInvitations_user");
+
+                    b.ToTable("userInvitations", (string)null);
                 });
 
             modelBuilder.Entity("Oficina.Domain.Inventory.Entities.Part", b =>
@@ -396,6 +466,53 @@ namespace Oficina.Infrastructure.Persistence.Migrations
                         .HasDatabaseName("ix_stockMovements_userId");
 
                     b.ToTable("stockMovements", (string)null);
+                });
+
+            modelBuilder.Entity("Oficina.Domain.Privacy.Entities.SensitiveDataAccess", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("CustomerId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("customerId");
+
+                    b.Property<string>("Field")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(10)")
+                        .HasColumnName("field");
+
+                    b.Property<DateTimeOffset>("OccurredAt")
+                        .HasColumnType("datetimeoffset")
+                        .HasColumnName("occurredAt");
+
+                    b.Property<string>("Reason")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(10)")
+                        .HasColumnName("reason");
+
+                    b.Property<string>("TraceId")
+                        .HasMaxLength(64)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(64)")
+                        .HasColumnName("traceId");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("userId");
+
+                    b.HasKey("Id")
+                        .HasName("pk_sensitiveDataAccess");
+
+                    b.HasIndex("CustomerId", "OccurredAt")
+                        .HasDatabaseName("ix_sensitiveDataAccess_customer");
+
+                    b.ToTable("sensitiveDataAccess", (string)null);
                 });
 
             modelBuilder.Entity("Oficina.Domain.ServiceOrders.Entities.PartItem", b =>
@@ -841,6 +958,16 @@ namespace Oficina.Infrastructure.Persistence.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired()
                         .HasConstraintName("fk_vehicles_customers_customerId");
+                });
+
+            modelBuilder.Entity("Oficina.Domain.Identity.Entities.UserInvitation", b =>
+                {
+                    b.HasOne("Oficina.Domain.Identity.Entities.User", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_userInvitations_users_userId");
                 });
 
             modelBuilder.Entity("Oficina.Domain.Inventory.Entities.StockMovement", b =>

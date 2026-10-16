@@ -1,0 +1,9 @@
+dist
+coverage
+playwright-report
+test-results
+.angular
+node_modules
+package-lock.json
+src/app/core/api/generated
+src/mock-worker

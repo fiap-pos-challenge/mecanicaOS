@@ -1,0 +1,189 @@
+<a class="back" routerLink="/mechanic">
+  <ui-icon [icon]="icons.back" [size]="16" />
+  {{ text.back }}
+</a>
+<app-sync-banner class="block" />
+
+@switch (state()) {
+  @case ('loading') {
+    <ui-skeleton height="320px" />
+  }
+  @case ('pending') {
+    <ui-pending-notice [message]="pendingText" />
+  }
+  @case ('error') {
+    <div class="alert" role="alert">
+      <span>{{ text.loadError }}</span>
+      <button uiButton size="sm" type="button" (click)="load(id() ?? '')">{{ text.retry }}</button>
+    </div>
+  }
+  @case ('ready') {
+    @if (order(); as current) {
+      <header class="head">
+        <p class="row">
+          <span class="mono">{{ orderText.number(current.number) }}</span>
+          <ui-status-pill [tone]="tones[current.status]">{{
+            orderText.statuses[current.status]
+          }}</ui-status-pill>
+        </p>
+        <h1 class="title">
+          {{ current.vehicle }}
+          <ui-plate [value]="current.plate" />
+        </h1>
+        <p class="muted">
+          <strong>{{ text.complaint }}:</strong> {{ current.complaint }}
+        </p>
+        @if (current.timerRunning) {
+          <p class="timer" role="status">{{ text.actions.timer }}</p>
+        }
+      </header>
+
+      @if (error(); as message) {
+        <p class="alert" role="alert">{{ message }}</p>
+      }
+
+      <ui-tabs
+        [tabs]="tabs"
+        [label]="text.tabs"
+        [selected]="section()"
+        (selectedChange)="selectSection($event)"
+      >
+        @switch (section()) {
+          @case ('checklist') {
+            <div class="checklist">
+              @for (item of current.checklist; track item.id) {
+                <fieldset class="check">
+                  <legend>{{ item.label }}</legend>
+                  <div class="choices">
+                    @for (option of states; track option) {
+                      <label
+                        class="choice"
+                        [class.choice--on]="item.state === option"
+                        [attr.data-state]="option"
+                      >
+                        <input
+                          type="radio"
+                          [name]="'check-' + item.id"
+                          [value]="option"
+                          [checked]="item.state === option"
+                          (change)="setState(item.id, option)"
+                        />
+                        {{ text.states[option] }}
+                      </label>
+                    }
+                  </div>
+                </fieldset>
+              }
+            </div>
+          }
+          @case ('photos') {
+            <div class="photos">
+              @for (photo of current.photos; track photo.id; let index = $index) {
+                <figure class="photo">
+                  <img
+                    [src]="photo.url"
+                    [alt]="text.photos.alt(current.number, index + 1)"
+                    width="96"
+                    height="96"
+                  />
+                  @if (photo.pending) {
+                    <figcaption class="pending">{{ text.photos.pending }}</figcaption>
+                  }
+                </figure>
+              } @empty {
+                <p class="muted">{{ text.photos.empty }}</p>
+              }
+            </div>
+            <label class="upload">
+              {{ text.photos.take }}
+              <input
+                class="file"
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                capture="environment"
+                multiple
+                (change)="addPhotos($event)"
+              />
+            </label>
+            @if (photoError(); as message) {
+              <p class="alert" role="alert">{{ message }}</p>
+            }
+            <p class="muted">{{ text.photos.hint }}</p>
+          }
+          @case ('diagnosis') {
+            <ui-field [label]="text.diagnosis.label">
+              <textarea
+                uiControl
+                rows="4"
+                maxlength="2000"
+                [value]="description()"
+                (input)="setDescription($event)"
+              ></textarea>
+            </ui-field>
+            <div class="buttons">
+              <button uiButton type="button" (click)="saveDescription()">
+                {{ text.diagnosis.save }}
+              </button>
+              <button
+                uiButton
+                type="button"
+                [loading]="suggesting()"
+                [disabled]="!store.online()"
+                (click)="suggest()"
+              >
+                {{ text.diagnosis.suggest }}
+              </button>
+            </div>
+            @if (!store.online()) {
+              <p class="muted">{{ text.diagnosis.offlineSuggest }}</p>
+            }
+            @if (suggestions(); as items) {
+              <fieldset class="suggestions">
+                <legend>{{ text.diagnosis.suggestions }}</legend>
+                <ui-ai-badge />
+                @for (item of items; track item.itemId) {
+                  <label class="suggestion">
+                    <input
+                      type="checkbox"
+                      [checked]="selected().has(item.itemId)"
+                      (change)="toggle(item.itemId, $event)"
+                    />
+                    <span>
+                      <strong>{{ item.name }}</strong>
+                      <small class="muted"
+                        >{{ text.diagnosis.confidence(item.confidence) }} · {{ item.reason }}</small
+                      >
+                    </span>
+                  </label>
+                } @empty {
+                  <p class="muted">{{ text.diagnosis.noSuggestions }}</p>
+                }
+              </fieldset>
+            }
+          }
+        }
+      </ui-tabs>
+
+      <div class="footer">
+        @if (current.status === 'Received') {
+          <button uiButton variant="primary" type="button" (click)="start()">
+            {{ text.actions.startDiagnosis }}
+          </button>
+        }
+        @if (current.status === 'InDiagnosis') {
+          <button uiButton variant="primary" type="button" (click)="sendToQuote()">
+            {{ text.actions.sendToQuote }}
+          </button>
+        }
+        @if (current.status === 'InProgress') {
+          @if (!current.timerRunning) {
+            <button uiButton type="button" (click)="start()">{{ text.actions.start }}</button>
+          }
+          <button uiButton variant="primary" type="button" (click)="finish()">
+            {{ text.actions.finish }}
+          </button>
+        }
+      </div>
+    }
+  }
+}

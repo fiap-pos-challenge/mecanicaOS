@@ -1,0 +1,75 @@
+# Serves the Angular build and proxies the API on the same origin.
+# API_UPSTREAM is substituted at container start (default http://api:8080).
+# Portal links carry the customer's access token in the path: never write them to the access log.
+map $request_uri $loggable {
+    ~^/o/ 0;
+    default 1;
+}
+
+server {
+    listen 8080;
+    server_name _;
+    root /usr/share/nginx/html;
+    index index.html;
+    server_tokens off;
+    access_log /var/log/nginx/access.log combined if=$loggable;
+
+    # Compress the static bundle (JS, CSS, fonts metadata, SVG, manifest). API responses are not compressed here.
+    gzip on;
+    gzip_vary on;
+    gzip_comp_level 6;
+    gzip_min_length 1024;
+    gzip_proxied off;
+    gzip_types text/css application/javascript application/json application/manifest+json image/svg+xml;
+
+    resolver 127.0.0.11 valid=10s ipv6=off;
+    set $api_upstream ${API_UPSTREAM};
+
+    location = /index.html {
+        include /etc/nginx/snippets/security-headers.conf;
+        add_header Cache-Control "no-store" always;
+        # Angular applies this per-request nonce to the component styles it injects.
+        sub_filter '__CSP_NONCE__' '$request_id';
+        sub_filter_once off;
+    }
+
+    location = /api/health {
+        include /etc/nginx/snippets/security-headers.conf;
+        proxy_pass $api_upstream/health;
+    }
+
+    location /api/ {
+        include /etc/nginx/snippets/security-headers.conf;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_pass $api_upstream;
+    }
+
+    # The service worker and the manifest must be revalidated on every load to pick up new versions.
+    location = /sw.js {
+        include /etc/nginx/snippets/security-headers.conf;
+        add_header Cache-Control "no-cache" always;
+        add_header Service-Worker-Allowed "/" always;
+        try_files $uri =404;
+    }
+
+    location = /manifest.webmanifest {
+        include /etc/nginx/snippets/security-headers.conf;
+        add_header Cache-Control "no-cache" always;
+        default_type application/manifest+json;
+        try_files $uri =404;
+    }
+
+    location ~* \.(?:js|css|woff2?|ico|png|svg)$ {
+        include /etc/nginx/snippets/security-headers.conf;
+        add_header Cache-Control "public, max-age=31536000, immutable" always;
+        try_files $uri =404;
+    }
+
+    # SPA fallback: any unknown path loads the app, which handles the route.
+    location / {
+        include /etc/nginx/snippets/security-headers.conf;
+        try_files $uri /index.html;
+    }
+}

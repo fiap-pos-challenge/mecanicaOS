@@ -1,0 +1,171 @@
+<a class="back" routerLink="/catalog/services">
+  <ui-icon [icon]="icons.back" [size]="16" />
+  {{ text.back }}
+</a>
+
+@switch (state()) {
+  @case ('loading') {
+    <ui-skeleton height="320px" />
+  }
+  @case ('pending') {
+    <ui-pending-notice [message]="pendingText" />
+  }
+  @case ('notFound') {
+    <p class="alert" role="alert">{{ text.notFound }}</p>
+  }
+  @case ('error') {
+    <div class="alert" role="alert">
+      <span>{{ text.loadError }}</span>
+      <button uiButton size="sm" type="button" (click)="retry()">{{ text.retry }}</button>
+    </div>
+  }
+  @case ('ready') {
+    <header class="head">
+      <h1 class="title">{{ title() }}</h1>
+      @if (item(); as current) {
+        <p class="meta">
+          <ui-status-pill [tone]="current.isActive ? 'ok' : 'neutral'">
+            {{ text.status(current.isActive) }}
+          </ui-status-pill>
+        </p>
+      }
+    </header>
+
+    @if (optionsPending()) {
+      <ui-pending-notice class="pending-block" [message]="pendingText" />
+    }
+
+    @if (!canManage()) {
+      <p class="notice" role="note">{{ text.readOnly }}</p>
+    }
+
+    <div class="layout">
+      <form class="form" novalidate [formGroup]="form" (ngSubmit)="save()">
+        @if (error(); as message) {
+          <p class="alert" role="alert" data-testid="catalog-form-error">{{ message }}</p>
+        }
+        <ui-card [headingLevel]="2" [title]="service.details">
+          <div class="grid">
+            <ui-field class="wide" [label]="text.name" [required]="true" [error]="errorOf('name')">
+              <input uiControl type="text" formControlName="name" maxlength="120" />
+            </ui-field>
+            <ui-field class="wide" [label]="text.description">
+              <textarea uiControl rows="2" formControlName="description" maxlength="500"></textarea>
+            </ui-field>
+            <ui-field [label]="service.basePrice" [required]="true" [error]="errorOf('basePrice')">
+              <input
+                uiControl
+                type="text"
+                inputmode="decimal"
+                formControlName="basePrice"
+                (blur)="formatPrice()"
+              />
+            </ui-field>
+            <ui-field
+              [label]="service.minutes"
+              [required]="true"
+              [error]="errorOf('estimatedMinutes')"
+            >
+              <input uiControl type="number" min="1" formControlName="estimatedMinutes" />
+            </ui-field>
+            <ui-field
+              [label]="service.commission"
+              [required]="true"
+              [error]="errorOf('commissionPercent')"
+            >
+              <input
+                uiControl
+                type="number"
+                min="0"
+                max="50"
+                step="0.5"
+                formControlName="commissionPercent"
+              />
+            </ui-field>
+            <ui-field
+              [label]="service.warranty"
+              [required]="true"
+              [error]="errorOf('warrantyDays')"
+            >
+              <input uiControl type="number" min="0" formControlName="warrantyDays" />
+            </ui-field>
+          </div>
+        </ui-card>
+
+        <ui-card
+          [headingLevel]="2"
+          [title]="service.usualParts"
+          [subtitle]="service.usualPartsHint"
+        >
+          @if (canManage()) {
+            <div class="picker">
+              <ui-field [label]="service.part">
+                <select uiControl [formControl]="partChoice">
+                  <option value="">{{ service.choosePart }}</option>
+                  @for (part of availableParts(); track part.id) {
+                    <option [value]="part.id">{{ part.code }} · {{ part.name }}</option>
+                  }
+                </select>
+              </ui-field>
+              <button uiButton type="button" [disabled]="!partChoice.value" (click)="addPart()">
+                {{ service.addPart }}
+              </button>
+            </div>
+          }
+          @if (form.controls.usualParts.length === 0) {
+            <p class="empty">{{ service.noUsualParts }}</p>
+          } @else {
+            <ul class="lines" formArrayName="usualParts">
+              @for (line of form.controls.usualParts.controls; track $index; let index = $index) {
+                <li class="line" [formGroupName]="index">
+                  <span class="line-kind">
+                    <ui-status-pill tone="info">{{ service.part }}</ui-status-pill>
+                  </span>
+                  <span class="line-name">{{ partName(line.controls.partId.value) }}</span>
+                  <input
+                    class="ui-control qty"
+                    type="number"
+                    min="0.001"
+                    step="0.001"
+                    formControlName="quantity"
+                    [attr.aria-label]="service.quantityOf(partName(line.controls.partId.value))"
+                    [attr.aria-invalid]="quantityInvalid(index) || null"
+                  />
+                  <span></span>
+                  @if (canManage()) {
+                    <button
+                      uiIconButton
+                      type="button"
+                      [label]="service.removePart(partName(line.controls.partId.value))"
+                      (click)="removePart(index)"
+                    >
+                      <ui-icon [icon]="icons.remove" [size]="14" />
+                    </button>
+                  }
+                </li>
+              }
+            </ul>
+          }
+        </ui-card>
+
+        @if (canManage()) {
+          <div class="actions">
+            <a uiButton routerLink="/catalog/services">{{ text.cancel }}</a>
+            <button uiButton variant="primary" type="submit" [loading]="saving()">
+              {{ text.save }}
+            </button>
+          </div>
+        }
+      </form>
+
+      @if (item(); as current) {
+        <app-price-history
+          class="history"
+          kind="services"
+          [itemId]="current.id"
+          [version]="historyVersion()"
+        />
+      }
+    </div>
+  }
+}

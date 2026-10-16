@@ -1,0 +1,265 @@
+<main class="portal">
+  <header class="brand">
+    <strong>{{ store.order()?.shopName ?? text.screen }}</strong>
+    <span class="secure">
+      <ui-icon [icon]="icons.lock" [size]="14" />
+      {{ text.secure }}
+    </span>
+  </header>
+
+  @switch (store.phase()) {
+    @case ('checking') {
+      <p class="muted" role="status">{{ text.checking }}</p>
+      <ui-skeleton height="160px" />
+    }
+    @case ('pending') {
+      <ui-pending-notice [message]="pendingText" />
+    }
+    @case ('unavailable') {
+      <section class="state" data-testid="portal-unavailable">
+        <h1>{{ text.unavailableTitle }}</h1>
+        <p>{{ text.unavailable }}</p>
+      </section>
+    }
+    @case ('locked') {
+      <section class="state" data-testid="portal-locked">
+        <h1>{{ text.lockedTitle }}</h1>
+        <p>{{ text.locked }}</p>
+      </section>
+    }
+    @case ('error') {
+      <section class="state" role="alert">
+        <p>{{ text.loadError }}</p>
+        <button uiButton type="button" (click)="store.start(token() ?? '')">
+          {{ text.retry }}
+        </button>
+      </section>
+    }
+    @case ('confirm') {
+      <form class="card" novalidate (submit)="submitDigits($event)">
+        <h1>{{ text.confirmTitle }}</h1>
+        <p class="muted">{{ text.confirmText }}</p>
+        <ui-field [label]="text.digits" [required]="true" [error]="store.digitsError()">
+          <input
+            uiControl
+            type="text"
+            inputmode="numeric"
+            autocomplete="off"
+            maxlength="3"
+            [value]="digits()"
+            (input)="setDigits($event)"
+          />
+        </ui-field>
+        <button uiButton variant="primary" type="submit" [loading]="store.busy()">
+          {{ text.confirm }}
+        </button>
+      </form>
+    }
+    @case ('ready') {
+      @if (store.order(); as order) {
+        <h1>{{ text.hello(order.customerFirstName) }}</h1>
+        <p class="muted vehicle">
+          {{ text.vehicle(order.vehicle) }}
+          <ui-plate [value]="order.plate" />
+        </p>
+
+        @if (store.cardNotice(); as notice) {
+          <p class="notice notice--{{ notice.tone }}" role="status">{{ notice.text }}</p>
+        }
+        @if (store.notice(); as notice) {
+          <p class="notice notice--{{ notice.tone }}" role="status" data-testid="portal-notice">
+            {{ notice.text }}
+          </p>
+        }
+
+        <section class="card" [attr.aria-label]="text.timeline">
+          <h2>{{ text.timeline }}</h2>
+          <ol class="steps">
+            @for (step of steps(); track step.status) {
+              <li
+                class="step step--{{ step.state }}"
+                [attr.aria-current]="step.state === 'current' ? 'step' : null"
+              >
+                <span class="dot"></span>
+                <span>
+                  <strong>{{ step.label }}</strong>
+                  @if (step.at; as at) {
+                    <small class="muted">{{ at }}</small>
+                  }
+                </span>
+              </li>
+            }
+          </ol>
+        </section>
+
+        @if (order.photos.length > 0) {
+          <section class="card">
+            <h2>{{ text.photos }}</h2>
+            <div class="photos">
+              @for (photo of order.photos; track photo.id; let index = $index) {
+                <img
+                  [src]="photo.url"
+                  [alt]="photo.caption || text.photo(index + 1)"
+                  width="96"
+                  height="96"
+                />
+              }
+            </div>
+          </section>
+        }
+
+        @if (order.quote; as quote) {
+          <section class="card">
+            <h2>{{ text.quote }} #{{ quote.number }}</h2>
+            @if (store.canAnswer()) {
+              <p class="muted">{{ text.quoteHint }}</p>
+            } @else if (quote.status !== 'Pending') {
+              <p class="muted">{{ text.answered[quote.status] }}</p>
+            }
+            <ul class="items">
+              @for (item of items(); track item.id) {
+                <li>
+                  <label class="item">
+                    <input
+                      type="checkbox"
+                      [checked]="item.checked"
+                      [disabled]="!store.canAnswer()"
+                      (change)="toggle(item.id, $event)"
+                    />
+                    <span class="name">{{ item.name }}</span>
+                    <span class="mono">{{ item.totalText }}</span>
+                  </label>
+                </li>
+              }
+            </ul>
+            @if (totals(); as sum) {
+              <dl class="sum">
+                <div>
+                  <dt>{{ text.discount }}</dt>
+                  <dd class="mono">{{ sum.discount }}</dd>
+                </div>
+                <div class="total">
+                  <dt>{{ text.total }}</dt>
+                  <dd class="mono" data-testid="portal-total">{{ sum.total }}</dd>
+                </div>
+              </dl>
+            }
+            @if (store.canAnswer()) {
+              <div class="actions">
+                <button
+                  uiButton
+                  variant="primary"
+                  type="button"
+                  [loading]="store.busy()"
+                  (click)="store.approve()"
+                >
+                  {{ text.approve }}
+                </button>
+                @if (!rejecting()) {
+                  <button uiButton variant="ghost" type="button" (click)="rejecting.set(true)">
+                    {{ text.reject }}
+                  </button>
+                } @else {
+                  <form class="reject" novalidate (submit)="submitReject($event)">
+                    <ui-field
+                      [label]="text.rejectReason"
+                      [required]="true"
+                      [error]="reasonInvalid() ? text.rejectRequired : null"
+                    >
+                      <textarea
+                        uiControl
+                        rows="3"
+                        maxlength="500"
+                        [value]="reason()"
+                        (input)="setReason($event)"
+                      ></textarea>
+                    </ui-field>
+                    <div class="actions">
+                      <button uiButton variant="danger" type="submit">
+                        {{ text.rejectSubmit }}
+                      </button>
+                      <button uiButton type="button" (click)="rejecting.set(false)">
+                        {{ text.cancel }}
+                      </button>
+                    </div>
+                  </form>
+                }
+              </div>
+            }
+          </section>
+        }
+
+        @if (paymentView(); as payment) {
+          <section class="card">
+            <h2>{{ text.payment }}</h2>
+            <p>{{ payment.statusText }}</p>
+            @if (payment.open) {
+              <p class="mono">{{ payment.due }}</p>
+              @if (store.pix(); as pix) {
+                <div class="pix" data-testid="pix">
+                  <h3>{{ text.pixTitle }}</h3>
+                  <img [src]="pix.qrCodeDataUrl" [alt]="text.pixQr" width="160" height="160" />
+                  <ui-field [label]="text.pixCode">
+                    <input uiControl type="text" readonly [value]="pix.copyPaste" />
+                  </ui-field>
+                  <button uiButton type="button" (click)="copyPix(pix.copyPaste)">
+                    {{ text.pixCopy }}
+                  </button>
+                  @switch (store.pixStatus()) {
+                    @case ('Expired') {
+                      <p class="notice notice--bad" role="alert">{{ text.pixExpired }}</p>
+                      <button uiButton variant="primary" type="button" (click)="store.payPix()">
+                        {{ text.pixRenew }}
+                      </button>
+                    }
+                    @default {
+                      <p class="muted" role="status">{{ text.pixWaiting }}</p>
+                    }
+                  }
+                </div>
+              } @else {
+                <div class="actions">
+                  @if (payment.methods.includes('Pix')) {
+                    <button
+                      uiButton
+                      variant="primary"
+                      type="button"
+                      [loading]="store.busy()"
+                      (click)="store.payPix()"
+                    >
+                      {{ text.payPix }}
+                    </button>
+                  }
+                  @if (payment.methods.includes('Credit')) {
+                    <button uiButton type="button" (click)="payCard()">{{ text.payCard }}</button>
+                    <small class="muted">{{ text.cardRedirect }}</small>
+                  }
+                </div>
+              }
+            }
+          </section>
+        }
+
+        <section class="card">
+          <h2>{{ text.documents }}</h2>
+          <ul class="docs">
+            @for (document of documents(); track document.code) {
+              <li>
+                <button
+                  uiButton
+                  type="button"
+                  [attr.aria-label]="documentText.open(document.label, document.code)"
+                  (click)="openDocument(document.code)"
+                >
+                  {{ document.label }} · {{ document.date }}
+                </button>
+              </li>
+            } @empty {
+              <li class="muted">{{ text.noDocuments }}</li>
+            }
+          </ul>
+        </section>
+      }
+    }
+  }
+</main>

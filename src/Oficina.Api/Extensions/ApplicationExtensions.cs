@@ -2,6 +2,7 @@ using FluentValidation;
 using Oficina.Application;
 using Oficina.Application.Abstractions.Messaging;
 using Oficina.Application.Common.Behaviors;
+using Oficina.Application.Identity.Invitations;
 using Oficina.Application.ServiceOrders.EventHandlers;
 using Oficina.Domain.ServiceOrders.Events;
 
@@ -19,6 +20,7 @@ public static class ApplicationExtensions
         });
         services.AddValidatorsFromAssembly(AssemblyReference.Assembly, includeInternalTypes: true);
         services.AddScoped<IDomainEventHandler<ServiceOrderCompleted>, NotifyCustomerOnServiceOrderCompleted>();
+        services.AddScoped<InvitationIssuer>();
 
         return services;
     }

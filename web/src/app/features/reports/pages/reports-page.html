@@ -1,0 +1,235 @@
+<header class="head">
+  <div>
+    <h1 class="page-title">{{ screen }}</h1>
+    <p class="sub">{{ text.subtitle }}</p>
+  </div>
+  <div class="tools">
+    @for (option of formats; track option) {
+      <button
+        uiButton
+        type="button"
+        [disabled]="!store.valid() || store.exporting()"
+        (click)="store.export(option)"
+      >
+        {{ text.export[option] }}
+      </button>
+    }
+    <button
+      uiButton
+      variant="primary"
+      type="button"
+      [disabled]="!store.valid()"
+      (click)="saveReport()"
+    >
+      {{ text.save.open }}
+    </button>
+  </div>
+</header>
+
+@if (pending()) {
+  <ui-pending-notice class="block" [message]="pendingText" />
+}
+
+@if (store.exportJob(); as job) {
+  <div class="notice block" role="status" data-testid="export-status">
+    @if (job.large) {
+      <span>{{ text.export.large }}</span>
+    } @else if (job.status === 'Ready' && job.fileUrl) {
+      <span>{{ text.export.ready }}</span>
+      <a class="link" [href]="job.fileUrl" [attr.download]="job.fileName" rel="noopener">{{
+        text.export.download(text.formats[job.format])
+      }}</a>
+    } @else if (job.status === 'Failed') {
+      <span>{{ text.export.failed }}</span>
+    } @else if (job.status === 'Processing') {
+      <span>{{ text.export.processing }}</span>
+    } @else {
+      <span>{{ text.export.queued }}</span>
+    }
+  </div>
+}
+
+@if (store.exportError(); as message) {
+  <p class="alert block" role="alert">{{ message }}</p>
+}
+
+<div class="layout">
+  <section class="builder" [attr.aria-label]="text.builder">
+    <div class="fields">
+      <ui-field [label]="text.fields.measure">
+        <select uiControl (change)="setMeasure($event)">
+          @for (measure of measures; track measure) {
+            <option [value]="measure" [selected]="measure === store.definition().measure">
+              {{ text.measures[measure] }}
+            </option>
+          }
+        </select>
+      </ui-field>
+      <ui-field [label]="text.fields.groupBy">
+        <select uiControl (change)="setGrouping($event)">
+          @for (grouping of groupings; track grouping) {
+            <option
+              [value]="grouping"
+              [selected]="grouping === store.definition().groupBy"
+              [disabled]="!allowed(grouping)"
+            >
+              {{
+                allowed(grouping)
+                  ? text.groupings[grouping]
+                  : text.incompatible(text.groupings[grouping])
+              }}
+            </option>
+          }
+        </select>
+      </ui-field>
+      <ui-field [label]="text.fields.period">
+        <select uiControl (change)="setPeriod($event)">
+          @for (period of periods; track period) {
+            <option [value]="period" [selected]="period === store.definition().period.preset">
+              {{ text.periods[period] }}
+            </option>
+          }
+        </select>
+      </ui-field>
+      <ui-field [label]="text.fields.chart">
+        <select uiControl (change)="setChart($event)">
+          @for (chart of charts; track chart) {
+            <option [value]="chart" [selected]="chart === store.definition().chart">
+              {{ text.charts[chart] }}
+            </option>
+          }
+        </select>
+      </ui-field>
+      @if (store.definition().period.preset === 'custom') {
+        <ui-field [label]="text.fields.from">
+          <input
+            uiControl
+            type="date"
+            [value]="store.definition().period.from ?? ''"
+            (change)="setDate('from', $event)"
+          />
+        </ui-field>
+        <ui-field [label]="text.fields.to">
+          <input
+            uiControl
+            type="date"
+            [value]="store.definition().period.to ?? ''"
+            (change)="setDate('to', $event)"
+          />
+        </ui-field>
+      }
+    </div>
+
+    @if (store.fromAssistant()) {
+      <p class="assistant" role="status">
+        <ui-ai-badge />
+        <span>{{ text.fromAssistant }}</span>
+      </p>
+    }
+
+    @if (store.problems().length > 0) {
+      <ul class="problems" role="alert" data-testid="report-problems">
+        @for (problem of store.problems(); track problem) {
+          <li>{{ text.problems[problem] }}</li>
+        }
+      </ul>
+    }
+
+    <h2 class="result-title">{{ title() }}</h2>
+    @if (range(); as range) {
+      <p class="sub">
+        {{ range }}
+        @if (total(); as total) {
+          <span class="mono">· {{ total }}</span>
+        }
+      </p>
+    }
+
+    @switch (store.state()) {
+      @case ('loading') {
+        <ui-skeleton height="240px" />
+      }
+      @case ('error') {
+        <div class="alert" role="alert">
+          <span>{{ store.error() }}</span>
+          <button uiButton size="sm" type="button" (click)="store.refresh()">
+            {{ text.retry }}
+          </button>
+        </div>
+      }
+      @case ('ready') {
+        <ui-chart
+          [kind]="store.definition().chart"
+          [data]="chartData()"
+          [label]="title()"
+          [format]="format()"
+          [emptyMessage]="text.empty"
+        />
+      }
+    }
+  </section>
+
+  <aside class="side">
+    <ui-card [headingLevel]="2" [title]="text.saved.title" [subtitle]="text.saved.hint">
+      @switch (store.savedState()) {
+        @case ('loading') {
+          <ui-skeleton height="96px" />
+        }
+        @case ('error') {
+          <p class="alert" role="alert">{{ text.saved.loadError }}</p>
+        }
+        @default {
+          <ul class="saved" [attr.aria-label]="text.saved.label">
+            @for (report of store.saved(); track report.id) {
+              <li class="report" [class.report--open]="report.id === store.openId()">
+                <button
+                  type="button"
+                  class="report-name"
+                  [attr.aria-label]="text.saved.open(report.name)"
+                  [attr.aria-current]="report.id === store.openId() ? 'true' : null"
+                  (click)="open(report)"
+                >
+                  {{ report.name }}
+                </button>
+                <small class="sub">{{ scheduleText(report) }}</small>
+                <span class="report-actions">
+                  <button
+                    uiButton
+                    size="sm"
+                    type="button"
+                    [attr.aria-label]="text.saved.rename(report.name)"
+                    (click)="rename(report)"
+                  >
+                    {{ text.save.rename }}
+                  </button>
+                  <button
+                    uiButton
+                    size="sm"
+                    type="button"
+                    [attr.aria-label]="text.saved.schedule(report.name)"
+                    (click)="schedule(report)"
+                  >
+                    {{ text.schedule.submit }}
+                  </button>
+                  <button
+                    uiButton
+                    size="sm"
+                    variant="danger"
+                    type="button"
+                    [attr.aria-label]="text.saved.remove(report.name)"
+                    (click)="remove(report)"
+                  >
+                    {{ text.saved.removeConfirm }}
+                  </button>
+                </span>
+              </li>
+            } @empty {
+              <li class="sub">{{ text.saved.empty }}</li>
+            }
+          </ul>
+        }
+      }
+    </ui-card>
+    <app-assistant-panel />
+  </aside>
+</div>

@@ -6,6 +6,7 @@ using Oficina.Domain.Common.Interfaces;
 using Oficina.Domain.Customers.Entities;
 using Oficina.Domain.Identity.Entities;
 using Oficina.Domain.Inventory.Entities;
+using Oficina.Domain.Privacy.Entities;
 using Oficina.Domain.ServiceOrders.Entities;
 using Oficina.Infrastructure.Messaging.Outbox;
 using Oficina.Infrastructure.Persistence.Conventions;
@@ -29,6 +30,10 @@ public sealed class OficinaDbContext(DbContextOptions<OficinaDbContext> options)
     public DbSet<ServiceOrder> ServiceOrders => Set<ServiceOrder>();
 
     public DbSet<OutboxMessage> OutboxMessages => Set<OutboxMessage>();
+
+    public DbSet<SensitiveDataAccess> SensitiveDataAccesses => Set<SensitiveDataAccess>();
+
+    public DbSet<UserInvitation> UserInvitations => Set<UserInvitation>();
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder) =>
         optionsBuilder.ConfigureWarnings(warnings =>

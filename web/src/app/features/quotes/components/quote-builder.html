@@ -1,0 +1,54 @@
+<ui-card [headingLevel]="2" [title]="text.title">
+  <ui-tabs
+    [tabs]="tabs"
+    [label]="text.tabs"
+    [selected]="section()"
+    (selectedChange)="selectSection($event)"
+  >
+    <ui-field class="search" [label]="text.search">
+      <input uiControl type="search" maxlength="60" [value]="term()" (input)="search($event)" />
+    </ui-field>
+    @if (rows().length === 0) {
+      <p class="empty">{{ section() === 'suggestions' ? text.noSuggestions : text.empty }}</p>
+    } @else {
+      <ul class="options">
+        @for (row of rows(); track row.option.kind + row.option.itemId) {
+          <li class="option">
+            <div class="info">
+              <span class="name">
+                @if (row.reason !== null) {
+                  <ui-ai-badge [label]="text.ai" />
+                }
+                {{ row.option.name }}
+              </span>
+              <span class="meta">
+                @if (row.detail; as detail) {
+                  <span>{{ detail }}</span>
+                }
+                @if (row.stock; as stock) {
+                  <ui-status-pill [tone]="row.outOfStock ? 'warn' : 'neutral'">{{
+                    stock
+                  }}</ui-status-pill>
+                }
+              </span>
+              @if (row.reason; as reason) {
+                <span class="reason">{{ reason }}</span>
+              }
+            </div>
+            <span class="price">{{ row.price }}</span>
+            <button
+              uiIconButton
+              type="button"
+              [outlined]="true"
+              [label]="text.addItem(row.option.name)"
+              [disabled]="!editable()"
+              (click)="add(row)"
+            >
+              <ui-icon [icon]="icons.plus" [size]="16" />
+            </button>
+          </li>
+        }
+      </ul>
+    }
+  </ui-tabs>
+</ui-card>

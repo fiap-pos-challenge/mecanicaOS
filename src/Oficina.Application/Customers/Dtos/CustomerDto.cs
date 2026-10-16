@@ -10,5 +10,6 @@ public sealed record CustomerDto(
     string? Email,
     string Phone,
     AddressDto? Address,
+    MessagingConsentDto MessagingConsent,
     DateTimeOffset CreatedAt,
     DateTimeOffset? UpdatedAt);

@@ -1,0 +1,32 @@
+:host {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  border: 1px dashed var(--amber);
+  border-radius: var(--radius-md);
+  background: repeating-linear-gradient(
+    -45deg,
+    var(--amber-soft),
+    var(--amber-soft) 10px,
+    var(--surface) 10px,
+    var(--surface) 20px
+  );
+  color: var(--fg);
+}
+
+.icon {
+  flex: none;
+  color: var(--amber);
+}
+
+.title {
+  margin: 0;
+  font-weight: 700;
+}
+
+.body {
+  margin: 2px 0 0;
+  color: var(--muted);
+  font-size: var(--text-sm);
+}

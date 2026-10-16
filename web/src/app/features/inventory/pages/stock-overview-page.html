@@ -1,0 +1,137 @@
+<div class="bar">
+  @if (stockValue(); as value) {
+    <p class="value">{{ value }}</p>
+  }
+  <div class="actions">
+    <a *appCan="'inventory.count'" uiButton routerLink="/inventory/counts">
+      <ui-icon [icon]="icons.count" [size]="16" />
+      {{ text.startCount }}
+    </a>
+    <button *appCan="'inventory.manage'" uiButton type="button" (click)="openEntry()">
+      <ui-icon [icon]="icons.entry" [size]="16" />
+      {{ text.registerEntry }}
+    </button>
+    <a
+      *appCan="'inventory.manage'"
+      uiButton
+      variant="primary"
+      routerLink="/inventory/purchase-orders"
+    >
+      <ui-icon [icon]="icons.order" [size]="16" />
+      {{ text.generateOrders(kpis()?.belowMinimum ?? 0) }}
+    </a>
+  </div>
+</div>
+
+@if (pending()) {
+  <ui-pending-notice class="pending" [message]="pendingText" />
+}
+
+<section class="kpis" [attr.aria-label]="text.kpisLabel">
+  @for (card of cards(); track card.label) {
+    <ui-kpi [label]="card.label" [value]="card.value" [delta]="card.delta" [trend]="card.trend" />
+  }
+</section>
+
+<div class="toolbar">
+  <label class="search">
+    <span class="visually-hidden">{{ text.searchLabel }}</span>
+    <ui-icon [icon]="icons.search" [size]="16" />
+    <input type="search" autocomplete="off" [formControl]="search" [placeholder]="text.search" />
+  </label>
+  <ui-field [label]="text.situation">
+    <select uiControl (change)="setSituation($event)">
+      <option value="" [selected]="situation() === null">{{ text.situationAll }}</option>
+      @for (option of situationOptions; track option) {
+        <option [value]="option" [selected]="situation() === option">
+          {{ situations[option] }}
+        </option>
+      }
+    </select>
+  </ui-field>
+  <ui-field [label]="text.location">
+    <select uiControl (change)="setLocation($event)">
+      <option value="" [selected]="location() === null">{{ text.locationAll }}</option>
+      @for (option of locations(); track option) {
+        <option [value]="option" [selected]="location() === option">{{ option }}</option>
+      }
+    </select>
+  </ui-field>
+  @if (hasFilters()) {
+    <button uiButton variant="ghost" size="sm" type="button" (click)="clear()">
+      {{ text.clear }}
+    </button>
+  }
+</div>
+
+@if (failed()) {
+  <div class="alert" role="alert">
+    <span>{{ text.loadError }}</span>
+    <button uiButton size="sm" type="button" (click)="load()">{{ text.retry }}</button>
+  </div>
+}
+
+<ui-table
+  [caption]="text.caption"
+  [columns]="columns()"
+  [rows]="rows()"
+  [trackBy]="trackRow"
+  [loading]="loading()"
+  [emptyMessage]="text.empty"
+  [page]="page()"
+  [pageSize]="pageSize"
+  [totalItems]="totalItems()"
+  (pageChange)="goTo($event)"
+>
+  <ng-template uiCell="code" let-row>
+    <span class="mono">{{ row.item.code }}</span>
+  </ng-template>
+  <ng-template uiCell="name" let-row>
+    <strong>{{ row.item.name }}</strong>
+  </ng-template>
+  <ng-template uiCell="balance" let-row>
+    <span class="mono">{{ balance(row) }}</span>
+  </ng-template>
+  <ng-template uiCell="level" let-row>
+    <span
+      class="level"
+      role="meter"
+      aria-valuemin="0"
+      aria-valuemax="100"
+      [attr.aria-valuenow]="row.level"
+      [attr.aria-label]="text.level(row.level)"
+    >
+      <span
+        class="level-fill"
+        [attr.data-situation]="row.situation"
+        [style.width.%]="row.level || 3"
+      ></span>
+    </span>
+  </ng-template>
+  <ng-template uiCell="situation" let-row>
+    <ui-status-pill [tone]="situationTone(row)">{{ situationLabel(row) }}</ui-status-pill>
+  </ng-template>
+  <ng-template uiCell="actions" let-row>
+    <span class="row-actions">
+      <a
+        uiButton
+        size="sm"
+        variant="ghost"
+        [routerLink]="['/inventory/parts', row.item.partId]"
+        [attr.aria-label]="text.movementsOf(row.item.name)"
+        >{{ text.movements }}</a
+      >
+      <button
+        *appCan="'inventory.manage'"
+        uiButton
+        size="sm"
+        variant="ghost"
+        type="button"
+        [attr.aria-label]="text.exitOf(row.item.name)"
+        (click)="openExit(row)"
+      >
+        {{ text.exit }}
+      </button>
+    </span>
+  </ng-template>
+</ui-table>

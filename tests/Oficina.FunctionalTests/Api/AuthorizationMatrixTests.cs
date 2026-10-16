@@ -8,22 +8,28 @@ namespace Oficina.FunctionalTests.Api;
 public sealed class AuthorizationMatrixTests(SqlServerFixture database) : ApiTestBase(database)
 {
     private static readonly Role[] AdminOnly = { Role.Admin };
-    private static readonly Role[] AdminOrAttendant = { Role.Admin, Role.Attendant };
-    private static readonly Role[] Everyone = { Role.Admin, Role.Attendant, Role.Mechanic };
+    private static readonly Role[] AdminOrManager = { Role.Admin, Role.Manager };
+    private static readonly Role[] Staff = { Role.Admin, Role.Manager, Role.Attendant };
+    private static readonly Role[] Everyone = { Role.Admin, Role.Manager, Role.Attendant, Role.Mechanic };
     private static readonly string AnyId = Guid.CreateVersion7().ToString();
 
     public static TheoryData<string, string, string?, string> Endpoints => new()
     {
         { "GET", "/api/auth/me", null, nameof(Everyone) },
-        { "GET", "/api/admin/customers", null, nameof(AdminOrAttendant) },
-        { "POST", "/api/admin/customers", """{"name":"Maria","document":"52998224725","phone":"11987654321"}""", nameof(AdminOrAttendant) },
-        { "GET", $"/api/admin/customers/{AnyId}", null, nameof(AdminOrAttendant) },
-        { "PUT", $"/api/admin/customers/{AnyId}", """{"name":"Maria","phone":"11987654321"}""", nameof(AdminOrAttendant) },
-        { "POST", "/api/admin/customers/search", """{"document":"52998224725"}""", nameof(AdminOrAttendant) },
+        { "GET", "/api/admin/customers", null, nameof(Staff) },
+        { "POST", "/api/admin/customers", """{"name":"Maria","document":"52998224725","phone":"11987654321"}""", nameof(Staff) },
+        { "GET", $"/api/admin/customers/{AnyId}", null, nameof(Staff) },
+        { "PUT", $"/api/admin/customers/{AnyId}", """{"name":"Maria","phone":"11987654321"}""", nameof(Staff) },
+        { "POST", "/api/admin/customers/search", """{"document":"52998224725"}""", nameof(Staff) },
         { "DELETE", $"/api/admin/customers/{AnyId}", null, nameof(AdminOnly) },
-        { "GET", "/api/admin/users", null, nameof(AdminOnly) },
+        { "POST", "/api/admin/customers/query", """{"term":"Maria"}""", nameof(Staff) },
+        { "POST", $"/api/admin/customers/{AnyId}/reveal", """{"field":"Phone","reason":"View"}""", nameof(Staff) },
+        { "GET", "/api/admin/users", null, nameof(AdminOrManager) },
+        { "GET", "/api/admin/users?role=Mechanic&status=Active", null, nameof(AdminOrManager) },
+        { "POST", "/api/admin/users/invite", """{"name":"Novo","email":"convite@oficina.com","role":"Mechanic"}""", nameof(AdminOnly) },
+        { "POST", $"/api/admin/users/{AnyId}/invite/resend", null, nameof(AdminOnly) },
         { "POST", "/api/admin/users", """{"name":"Novo","email":"novo@oficina.com","password":"Oficina@2026","role":"Mechanic"}""", nameof(AdminOnly) },
-        { "GET", $"/api/admin/users/{AnyId}", null, nameof(AdminOnly) },
+        { "GET", $"/api/admin/users/{AnyId}", null, nameof(AdminOrManager) },
         { "PUT", $"/api/admin/users/{AnyId}", """{"name":"Novo","role":"Mechanic"}""", nameof(AdminOnly) },
         { "DELETE", $"/api/admin/users/{AnyId}", null, nameof(AdminOnly) },
         { "POST", $"/api/admin/users/{AnyId}/deactivate", null, nameof(AdminOnly) },
@@ -38,7 +44,8 @@ public sealed class AuthorizationMatrixTests(SqlServerFixture database) : ApiTes
         var allowedRoles = allowed switch
         {
             nameof(AdminOnly) => AdminOnly,
-            nameof(AdminOrAttendant) => AdminOrAttendant,
+            nameof(AdminOrManager) => AdminOrManager,
+            nameof(Staff) => Staff,
             _ => Everyone,
         };
 

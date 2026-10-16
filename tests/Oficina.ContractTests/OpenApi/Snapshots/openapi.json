@@ -11,7 +11,7 @@
           "Auth"
         ],
         "summary": "Sign in",
-        "description": "Validates e-mail and password and returns a JWT access token. Inactive or deleted users cannot sign in. Limited to 5 attempts per minute per client IP.",
+        "description": "Validates e-mail and password and returns a JWT access token. Wrong password, unknown e-mail, deleted users and invited users who have not defined a password yet get the same 401. An inactive user with the right password gets 403 identity.accountDisabled. Five wrong passwords in a row lock the account for 15 minutes (429 identity.accountLocked with Retry-After). Limited to 5 attempts per minute per client IP (429 common.tooManyRequests with Retry-After).",
         "requestBody": {
           "content": {
             "application/json": {
@@ -64,6 +64,229 @@
           },
           "400": {
             "description": "Bad Request",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too Many Requests",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/auth/invitations/inspect": {
+      "post": {
+        "tags": [
+          "Auth"
+        ],
+        "summary": "Inspect invitation",
+        "description": "Returns the invited name, masked e-mail, role and expiry for the token sent in the body (never in the URL). Unknown token: 404 identity.invitationNotFound; expired: 422 identity.invitationExpired; used or replaced: 409 identity.invitationAlreadyUsed. Limited to 5 attempts per minute per client IP, counted apart from sign in.",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InspectInvitationRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InspectInvitationRequest"
+              }
+            },
+            "application/*\u002Bjson": {
+              "schema": {
+                "$ref": "#/components/schemas/InspectInvitationRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InvitationDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Content",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too Many Requests",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/auth/invitations/accept": {
+      "post": {
+        "tags": [
+          "Auth"
+        ],
+        "summary": "Accept invitation",
+        "description": "Defines the password of an invited user with a strong password and consumes the single-use token. Same errors as inspect, plus 400 identity.weakPassword. Limited to 5 attempts per minute per client IP, counted apart from sign in.",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AcceptInvitationRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AcceptInvitationRequest"
+              }
+            },
+            "application/*\u002Bjson": {
+              "schema": {
+                "$ref": "#/components/schemas/AcceptInvitationRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "204": {
+            "description": "No Content"
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Content",
             "content": {
               "application/problem\u002Bjson": {
                 "schema": {
@@ -132,7 +355,7 @@
           "Customers"
         ],
         "summary": "List customers",
-        "description": "Returns a page of customers ordered by name. Roles: Admin, Attendant.",
+        "description": "Returns a page of customers ordered by name. Document, e-mail and phone come masked. Roles: Admin, Manager, Attendant.",
         "parameters": [
           {
             "name": "page",
@@ -211,7 +434,7 @@
           "Customers"
         ],
         "summary": "Create customer",
-        "description": "Creates a customer with CPF or CNPJ, phone and optional e-mail and address (all or nothing). Roles: Admin, Attendant.",
+        "description": "Creates a customer with CPF or CNPJ, phone, optional e-mail and address (all or nothing) and the messaging consent (the server stamps the consent date). Roles: Admin, Manager, Attendant.",
         "requestBody": {
           "content": {
             "application/json": {
@@ -295,13 +518,194 @@
         }
       }
     },
+    "/api/admin/customers/query": {
+      "post": {
+        "tags": [
+          "Customers"
+        ],
+        "summary": "Query customers",
+        "description": "Searches by name or full CPF/CNPJ sent in the body (never in the URL), filters by document type and sorts by name or creation date. Document, e-mail and phone come masked. Roles: Admin, Manager, Attendant.",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/QueryCustomersRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/QueryCustomersRequest"
+              }
+            },
+            "application/*\u002Bjson": {
+              "schema": {
+                "$ref": "#/components/schemas/QueryCustomersRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CustomerDtoPagedResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/customers/{id}/reveal": {
+      "post": {
+        "tags": [
+          "Customers"
+        ],
+        "summary": "Reveal customer data",
+        "description": "Returns one sensitive field (Document, Email or Phone) unmasked and records who saw it, when and why (View or Edit). Roles: Admin, Manager, Attendant.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RevealCustomerDataRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RevealCustomerDataRequest"
+              }
+            },
+            "application/*\u002Bjson": {
+              "schema": {
+                "$ref": "#/components/schemas/RevealCustomerDataRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RevealedDataDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/admin/customers/{id}": {
       "get": {
         "tags": [
           "Customers"
         ],
         "summary": "Get customer",
-        "description": "Returns one customer by id. Roles: Admin, Attendant.",
+        "description": "Returns one customer by id. Roles: Admin, Manager, Attendant.",
         "parameters": [
           {
             "name": "id",
@@ -371,7 +775,7 @@
           "Customers"
         ],
         "summary": "Update customer",
-        "description": "Updates name, contact and address. The document cannot change. Roles: Admin, Attendant.",
+        "description": "Updates name, contact, address and messaging consent. The document cannot change. Roles: Admin, Manager, Attendant.",
         "parameters": [
           {
             "name": "id",
@@ -555,7 +959,7 @@
           "Customers"
         ],
         "summary": "Search customer by document",
-        "description": "Finds a customer by CPF or CNPJ sent in the body (never in the URL). Roles: Admin, Attendant.",
+        "description": "Finds a customer by CPF or CNPJ sent in the body (never in the URL). Roles: Admin, Manager, Attendant.",
         "requestBody": {
           "content": {
             "application/json": {
@@ -645,7 +1049,7 @@
           "Users"
         ],
         "summary": "List users",
-        "description": "Returns a page of users ordered by name. Role: Admin.",
+        "description": "Returns a page of users ordered by name, optionally filtered by role and status (Active, Inactive or InvitationPending). Roles: Admin, Manager.",
         "parameters": [
           {
             "name": "page",
@@ -663,6 +1067,20 @@
               "type": "integer",
               "format": "int32",
               "default": 20
+            }
+          },
+          {
+            "name": "role",
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/Role"
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/UserStatus"
             }
           }
         ],
@@ -724,7 +1142,7 @@
           "Users"
         ],
         "summary": "Create user",
-        "description": "Creates a user with any role (Admin, Attendant or Mechanic), unique e-mail and strong password. Role: Admin.",
+        "description": "Creates a user with any role (Admin, Manager, Attendant or Mechanic), unique e-mail and strong password. Role: Admin.",
         "requestBody": {
           "content": {
             "application/json": {
@@ -808,13 +1226,185 @@
         }
       }
     },
+    "/api/admin/users/invite": {
+      "post": {
+        "tags": [
+          "Users"
+        ],
+        "summary": "Invite user",
+        "description": "Creates a user without password and e-mails a single-use link (valid for 72 hours) where the person defines their own password. Nobody, not even the Admin, sees the password. Role: Admin.",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InviteUserRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InviteUserRequest"
+              }
+            },
+            "application/*\u002Bjson": {
+              "schema": {
+                "$ref": "#/components/schemas/InviteUserRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/users/{id}/invite/resend": {
+      "post": {
+        "tags": [
+          "Users"
+        ],
+        "summary": "Resend invitation",
+        "description": "Revokes the open invitation and e-mails a new link. Only for users who have not defined a password yet. Role: Admin.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/admin/users/{id}": {
       "get": {
         "tags": [
           "Users"
         ],
         "summary": "Get user",
-        "description": "Returns one user by id. Role: Admin.",
+        "description": "Returns one user by id. Roles: Admin, Manager.",
         "parameters": [
           {
             "name": "id",
@@ -1335,6 +1925,27 @@
   },
   "components": {
     "schemas": {
+      "AcceptInvitationRequest": {
+        "type": "object",
+        "properties": {
+          "token": {
+            "type": "string",
+            "nullable": true
+          },
+          "password": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "AccessReason": {
+        "enum": [
+          "View",
+          "Edit"
+        ],
+        "type": "string"
+      },
       "AddressDto": {
         "type": "object",
         "properties": {
@@ -1424,6 +2035,9 @@
           },
           "address": {
             "$ref": "#/components/schemas/AddressRequest"
+          },
+          "messagingConsent": {
+            "$ref": "#/components/schemas/MessagingConsentRequest"
           }
         },
         "additionalProperties": false
@@ -1499,6 +2113,9 @@
           "address": {
             "$ref": "#/components/schemas/AddressDto"
           },
+          "messagingConsent": {
+            "$ref": "#/components/schemas/MessagingConsentDto"
+          },
           "createdAt": {
             "type": "string",
             "format": "date-time"
@@ -1536,12 +2153,67 @@
         },
         "additionalProperties": false
       },
+      "CustomerSort": {
+        "enum": [
+          "Name",
+          "CreatedAt"
+        ],
+        "type": "string"
+      },
       "DocumentType": {
         "enum": [
           "Cpf",
           "Cnpj"
         ],
         "type": "string"
+      },
+      "InspectInvitationRequest": {
+        "type": "object",
+        "properties": {
+          "token": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "InvitationDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "nullable": true
+          },
+          "maskedEmail": {
+            "type": "string",
+            "nullable": true
+          },
+          "role": {
+            "$ref": "#/components/schemas/Role"
+          },
+          "expiresAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "additionalProperties": false
+      },
+      "InviteUserRequest": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "nullable": true
+          },
+          "email": {
+            "type": "string",
+            "nullable": true
+          },
+          "role": {
+            "$ref": "#/components/schemas/Role"
+          }
+        },
+        "additionalProperties": false
       },
       "LoginRequest": {
         "type": "object",
@@ -1567,6 +2239,35 @@
           "expiresAt": {
             "type": "string",
             "format": "date-time"
+          }
+        },
+        "additionalProperties": false
+      },
+      "MessagingConsentDto": {
+        "type": "object",
+        "properties": {
+          "whatsApp": {
+            "type": "boolean"
+          },
+          "email": {
+            "type": "boolean"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "MessagingConsentRequest": {
+        "type": "object",
+        "properties": {
+          "whatsApp": {
+            "type": "boolean"
+          },
+          "email": {
+            "type": "boolean"
           }
         },
         "additionalProperties": false
@@ -1598,11 +2299,66 @@
         },
         "additionalProperties": {}
       },
+      "QueryCustomersRequest": {
+        "type": "object",
+        "properties": {
+          "term": {
+            "type": "string",
+            "nullable": true
+          },
+          "documentType": {
+            "$ref": "#/components/schemas/DocumentType"
+          },
+          "sort": {
+            "$ref": "#/components/schemas/CustomerSort"
+          },
+          "direction": {
+            "$ref": "#/components/schemas/SortDirection"
+          },
+          "page": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "pageSize": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "RevealCustomerDataRequest": {
+        "type": "object",
+        "properties": {
+          "field": {
+            "$ref": "#/components/schemas/SensitiveField"
+          },
+          "reason": {
+            "$ref": "#/components/schemas/AccessReason"
+          }
+        },
+        "additionalProperties": false
+      },
+      "RevealedDataDto": {
+        "type": "object",
+        "properties": {
+          "field": {
+            "$ref": "#/components/schemas/SensitiveField"
+          },
+          "value": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
       "Role": {
         "enum": [
           "Admin",
           "Attendant",
-          "Mechanic"
+          "Mechanic",
+          "Manager"
         ],
         "type": "string"
       },
@@ -1626,6 +2382,21 @@
         },
         "additionalProperties": false
       },
+      "SensitiveField": {
+        "enum": [
+          "Document",
+          "Email",
+          "Phone"
+        ],
+        "type": "string"
+      },
+      "SortDirection": {
+        "enum": [
+          "Asc",
+          "Desc"
+        ],
+        "type": "string"
+      },
       "UpdateCustomerRequest": {
         "type": "object",
         "properties": {
@@ -1643,6 +2414,9 @@
           },
           "address": {
             "$ref": "#/components/schemas/AddressRequest"
+          },
+          "messagingConsent": {
+            "$ref": "#/components/schemas/MessagingConsentRequest"
           }
         },
         "additionalProperties": false
@@ -1681,6 +2455,14 @@
           "isActive": {
             "type": "boolean"
           },
+          "status": {
+            "$ref": "#/components/schemas/UserStatus"
+          },
+          "invitationExpiresAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
           "createdAt": {
             "type": "string",
             "format": "date-time"
@@ -1717,6 +2499,14 @@
           }
         },
         "additionalProperties": false
+      },
+      "UserStatus": {
+        "enum": [
+          "Active",
+          "Inactive",
+          "InvitationPending"
+        ],
+        "type": "string"
       }
     },
     "securitySchemes": {

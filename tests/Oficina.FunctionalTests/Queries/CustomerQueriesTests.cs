@@ -78,7 +78,7 @@ public sealed class CustomerQueriesTests(SqlServerFixture database) : IAsyncLife
         var found = await new CustomerQueries(context).GetByIdAsync(customer.Id, CancellationToken);
 
         Assert.NotNull(found);
-        Assert.Equal("52998224725", found.Document);
+        Assert.Equal("•••.982.247-••", found.Document);
         Assert.Equal("SP", found.Address!.State);
         Assert.NotEqual(default, found.CreatedAt);
         Assert.Null(await new CustomerQueries(context).GetByIdAsync(Guid.CreateVersion7(), CancellationToken));

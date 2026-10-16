@@ -1,0 +1,69 @@
+:host {
+  display: grid;
+  min-height: 100dvh;
+  place-items: center;
+  padding: var(--space-6) var(--space-4);
+  background: var(--bg);
+}
+
+.status {
+  width: min(520px, 100%);
+  padding: var(--space-6);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-xl);
+  background: var(--surface);
+  box-shadow: var(--shadow);
+}
+
+.brand {
+  margin: 0 0 var(--space-5);
+  font-family: var(--f-display);
+  font-size: var(--text-lg);
+  font-weight: 700;
+
+  b {
+    color: var(--accent);
+  }
+}
+
+h1 {
+  margin: 0 0 var(--space-2);
+  font-family: var(--f-display);
+  font-size: var(--text-2xl);
+}
+
+.description {
+  margin: 0 0 var(--space-5);
+  color: var(--muted);
+}
+
+.trace {
+  display: grid;
+  gap: var(--space-1);
+  margin: 0 0 var(--space-5);
+  padding: var(--space-3);
+  border: 1px dashed var(--line2);
+  border-radius: var(--radius-md);
+  background: var(--surface2);
+
+  dt {
+    color: var(--muted);
+    font-size: var(--text-xs);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+
+  dd {
+    margin: 0;
+    font-family: var(--f-mono);
+    font-size: var(--text-sm);
+    overflow-wrap: anywhere;
+    user-select: all;
+  }
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}

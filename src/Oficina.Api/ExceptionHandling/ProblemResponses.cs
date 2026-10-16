@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Globalization;
 using Microsoft.AspNetCore.Mvc;
 using Oficina.Domain.Common.Results;
 
@@ -13,6 +14,7 @@ public static class ProblemResponses
         ErrorType.Validation => StatusCodes.Status400BadRequest,
         ErrorType.Unauthorized => StatusCodes.Status401Unauthorized,
         ErrorType.Forbidden => StatusCodes.Status403Forbidden,
+        ErrorType.TooManyRequests => StatusCodes.Status429TooManyRequests,
         ErrorType.NotFound => StatusCodes.Status404NotFound,
         ErrorType.Conflict => StatusCodes.Status409Conflict,
         ErrorType.BusinessRule => StatusCodes.Status422UnprocessableEntity,
@@ -32,6 +34,13 @@ public static class ProblemResponses
         };
         problem.Extensions["code"] = error.Code;
         problem.Extensions["traceId"] = Activity.Current?.Id ?? context.TraceIdentifier;
+        if (error.RetryAfter is { } retryAfter)
+        {
+            var seconds = (int)Math.Ceiling(retryAfter.TotalSeconds);
+            problem.Extensions["retryAfterSeconds"] = seconds;
+            context.Response.Headers.RetryAfter = seconds.ToString(CultureInfo.InvariantCulture);
+        }
+
         if (error.Fields.Count > 0)
         {
             problem.Extensions["errors"] = error.Fields;

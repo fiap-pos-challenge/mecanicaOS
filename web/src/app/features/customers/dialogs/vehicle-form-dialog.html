@@ -1,0 +1,43 @@
+<ui-dialog-layout [title]="editing ? text.editTitle : text.newTitle">
+  <form class="dialog-form" novalidate [formGroup]="form" (ngSubmit)="save()">
+    @if (error(); as message) {
+      <p class="alert" role="alert">{{ message }}</p>
+    }
+    <ui-field
+      [label]="text.plate"
+      [required]="true"
+      [hint]="editing ? null : text.plateHint"
+      [error]="errorOf('licensePlate')"
+    >
+      <input
+        uiControl
+        type="text"
+        class="plate"
+        formControlName="licensePlate"
+        autocomplete="off"
+        maxlength="8"
+        (input)="formatPlateInput()"
+      />
+    </ui-field>
+    <div class="row">
+      <ui-field [label]="text.brand" [required]="true" [error]="errorOf('brand')">
+        <input uiControl type="text" formControlName="brand" maxlength="60" />
+      </ui-field>
+      <ui-field [label]="text.model" [required]="true" [error]="errorOf('model')">
+        <input uiControl type="text" formControlName="model" maxlength="60" />
+      </ui-field>
+    </div>
+    <div class="row">
+      <ui-field [label]="text.year" [required]="true" [error]="errorOf('year')">
+        <input uiControl type="number" inputmode="numeric" formControlName="year" min="1950" />
+      </ui-field>
+      <ui-field [label]="text.mileage" [required]="true" [error]="errorOf('mileage')">
+        <input uiControl type="number" inputmode="numeric" formControlName="mileage" min="0" />
+      </ui-field>
+    </div>
+    <div class="footer">
+      <button uiButton type="button" (click)="ref.close()">{{ text.cancel }}</button>
+      <button uiButton variant="primary" type="submit" [loading]="saving()">{{ text.save }}</button>
+    </div>
+  </form>
+</ui-dialog-layout>

@@ -1,0 +1,23 @@
+:host {
+  display: inline-grid;
+  flex: none;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+
+  &:hover {
+    background: var(--side-hover);
+    color: var(--fg);
+  }
+}
+
+:host(.ui-icon-button--outlined) {
+  border-color: var(--line2);
+  background: var(--surface);
+}

@@ -1,0 +1,86 @@
+<ui-dialog-layout [title]="text.title">
+  <div class="dialog-form">
+    <p>{{ text.description }}</p>
+    <p class="notice">{{ text.simulated }}</p>
+    <div>
+      <button uiButton size="sm" variant="ghost" type="button" (click)="downloadTemplate()">
+        {{ text.template }}
+      </button>
+    </div>
+    <div>
+      <label for="import-file" class="label">{{ text.file }}</label>
+      <input
+        id="import-file"
+        type="file"
+        accept=".csv,text/csv"
+        aria-describedby="import-file-hint"
+        (change)="choose($event)"
+      />
+      <p id="import-file-hint" class="notice">{{ text.fileHint }}</p>
+    </div>
+
+    @if (error(); as message) {
+      <p class="alert" role="alert">{{ message }}</p>
+    }
+
+    <div aria-live="polite">
+      @if (job(); as current) {
+        @if (current.status === 'Completed') {
+          <h3>{{ text.reportTitle }}</h3>
+          <dl class="stats">
+            <div>
+              <dt>{{ text.total }}</dt>
+              <dd>{{ current.totalLines }}</dd>
+            </div>
+            <div>
+              <dt>{{ text.valid }}</dt>
+              <dd>{{ current.validLines }}</dd>
+            </div>
+            <div>
+              <dt>{{ text.invalid }}</dt>
+              <dd>{{ current.errors.length }}</dd>
+            </div>
+          </dl>
+          @if (current.errors.length > 0) {
+            <div
+              class="report-scroll"
+              role="region"
+              tabindex="0"
+              [attr.aria-label]="text.reportTitle"
+            >
+              <table class="report">
+                <thead>
+                  <tr>
+                    <th scope="col">{{ text.line }}</th>
+                    <th scope="col">{{ text.field }}</th>
+                    <th scope="col">{{ text.message }}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (row of current.errors; track $index) {
+                    <tr>
+                      <td>{{ row.line }}</td>
+                      <td>{{ row.field }}</td>
+                      <td>{{ row.message }}</td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          } @else {
+            <p>{{ text.noErrors }}</p>
+          }
+        } @else {
+          <p class="notice">{{ text.queued }}</p>
+        }
+      }
+    </div>
+
+    <div class="footer">
+      <button uiButton type="button" (click)="ref.close()">{{ text.close }}</button>
+      <button uiButton variant="primary" type="button" [loading]="running()" (click)="submit()">
+        {{ text.submit }}
+      </button>
+    </div>
+  </div>
+</ui-dialog-layout>

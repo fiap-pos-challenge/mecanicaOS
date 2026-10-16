@@ -1,3 +1,4 @@
+using Oficina.Application.Common.Privacy;
 using Oficina.Application.Customers.Dtos;
 using Oficina.Domain.Common.Results;
 using Oficina.Domain.Common.ValueObjects;
@@ -10,10 +11,17 @@ namespace Oficina.Application.Customers.Mappers;
 [Mapper]
 public static partial class CustomerMapper
 {
-    [MapperIgnoreSource(nameof(Customer.DomainEvents))]
-    [MapperIgnoreSource(nameof(Customer.DeletedAt))]
-    [MapperIgnoreSource(nameof(Customer.IsDeleted))]
-    public static partial CustomerDto ToDto(this Customer customer);
+    public static CustomerDto ToDto(this Customer customer) => new(
+        customer.Id,
+        customer.Name,
+        SensitiveDataMasker.MaskDocument(customer.Document),
+        customer.DocumentType,
+        customer.Email is null ? null : SensitiveDataMasker.MaskEmail(customer.Email),
+        SensitiveDataMasker.MaskPhone(customer.Phone),
+        customer.Address is null ? null : ToAddressDto(customer.Address),
+        new MessagingConsentDto(customer.ConsentWhatsApp, customer.ConsentEmail, customer.ConsentUpdatedAt),
+        customer.CreatedAt,
+        customer.UpdatedAt);
 
     public static Result<Email?> ToOptionalEmail(string? value)
     {
@@ -38,9 +46,4 @@ public static partial class CustomerMapper
 
     private static partial AddressDto ToAddressDto(Address address);
 
-    private static string DocumentToString(Document document) => document.Value;
-
-    private static string EmailToString(Email email) => email.Value;
-
-    private static string PhoneToString(Phone phone) => phone.Value;
 }

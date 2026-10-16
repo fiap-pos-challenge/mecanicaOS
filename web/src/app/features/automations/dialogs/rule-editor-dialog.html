@@ -1,0 +1,182 @@
+<ui-dialog-layout [title]="title">
+  <form class="editor" novalidate (submit)="submit($event)">
+    @if (error(); as message) {
+      <p class="alert" role="alert">{{ message }}</p>
+    }
+    @if (submitted() && problems().length > 0) {
+      <ul class="alert" role="alert" data-testid="rule-problems">
+        @for (problem of problems(); track problem) {
+          <li>{{ text.problems[problem] }}</li>
+        }
+      </ul>
+    }
+
+    <ui-field [label]="text.editor.name" [required]="true">
+      <input uiControl maxlength="80" [value]="draft().name" (input)="setName($event)" />
+    </ui-field>
+
+    <fieldset class="block">
+      <legend>{{ text.editor.trigger }}</legend>
+      <ui-field [label]="text.editor.trigger">
+        <select uiControl (change)="setTrigger($event)">
+          @for (trigger of triggers; track trigger) {
+            <option [value]="trigger" [selected]="trigger === draft().trigger">
+              {{ text.triggers[trigger] }}
+            </option>
+          }
+        </select>
+      </ui-field>
+    </fieldset>
+
+    <fieldset class="block">
+      <legend>{{ text.editor.conditions }}</legend>
+      @for (condition of draft().conditions; track $index; let index = $index) {
+        <div class="row">
+          <ui-field [label]="text.editor.field">
+            <select uiControl (change)="setCondition(index, 'field', $event)">
+              @for (field of fields(); track field) {
+                <option [value]="field" [selected]="field === condition.field">
+                  {{ text.fields[field] }}
+                </option>
+              }
+            </select>
+          </ui-field>
+          <ui-field [label]="text.editor.operator">
+            <select uiControl (change)="setCondition(index, 'operator', $event)">
+              @for (operator of operators(condition.field); track operator) {
+                <option [value]="operator" [selected]="operator === condition.operator">
+                  {{ text.operators[operator] }}
+                </option>
+              }
+            </select>
+          </ui-field>
+          <ui-field [label]="text.editor.value">
+            @if (values(condition.field); as options) {
+              <select uiControl (change)="setCondition(index, 'value', $event)">
+                @for (option of options; track option) {
+                  <option [value]="option" [selected]="option === condition.value">
+                    {{ valueLabel(condition.field, option) }}
+                  </option>
+                }
+              </select>
+            } @else {
+              <input
+                uiControl
+                inputmode="decimal"
+                [value]="condition.value"
+                (input)="setCondition(index, 'value', $event)"
+              />
+            }
+          </ui-field>
+          <button
+            uiButton
+            size="sm"
+            type="button"
+            class="remove"
+            [attr.aria-label]="text.editor.removeCondition(index + 1)"
+            (click)="removeCondition(index)"
+          >
+            <ui-icon [icon]="removeIcon" [size]="14" />
+          </button>
+        </div>
+      } @empty {
+        <p class="hint">{{ text.editor.noConditions }}</p>
+      }
+      <button
+        uiButton
+        size="sm"
+        type="button"
+        [disabled]="draft().conditions.length >= max"
+        (click)="addCondition()"
+      >
+        {{ text.editor.addCondition }}
+      </button>
+    </fieldset>
+
+    <fieldset class="block">
+      <legend>{{ text.editor.wait }}</legend>
+      <label class="check">
+        <input type="checkbox" [checked]="draft().wait !== null" (change)="toggleWait($event)" />
+        <span>{{ text.editor.wait }}</span>
+      </label>
+      @if (draft().wait; as wait) {
+        <div class="row">
+          <ui-field [label]="text.editor.waitAmount">
+            <input
+              uiControl
+              type="number"
+              min="1"
+              [value]="wait.amount"
+              (input)="setWait('amount', $event)"
+            />
+          </ui-field>
+          <ui-field [label]="text.editor.waitUnit">
+            <select uiControl (change)="setWait('unit', $event)">
+              @for (unit of units; track unit) {
+                <option [value]="unit" [selected]="unit === wait.unit">
+                  {{ text.units[unit] }}
+                </option>
+              }
+            </select>
+          </ui-field>
+        </div>
+      }
+    </fieldset>
+
+    <fieldset class="block">
+      <legend>{{ text.editor.actions }}</legend>
+      @for (action of draft().actions; track $index; let index = $index) {
+        <div class="action">
+          <div class="row">
+            <ui-field [label]="text.editor.action">
+              <select uiControl (change)="setAction(index, 'kind', $event)">
+                @for (kind of actionKinds(); track kind) {
+                  <option [value]="kind" [selected]="kind === action.kind">
+                    {{ text.actions[kind] }}
+                  </option>
+                }
+              </select>
+            </ui-field>
+            <button
+              uiButton
+              size="sm"
+              type="button"
+              class="remove"
+              [attr.aria-label]="text.editor.removeAction(index + 1)"
+              (click)="removeAction(index)"
+            >
+              <ui-icon [icon]="removeIcon" [size]="14" />
+            </button>
+          </div>
+          @if (needsMessage(action.kind)) {
+            <ui-field [label]="text.editor.message" [hint]="text.editor.messageHint">
+              <textarea
+                uiControl
+                rows="3"
+                maxlength="600"
+                [value]="action.message ?? ''"
+                (input)="setAction(index, 'message', $event)"
+              ></textarea>
+            </ui-field>
+          }
+        </div>
+      }
+      <button
+        uiButton
+        size="sm"
+        type="button"
+        [disabled]="draft().actions.length >= max"
+        (click)="addAction()"
+      >
+        {{ text.editor.addAction }}
+      </button>
+    </fieldset>
+
+    <div class="footer">
+      <button uiButton type="button" (click)="ref.close(null)">{{ text.editor.cancel }}</button>
+      <button uiButton variant="primary" type="submit" [loading]="saving()">
+        {{ text.editor.save }}
+      </button>
+    </div>
+  </form>
+</ui-dialog-layout>

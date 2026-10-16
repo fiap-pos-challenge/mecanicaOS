@@ -10,7 +10,7 @@ namespace Oficina.ContractTests.Authorization;
 [Collection(nameof(ContractCollection))]
 public sealed class RouteAuthorizationTests(ContractApiFactory factory)
 {
-    private static readonly string[] AnonymousAllowlist = { "api/auth/login", "health" };
+    private static readonly string[] AnonymousAllowlist = { "api/auth/login", "api/auth/invitations/inspect", "api/auth/invitations/accept", "health" };
 
     [Fact]
     public void FallbackPolicy_RequiresAnAuthenticatedUser()
@@ -44,18 +44,22 @@ public sealed class RouteAuthorizationTests(ContractApiFactory factory)
             Assert.True(policies.Length > 0 && policies.All(policy => policy is not null), Route(endpoint));
             if (Route(endpoint).StartsWith("api/admin/", StringComparison.Ordinal))
             {
-                Assert.All(policies, policy => Assert.Contains(policy, new[] { Policies.AdminOnly, Policies.AdminOrAttendant }));
+                Assert.All(policies, policy => Assert.Contains(policy, new[] { Policies.AdminOnly, Policies.AdminOrManager, Policies.Staff }));
             }
         }
     }
 
     [Fact]
-    public void UserAdministration_IsAdminOnly()
+    public void UserAdministration_ChangesAreAdminOnlyAndReadsAllowTheManager()
     {
         var userEndpoints = Endpoints().Where(endpoint => Route(endpoint).StartsWith("api/admin/users", StringComparison.Ordinal)).ToArray();
 
-        Assert.Equal(8, userEndpoints.Length);
-        Assert.All(userEndpoints, endpoint => Assert.Equal(Policies.AdminOnly, endpoint.Metadata.GetMetadata<IAuthorizeData>()!.Policy));
+        Assert.Equal(10, userEndpoints.Length);
+        foreach (var endpoint in userEndpoints)
+        {
+            var isRead = endpoint.Metadata.GetMetadata<HttpMethodMetadata>()?.HttpMethods.SequenceEqual(new[] { "GET" }) == true;
+            Assert.Equal(isRead ? Policies.AdminOrManager : Policies.AdminOnly, endpoint.Metadata.GetMetadata<IAuthorizeData>()?.Policy);
+        }
     }
 
     private static string Route(RouteEndpoint endpoint) => endpoint.RoutePattern.RawText!.Trim('/');

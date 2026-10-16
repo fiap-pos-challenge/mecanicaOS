@@ -19,9 +19,11 @@ public sealed class MigrationTests(SqlServerFixture database)
             "id|uniqueidentifier|NO",
             "name|nvarchar(120)|NO",
             "email|nvarchar(160)|NO",
-            "passwordHash|nvarchar(255)|NO",
+            "passwordHash|nvarchar(255)|YES",
             "role|varchar(20)|NO",
-            "isActive|bit|NO"),
+            "isActive|bit|NO",
+            "failedLoginAttempts|int|NO",
+            "lockoutEndAt|datetimeoffset|YES"),
         ["customers"] = WithAudit(
             "id|uniqueidentifier|NO",
             "name|nvarchar(160)|NO",
@@ -35,7 +37,10 @@ public sealed class MigrationTests(SqlServerFixture database)
             "addressComplement|nvarchar(60)|YES",
             "addressDistrict|nvarchar(80)|YES",
             "addressCity|nvarchar(80)|YES",
-            "addressState|char(2)|YES"),
+            "addressState|char(2)|YES",
+            "consentEmail|bit|NO",
+            "consentUpdatedAt|datetimeoffset|YES",
+            "consentWhatsApp|bit|NO"),
         ["vehicles"] = WithAudit(
             "id|uniqueidentifier|NO",
             "customerId|uniqueidentifier|NO",
@@ -116,6 +121,27 @@ public sealed class MigrationTests(SqlServerFixture database)
             "changedByUserId|uniqueidentifier|YES",
             "note|nvarchar(max)|YES",
             "changedAt|datetimeoffset|NO"),
+        ["sensitiveDataAccess"] = new[]
+        {
+            "id|uniqueidentifier|NO",
+            "userId|uniqueidentifier|NO",
+            "customerId|uniqueidentifier|NO",
+            "field|varchar(10)|NO",
+            "reason|varchar(10)|NO",
+            "traceId|varchar(64)|YES",
+            "occurredAt|datetimeoffset|NO",
+        },
+        ["userInvitations"] = new[]
+        {
+            "id|uniqueidentifier|NO",
+            "userId|uniqueidentifier|NO",
+            "tokenHash|char(64)|NO",
+            "createdBy|uniqueidentifier|YES",
+            "createdAt|datetimeoffset|NO",
+            "expiresAt|datetimeoffset|NO",
+            "acceptedAt|datetimeoffset|YES",
+            "revokedAt|datetimeoffset|YES",
+        },
         ["outboxMessages"] = new[]
         {
             "id|uniqueidentifier|NO",
@@ -129,7 +155,7 @@ public sealed class MigrationTests(SqlServerFixture database)
     };
 
     [Fact]
-    public async Task Database_HasExactlyTheTwelveModelTables()
+    public async Task Database_HasExactlyTheFourteenModelTables()
     {
         var rows = await database.QueryAsync(
             "SELECT TABLE_NAME AS name FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE = 'BASE TABLE' AND TABLE_NAME <> '__EFMigrationsHistory'");
@@ -197,6 +223,7 @@ public sealed class MigrationTests(SqlServerFixture database)
     [Theory]
     [InlineData("serviceOrders", "ux_serviceOrders_number")]
     [InlineData("quotes", "ux_quotes_serviceOrderId_version")]
+    [InlineData("userInvitations", "ux_userInvitations_tokenHash")]
     public async Task UniqueIndexesWithoutFilter_Exist(string table, string index)
     {
         var row = Assert.Single(await IndexesOf(table, index));

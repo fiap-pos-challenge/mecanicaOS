@@ -1,0 +1,10 @@
+<span class="icon" aria-hidden="true"><ui-icon [icon]="icon()" [size]="28" /></span>
+@if (headingLevel() === 2) {
+  <h2 class="title">{{ title() }}</h2>
+} @else {
+  <h3 class="title">{{ title() }}</h3>
+}
+@if (description(); as description) {
+  <p class="description">{{ description }}</p>
+}
+<ng-content />

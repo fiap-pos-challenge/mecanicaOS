@@ -1,0 +1,77 @@
+<article class="sheet" [attr.aria-label]="view().title">
+  <header class="top">
+    <strong class="brand">{{ document().shopName }}</strong>
+    <h2 class="title">{{ view().title }}</h2>
+    <small class="muted">{{ view().issued }}</small>
+  </header>
+  <dl class="parties">
+    <div>
+      <dt>{{ text.customer }}</dt>
+      <dd>{{ document().customerName }}</dd>
+    </div>
+    <div>
+      <dt>{{ text.vehicle }}</dt>
+      <dd>{{ document().vehicle }}</dd>
+    </div>
+  </dl>
+  <table class="items">
+    <caption class="visually-hidden">
+      {{
+        text.caption
+      }}
+    </caption>
+    <thead>
+      <tr>
+        <th scope="col">{{ text.columns.item }}</th>
+        <th scope="col" class="end">{{ text.columns.quantity }}</th>
+        <th scope="col" class="end">{{ text.columns.unit }}</th>
+        <th scope="col" class="end">{{ text.columns.total }}</th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (line of view().lines; track line.index) {
+        <tr>
+          <td>{{ line.name }}</td>
+          <td class="end">{{ line.quantity }}</td>
+          <td class="end">{{ line.unit }}</td>
+          <td class="end">{{ line.total }}</td>
+        </tr>
+      }
+    </tbody>
+  </table>
+  <dl class="sum">
+    <div>
+      <dt>{{ text.services }}</dt>
+      <dd>{{ view().services }}</dd>
+    </div>
+    <div>
+      <dt>{{ text.parts }}</dt>
+      <dd>{{ view().parts }}</dd>
+    </div>
+    <div>
+      <dt>{{ text.discount }}</dt>
+      <dd>{{ view().discount }}</dd>
+    </div>
+    <div class="total">
+      <dt>{{ text.total }}</dt>
+      <dd>{{ view().total }}</dd>
+    </div>
+  </dl>
+  @if (view().paid; as paid) {
+    <p class="note">{{ paid }}</p>
+  }
+  @if (view().methods) {
+    <p class="note">
+      <strong>{{ text.payment }}:</strong> {{ view().methods }}
+    </p>
+  }
+  @if (document().kind === 'Receipt') {
+    <p class="note">{{ text.noFiscal }}</p>
+  }
+  @if (view().verification; as verification) {
+    <p class="note code" data-testid="verification-code">{{ verification.code }}</p>
+    <p class="note">{{ verification.url }}</p>
+  } @else {
+    <p class="note">{{ text.draft }}</p>
+  }
+</article>

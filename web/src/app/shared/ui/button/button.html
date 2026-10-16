@@ -1,0 +1,5 @@
+@if (loading()) {
+  <span class="spinner" aria-hidden="true"></span>
+  <span class="visually-hidden">{{ loadingLabel }}</span>
+}
+<ng-content />

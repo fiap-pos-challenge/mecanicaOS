@@ -1,0 +1,44 @@
+<figure class="chart" [attr.data-kind]="kind()">
+  <figcaption class="visually-hidden">{{ label() }}</figcaption>
+  @if (empty()) {
+    <p class="empty" role="status">{{ emptyMessage() }}</p>
+  } @else if (kind() === 'table' || failed()) {
+    <ng-container [ngTemplateOutlet]="table" />
+  } @else {
+    <div #canvas class="canvas" role="img" [attr.aria-label]="summary()"></div>
+    <details class="data">
+      <summary>{{ text.showTable }}</summary>
+      <ng-container [ngTemplateOutlet]="table" />
+    </details>
+  }
+</figure>
+
+<ng-template #table>
+  <div class="scroll" role="region" tabindex="0" [attr.aria-label]="label()">
+    <table>
+      <caption class="visually-hidden">
+        {{
+          label()
+        }}
+      </caption>
+      <thead>
+        <tr>
+          <th scope="col">{{ text.category }}</th>
+          @for (series of data().series; track series.name) {
+            <th scope="col" class="end">{{ series.name }}</th>
+          }
+        </tr>
+      </thead>
+      <tbody>
+        @for (row of rows(); track row.category) {
+          <tr>
+            <th scope="row">{{ row.category }}</th>
+            @for (value of row.values; track $index) {
+              <td class="end mono">{{ value }}</td>
+            }
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+</ng-template>

@@ -9,6 +9,7 @@ using Oficina.Domain.Catalog.Repositories;
 using Oficina.Domain.Customers.Repositories;
 using Oficina.Domain.Identity.Repositories;
 using Oficina.Domain.Inventory.Repositories;
+using Oficina.Domain.Privacy.Repositories;
 using Oficina.Domain.ServiceOrders.Repositories;
 using Oficina.Infrastructure.Messaging.Outbox;
 using Oficina.Infrastructure.Notifications;
@@ -21,6 +22,7 @@ using Oficina.Infrastructure.Repositories.Catalog;
 using Oficina.Infrastructure.Repositories.Customers;
 using Oficina.Infrastructure.Repositories.Identity;
 using Oficina.Infrastructure.Repositories.Inventory;
+using Oficina.Infrastructure.Repositories.Privacy;
 using Oficina.Infrastructure.Repositories.ServiceOrders;
 using Oficina.Infrastructure.Security;
 
@@ -43,6 +45,10 @@ public static class InfrastructureExtensions
             .Bind(configuration.GetSection(OutboxOptions.SectionName))
             .ValidateDataAnnotations()
             .ValidateOnStart();
+        services.AddOptions<EmailOptions>()
+            .Bind(configuration.GetSection(EmailOptions.SectionName))
+            .ValidateDataAnnotations()
+            .ValidateOnStart();
         services.AddOptions<JwtOptions>()
             .Bind(configuration.GetSection(JwtOptions.SectionName))
             .ValidateDataAnnotations()
@@ -61,6 +67,8 @@ public static class InfrastructureExtensions
         services.AddScoped<IPartRepository, PartRepository>();
         services.AddScoped<IUserRepository, UserRepository>();
         services.AddScoped<IServiceOrderRepository, ServiceOrderRepository>();
+        services.AddScoped<ISensitiveDataAccessRepository, SensitiveDataAccessRepository>();
+        services.AddScoped<IUserInvitationRepository, UserInvitationRepository>();
         services.AddScoped<ICustomerQueries, CustomerQueries>();
         services.AddScoped<IUserQueries, UserQueries>();
 
@@ -73,6 +81,7 @@ public static class InfrastructureExtensions
         services.AddScoped<DevelopmentAdminSeeder>();
 
         services.AddScoped<INotifier, LogNotifier>();
+        services.AddScoped<IEmailSender, SmtpEmailSender>();
         services.AddScoped<OutboxBatchProcessor>();
         services.AddHostedService<OutboxProcessor>();
 

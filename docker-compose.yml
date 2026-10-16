@@ -36,11 +36,54 @@ services:
     environment:
       ASPNETCORE_ENVIRONMENT: Development
       ConnectionStrings__Oficina: Server=sqlserver,1433;Database=oficina;User Id=sa;Password=Oficina@Dev123;Encrypt=True;TrustServerCertificate=True
+      # Somente desenvolvimento: cada e-mail (convites) vira um arquivo .eml em ./.mail, no host.
+      Email__PickupDirectory: /mail
     ports:
       - "8080:8080"
+    volumes:
+      - ./.mail:/mail
     networks:
       - oficina
     restart: unless-stopped
+
+  # Frontend Angular servido pelo nginx (sem root), com CSP estrita e proxy de /api para a API.
+  web:
+    build:
+      context: ./web
+      dockerfile: Dockerfile
+    image: ${WEB_IMAGE:-oficina-web:local}
+    container_name: oficina-web
+    depends_on:
+      api:
+        condition: service_healthy
+    environment:
+      API_UPSTREAM: http://api:8080
+    ports:
+      - "4200:8080"
+    networks:
+      - oficina
+    restart: unless-stopped
+
+  # Modo demonstração (somente validação manual): `docker compose --profile demo up -d --build`.
+  # Login, clientes e usuários usam a API real; as demais telas usam dados fictícios no navegador.
+  web-demo:
+    profiles: ["demo"]
+    build:
+      context: ./web
+      dockerfile: Dockerfile
+      args:
+        NG_CONFIGURATION: production,demo
+    image: oficina-web:demo
+    container_name: oficina-web-demo
+    depends_on:
+      api:
+        condition: service_healthy
+    environment:
+      API_UPSTREAM: http://api:8080
+    ports:
+      - "4300:8080"
+    networks:
+      - oficina
 
 networks:
   oficina:

@@ -93,3 +93,88 @@ jobs:
           percent=$(awk -v rate="$rate" 'BEGIN { printf "%.2f", rate * 100 }')
           echo "Line coverage: ${percent}% (minimum ${COVERAGE_THRESHOLD}%)"
           awk -v value="$percent" -v minimum="$COVERAGE_THRESHOLD" 'BEGIN { exit (value + 0 < minimum + 0) }'
+
+  web:
+    name: web
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      - name: Install (locked)
+        run: npm ci
+
+      - name: Lint (ESLint, comment check, Prettier)
+        run: npm run lint
+
+      - name: Unit and component tests with coverage gate (85%)
+        run: |
+          set -o pipefail
+          npm test 2>&1 | tee test-output.txt
+
+      - name: Coverage summary
+        if: always()
+        run: |
+          {
+            echo "### Cobertura do frontend"
+            echo ""
+            echo '```'
+            sed -n '/Coverage summary/,/^=\{10,\}$/p' test-output.txt | sed 's/\x1b\[[0-9;]*m//g'
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Production build
+        run: npm run build
+
+      # The fake API (src/testing) must never reach the production bundle; the demo build must contain it.
+      - name: No fake API in the production bundle
+        run: npm run check:bundle
+
+      - name: Demo build contains the fake API
+        run: |
+          npm run build:demo
+          node scripts/check-bundle.mjs dist/oficina-web-demo/browser --expect-fake
+
+      - name: Dependency audit
+        run: npm audit --audit-level=high
+
+      - name: Secret scan (tracked and untracked files of the repository)
+        run: npm run check:secrets
+
+      # E2E runs against the production nginx image (real CSP and Trusted Types),
+      # the real API and a throwaway SQL Server (web/e2e/docker-compose.e2e.yml).
+      - name: Install Playwright browser
+        run: npx playwright install --with-deps chromium
+
+      - name: End-to-end tests
+        run: npm run e2e
+
+      - name: Lighthouse accessibility (minimum 95)
+        run: npm run lighthouse
+
+      - name: Upload Playwright report
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: web-playwright-report
+          path: web/playwright-report
+          retention-days: 14
+
+      - name: Upload coverage report
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: web-coverage
+          path: web/coverage
+          retention-days: 14

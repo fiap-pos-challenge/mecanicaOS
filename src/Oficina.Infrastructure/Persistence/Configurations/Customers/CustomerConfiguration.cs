@@ -30,6 +30,10 @@ public sealed class CustomerConfiguration : IEntityTypeConfiguration<Customer>
             .IsUnicode(false)
             .IsRequired();
 
+        builder.Property(customer => customer.ConsentWhatsApp).IsRequired();
+        builder.Property(customer => customer.ConsentEmail).IsRequired();
+        builder.Property(customer => customer.ConsentUpdatedAt);
+
         builder.OwnsOne(customer => customer.Address, address =>
         {
             address.Property(value => value.ZipCode).HasColumnName("addressZipCode").HasColumnType("char(8)");

@@ -1,0 +1,165 @@
+<header class="head">
+  <div>
+    <h1 class="page-title">{{ screen }}</h1>
+    <p class="sub">{{ text.subtitle }}</p>
+  </div>
+  <ui-segmented
+    [label]="text.view"
+    [options]="views"
+    [value]="view()"
+    (valueChange)="view.set($event)"
+  />
+</header>
+
+@switch (store.loadState()) {
+  @case ('loading') {
+    <ui-skeleton height="320px" />
+  }
+  @case ('pending') {
+    <ui-pending-notice [message]="pendingText" />
+  }
+  @case ('error') {
+    <div class="alert" role="alert">
+      <span>{{ text.loadError }}</span>
+      <button uiButton size="sm" type="button" (click)="store.load()">{{ text.retry }}</button>
+    </div>
+  }
+  @case ('ready') {
+    <div class="filters">
+      <ui-field class="search" [label]="text.filters.search">
+        <input
+          uiControl
+          type="search"
+          maxlength="60"
+          [value]="store.filters().term"
+          (input)="setTerm($event)"
+        />
+      </ui-field>
+      @if (view() !== 'board') {
+        <ui-field [label]="text.filters.status">
+          <select uiControl (change)="setStatus($event)">
+            <option value="" [selected]="store.filters().status === null">
+              {{ text.filters.all }}
+            </option>
+            @for (item of statuses; track item.status) {
+              <option [value]="item.status" [selected]="store.filters().status === item.status">
+                {{ item.label }}
+              </option>
+            }
+          </select>
+        </ui-field>
+      }
+      <ui-field [label]="text.filters.mechanic">
+        <select uiControl (change)="setMechanic($event)">
+          <option value="" [selected]="store.filters().mechanic === null">
+            {{ text.filters.all }}
+          </option>
+          @for (name of store.mechanics(); track name) {
+            <option [value]="name" [selected]="store.filters().mechanic === name">
+              {{ name }}
+            </option>
+          }
+        </select>
+      </ui-field>
+      <span class="late">
+        <button
+          uiToggle
+          [checked]="store.filters().lateOnly"
+          [attr.aria-label]="text.filters.lateOnly"
+          (checkedChange)="store.setFilters({ lateOnly: $event })"
+        ></button>
+        <span aria-hidden="true">{{ text.filters.lateOnly }}</span>
+      </span>
+      @if (hasFilters()) {
+        <button
+          uiButton
+          variant="ghost"
+          size="sm"
+          type="button"
+          (click)="store.setFilters({ term: '', status: null, mechanic: null, lateOnly: false })"
+        >
+          {{ text.filters.clear }}
+        </button>
+      }
+    </div>
+
+    @for (notice of notices(); track notice.number) {
+      <div class="notice" role="status" data-testid="order-change">
+        <div>
+          <strong>{{ notice.title }}</strong>
+          <ul>
+            @for (line of notice.lines; track $index) {
+              <li>{{ line }}</li>
+            }
+          </ul>
+        </div>
+        <button uiButton size="sm" type="button" (click)="store.dismissChange(notice.number)">
+          {{ text.changes.dismiss }}
+        </button>
+      </div>
+    }
+
+    @if (blocked(); as message) {
+      <p class="alert" role="alert" data-testid="move-blocked">{{ message }}</p>
+    }
+
+    @if (store.error(); as message) {
+      <p class="alert" role="alert" data-testid="board-error">{{ message }}</p>
+    }
+
+    @switch (view()) {
+      @case ('board') {
+        <app-board-view
+          [cards]="store.visible()"
+          [now]="store.now()"
+          [canMove]="canMove()"
+          [moving]="store.moving()"
+          (moved)="move($event)"
+        />
+      }
+      @case ('list') {
+        <ui-table
+          [caption]="text.list.caption"
+          [columns]="columns"
+          [rows]="store.visible()"
+          [trackBy]="trackRow"
+          [emptyMessage]="text.list.empty"
+        >
+          <ng-template uiCell="number" let-row>
+            <a
+              [routerLink]="['/service-orders', row.id]"
+              [attr.aria-label]="text.open(row.number)"
+              >{{ text.number(row.number) }}</a
+            >
+          </ng-template>
+          <ng-template uiCell="status" let-row>
+            <span class="pills">
+              <ui-status-pill [tone]="statusOf(row.status).tone">{{
+                statusOf(row.status).label
+              }}</ui-status-pill>
+              @for (item of tagsOf(row); track item.tag) {
+                <ui-status-pill [tone]="item.tone">{{ item.label }}</ui-status-pill>
+              }
+            </span>
+          </ng-template>
+        </ui-table>
+      }
+      @case ('agenda') {
+        <section class="agenda" [attr.aria-label]="text.agenda.caption">
+          @for (day of days(); track day.key) {
+            <div class="day" [class.day--overdue]="day.overdue">
+              <h2 class="day-title">{{ day.title }}</h2>
+              <div class="day-cards">
+                @for (card of day.cards; track card.id) {
+                  <app-order-card [card]="card" [now]="store.now()" [canMove]="false" />
+                }
+              </div>
+            </div>
+          } @empty {
+            <p class="empty">{{ text.agenda.empty }}</p>
+          }
+        </section>
+      }
+    }
+  }
+}

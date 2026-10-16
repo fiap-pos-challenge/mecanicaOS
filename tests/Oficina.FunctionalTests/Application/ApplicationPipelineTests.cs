@@ -107,14 +107,14 @@ public sealed class ApplicationPipelineTests(SqlServerFixture database) : IAsync
     }
 
     [Fact]
-    public async Task InactiveUser_CannotLogIn()
+    public async Task InactiveUser_WithRightPassword_GetsAccountDisabled()
     {
         await SaveAdminAsync();
         await database.QueryAsync("UPDATE users SET isActive = 0; SELECT 1 AS done");
 
         var login = await SendAsync(new LoginCommand("admin@oficina.com", AdminPassword));
 
-        Assert.Equal(IdentityErrors.InvalidCredentials, login.Error);
+        Assert.Equal(IdentityErrors.AccountDisabled, login.Error);
     }
 
     [Fact]

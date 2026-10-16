@@ -542,3 +542,15 @@ docs/relatorios/
 
 # Local API client collections
 bruno/
+
+# Frontend (web/): dependencies, builds and test reports
+web/node_modules/
+web/dist/
+web/.angular/
+web/coverage/
+web/playwright-report/
+web/test-results/
+
+# E-mails gravados em arquivo no desenvolvimento e no E2E (pickup directory)
+.mail/
+*.eml

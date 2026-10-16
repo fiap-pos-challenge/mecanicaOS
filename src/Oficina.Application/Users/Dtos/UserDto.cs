@@ -8,5 +8,7 @@ public sealed record UserDto(
     string Email,
     Role Role,
     bool IsActive,
+    UserStatus Status,
+    DateTimeOffset? InvitationExpiresAt,
     DateTimeOffset CreatedAt,
     DateTimeOffset? UpdatedAt);

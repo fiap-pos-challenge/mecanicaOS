@@ -2,7 +2,9 @@ using System.Net.Http.Headers;
 using System.Security.Cryptography;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
+using Oficina.Application.Abstractions.Notifications;
 using Oficina.Application.Abstractions.Security;
 using Oficina.Domain.Identity.Entities;
 
@@ -11,6 +13,8 @@ namespace Oficina.FunctionalTests.Fixtures;
 public sealed class FunctionalApiFactory(SqlServerFixture database) : WebApplicationFactory<Program>
 {
     public const string AllowedOrigin = "http://localhost:4200";
+
+    public CapturingEmailSender Emails { get; } = new();
 
     public HttpClient CreateClient(User user)
     {
@@ -28,5 +32,6 @@ public sealed class FunctionalApiFactory(SqlServerFixture database) : WebApplica
         builder.UseSetting("Jwt:Secret", Convert.ToBase64String(RandomNumberGenerator.GetBytes(48)));
         builder.UseSetting("DevelopmentAdmin:Email", string.Empty);
         builder.UseSetting("Cors:AllowedOrigins:0", AllowedOrigin);
+        builder.ConfigureTestServices(services => services.AddSingleton<IEmailSender>(Emails));
     }
 }

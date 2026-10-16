@@ -1,0 +1,19 @@
+<header class="head">
+  <h1 class="page-title">{{ screen }}</h1>
+  <p class="sub">{{ text.subtitle }}</p>
+</header>
+
+<nav class="tabs" [attr.aria-label]="text.tabs">
+  @for (section of sections; track section.key) {
+    <a
+      class="tab"
+      [routerLink]="section.path"
+      routerLinkActive="tab--active"
+      [routerLinkActiveOptions]="{ exact: section.exact }"
+      ariaCurrentWhenActive="page"
+      >{{ text.sections[section.key] }}</a
+    >
+  }
+</nav>
+
+<router-outlet />

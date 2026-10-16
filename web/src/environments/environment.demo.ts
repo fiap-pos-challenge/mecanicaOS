@@ -1,0 +1,38 @@
+import type { AppEnvironment } from '../app/core/config/app-environment';
+
+export const environment: AppEnvironment = {
+  apiBaseUrl: '/api',
+  realtimeHubPath: '/api/hubs/realtime',
+  paymentProviderOrigins: ['https://pagamento.provedor.example'],
+  session: {
+    idleWarningMs: 25 * 60_000,
+    idleLogoutMs: 30 * 60_000,
+    versionCheckIntervalMs: 5 * 60_000,
+  },
+  features: {
+    auth: { api: 'http' },
+    customers: { api: 'http' },
+    users: { api: 'http' },
+    realtime: { api: 'pending' },
+    session: { api: 'pending' },
+    twoFactor: { api: 'pending' },
+    vehicles: { api: 'http' },
+    customerInsights: { api: 'http' },
+    addresses: { api: 'http' },
+    jobs: { api: 'http' },
+    teamProfiles: { api: 'http' },
+    roles: { api: 'http' },
+    catalog: { api: 'http' },
+    inventory: { api: 'http' },
+    quotes: { api: 'http' },
+    serviceOrders: { api: 'http' },
+    portal: { api: 'http' },
+    documents: { api: 'http' },
+    dashboard: { api: 'http' },
+    reports: { api: 'http' },
+    automations: { api: 'http' },
+    notifications: { api: 'http' },
+    assistant: { api: 'http' },
+    settings: { api: 'http' },
+  },
+};

@@ -11,4 +11,6 @@ public interface ICustomerQueries
     Task<CustomerDto?> GetByDocumentAsync(Document document, CancellationToken cancellationToken);
 
     Task<PagedResult<CustomerDto>> ListAsync(PageRequest page, CancellationToken cancellationToken);
+
+    Task<PagedResult<CustomerDto>> QueryAsync(CustomerFilter filter, PageRequest page, CancellationToken cancellationToken);
 }

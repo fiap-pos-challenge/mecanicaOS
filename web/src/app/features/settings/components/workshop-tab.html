@@ -1,0 +1,130 @@
+@switch (state()) {
+  @case ('loading') {
+    <ui-skeleton height="200px" />
+  }
+  @case ('error') {
+    <div class="alert" role="alert">
+      <span>{{ common.loadError }}</span>
+      <button uiButton size="sm" type="button" (click)="load()">{{ common.retry }}</button>
+    </div>
+  }
+}
+
+@if (draft(); as workshop) {
+  <section class="section" [attr.aria-label]="text.title">
+    <h2 class="title">{{ text.title }}</h2>
+    <p class="hint" data-testid="plan">{{ text.plan }}: {{ plan() }}</p>
+    @if (submitted() && problems().length > 0) {
+      <ul class="alert" role="alert">
+        @for (problem of problems(); track problem) {
+          <li>{{ text.problems[problem] }}</li>
+        }
+      </ul>
+    }
+    <fieldset class="fields" [disabled]="!store.canManage">
+      <ui-field [label]="text.name" [required]="true">
+        <input uiControl maxlength="120" [value]="workshop.name" (input)="set('name', $event)" />
+      </ui-field>
+      <ui-field [label]="text.document" [required]="true">
+        <input
+          uiControl
+          inputmode="numeric"
+          maxlength="18"
+          [value]="workshop.document"
+          (input)="set('document', $event)"
+        />
+      </ui-field>
+      <ui-field [label]="text.zipCode" [required]="true">
+        <input
+          uiControl
+          inputmode="numeric"
+          maxlength="9"
+          [value]="workshop.address.zipCode"
+          (input)="setAddress('zipCode', $event)"
+        />
+      </ui-field>
+      <ui-field [label]="text.street" [required]="true">
+        <input uiControl [value]="workshop.address.street" (input)="setAddress('street', $event)" />
+      </ui-field>
+      <ui-field [label]="text.number" [required]="true">
+        <input uiControl [value]="workshop.address.number" (input)="setAddress('number', $event)" />
+      </ui-field>
+      <ui-field [label]="text.district">
+        <input
+          uiControl
+          [value]="workshop.address.district"
+          (input)="setAddress('district', $event)"
+        />
+      </ui-field>
+      <ui-field [label]="text.city" [required]="true">
+        <input uiControl [value]="workshop.address.city" (input)="setAddress('city', $event)" />
+      </ui-field>
+      <ui-field [label]="text.state" [required]="true">
+        <input
+          uiControl
+          maxlength="2"
+          [value]="workshop.address.state"
+          (input)="setAddress('state', $event)"
+        />
+      </ui-field>
+    </fieldset>
+
+    <h3 class="subtitle">{{ text.logo }}</h3>
+    <div class="logo">
+      @if (workshop.logoUrl; as logo) {
+        <img [src]="logo" [alt]="text.logoAlt" width="96" height="96" />
+      } @else {
+        <span class="hint">{{ text.noLogo }}</span>
+      }
+      @if (store.canManage) {
+        <ui-field
+          [label]="text.logo"
+          [hint]="text.logoHint"
+          [error]="logoError() ? text.logoInvalid : null"
+        >
+          <input uiControl type="file" accept="image/png,image/jpeg" (change)="pickLogo($event)" />
+        </ui-field>
+      }
+    </div>
+
+    <h3 class="subtitle">{{ text.hours }}</h3>
+    <fieldset class="hours" [disabled]="!store.canManage">
+      @for (day of workshop.hours; track day.weekday; let index = $index) {
+        <div class="day">
+          <strong>{{ common.weekdays[day.weekday] }}</strong>
+          <label class="check">
+            <input
+              type="checkbox"
+              [checked]="day.closed"
+              [attr.aria-label]="text.closedOn(common.weekdays[day.weekday])"
+              (change)="setHours(index, 'closed', $event)"
+            />
+            <span>{{ text.closed }}</span>
+          </label>
+          @if (!day.closed) {
+            <input
+              class="time"
+              type="time"
+              [value]="day.opens"
+              [attr.aria-label]="text.opens(common.weekdays[day.weekday])"
+              (input)="setHours(index, 'opens', $event)"
+            />
+            <input
+              class="time"
+              type="time"
+              [value]="day.closes"
+              [attr.aria-label]="text.closes(common.weekdays[day.weekday])"
+              (input)="setHours(index, 'closes', $event)"
+            />
+          }
+        </div>
+      }
+    </fieldset>
+
+    @if (store.canManage) {
+      <div class="actions">
+        <button uiButton variant="primary" type="button" (click)="save()">{{ common.save }}</button>
+      </div>
+    }
+  </section>
+}

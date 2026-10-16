@@ -1,0 +1,12 @@
+<header class="header">
+  <h2 [id]="titleId">{{ title() }}</h2>
+  <button uiIconButton [label]="closeLabel" (click)="close()">
+    <ui-icon [icon]="closeIcon" [size]="18" />
+  </button>
+</header>
+<div class="body">
+  <ng-content />
+</div>
+<footer class="footer">
+  <ng-content select="[uiDialogFooter]" />
+</footer>

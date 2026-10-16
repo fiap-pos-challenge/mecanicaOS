@@ -54,6 +54,11 @@ public static class CommonErrors
         "Já existe um registro com esses dados.",
         ErrorType.Conflict);
 
+    public static readonly Error InvalidSearchTerm = new(
+        "common.invalidSearch",
+        "Revise o termo de busca, os filtros e a ordenação.",
+        ErrorType.Validation);
+
     public static readonly Error Unauthorized = new(
         "common.unauthorized",
         "É necessário estar autenticado para acessar este recurso.",

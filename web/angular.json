@@ -1,0 +1,267 @@
+{
+  "$schema": "./node_modules/@angular/cli/lib/config/schema.json",
+  "version": 1,
+  "cli": {
+    "packageManager": "npm",
+    "schematicCollections": ["angular-eslint"]
+  },
+  "newProjectRoot": "projects",
+  "projects": {
+    "oficina-web": {
+      "projectType": "application",
+      "schematics": {
+        "@schematics/angular:component": {
+          "style": "scss",
+          "changeDetection": "OnPush"
+        }
+      },
+      "root": "",
+      "sourceRoot": "src",
+      "prefix": "app",
+      "architect": {
+        "build": {
+          "builder": "@angular/build:application",
+          "options": {
+            "browser": "src/main.ts",
+            "tsConfig": "tsconfig.app.json",
+            "inlineStyleLanguage": "scss",
+            "assets": [
+              {
+                "glob": "**/*",
+                "input": "public"
+              }
+            ],
+            "styles": [
+              "@fontsource/barlow-semi-condensed/latin-600.css",
+              "@fontsource/barlow-semi-condensed/latin-700.css",
+              "@fontsource/ibm-plex-sans/latin-400.css",
+              "@fontsource/ibm-plex-sans/latin-500.css",
+              "@fontsource/ibm-plex-sans/latin-600.css",
+              "@fontsource/ibm-plex-mono/latin-400.css",
+              "@fontsource/ibm-plex-mono/latin-500.css",
+              "@angular/cdk/overlay-prebuilt.css",
+              "src/styles.scss"
+            ],
+            "stylePreprocessorOptions": {
+              "includePaths": ["src"]
+            }
+          },
+          "configurations": {
+            "production": {
+              "budgets": [
+                {
+                  "type": "initial",
+                  "maximumWarning": "500kB",
+                  "maximumError": "1MB"
+                },
+                {
+                  "type": "anyComponentStyle",
+                  "maximumWarning": "4kB",
+                  "maximumError": "8kB"
+                },
+                {
+                  "type": "bundle",
+                  "name": "dashboard-page",
+                  "maximumWarning": "20kB",
+                  "maximumError": "30kB"
+                },
+                {
+                  "type": "bundle",
+                  "name": "reports-page",
+                  "maximumWarning": "35kB",
+                  "maximumError": "52kB"
+                },
+                {
+                  "type": "bundle",
+                  "name": "service-orders-page",
+                  "maximumWarning": "100kB",
+                  "maximumError": "150kB"
+                },
+                {
+                  "type": "bundle",
+                  "name": "service-order-detail-page",
+                  "maximumWarning": "20kB",
+                  "maximumError": "30kB"
+                },
+                {
+                  "type": "bundle",
+                  "name": "quotes-page",
+                  "maximumWarning": "15kB",
+                  "maximumError": "22kB"
+                },
+                {
+                  "type": "bundle",
+                  "name": "quote-editor-page",
+                  "maximumWarning": "75kB",
+                  "maximumError": "112kB"
+                },
+                {
+                  "type": "bundle",
+                  "name": "mechanic-page",
+                  "maximumWarning": "8kB",
+                  "maximumError": "12kB"
+                },
+                {
+                  "type": "bundle",
+                  "name": "mechanic-order-page",
+                  "maximumWarning": "20kB",
+                  "maximumError": "30kB"
+                },
+                {
+                  "type": "bundle",
+                  "name": "portal-page",
+                  "maximumWarning": "30kB",
+                  "maximumError": "45kB"
+                },
+                {
+                  "type": "bundle",
+                  "name": "automations-page",
+                  "maximumWarning": "30kB",
+                  "maximumError": "45kB"
+                },
+                {
+                  "type": "bundle",
+                  "name": "settings-page",
+                  "maximumWarning": "65kB",
+                  "maximumError": "97kB"
+                },
+                {
+                  "type": "bundle",
+                  "name": "echarts-setup",
+                  "maximumWarning": "600kB",
+                  "maximumError": "900kB"
+                }
+              ],
+              "outputHashing": "all",
+              "optimization": {
+                "scripts": true,
+                "styles": {
+                  "minify": true,
+                  "inlineCritical": false
+                },
+                "fonts": false
+              },
+              "fileReplacements": [
+                {
+                  "replace": "src/app/dev/dev.routes.ts",
+                  "with": "src/app/dev/dev.routes.production.ts"
+                }
+              ]
+            },
+            "demo": {
+              "budgets": [
+                {
+                  "type": "initial",
+                  "maximumWarning": "1MB",
+                  "maximumError": "2MB"
+                },
+                {
+                  "type": "anyComponentStyle",
+                  "maximumWarning": "4kB",
+                  "maximumError": "8kB"
+                }
+              ],
+              "fileReplacements": [
+                {
+                  "replace": "src/app/dev/dev.routes.ts",
+                  "with": "src/app/dev/dev.routes.production.ts"
+                },
+                {
+                  "replace": "src/environments/environment.ts",
+                  "with": "src/environments/environment.demo.ts"
+                },
+                {
+                  "replace": "src/app/demo/demo-mode.ts",
+                  "with": "src/testing/demo/demo-mode.ts"
+                }
+              ],
+              "assets": [
+                {
+                  "glob": "**/*",
+                  "input": "public"
+                },
+                {
+                  "glob": "**/*",
+                  "input": "src/testing/demo/public"
+                }
+              ]
+            },
+            "e2e": {
+              "fileReplacements": [
+                {
+                  "replace": "src/app/dev/dev.routes.ts",
+                  "with": "src/app/dev/dev.routes.production.ts"
+                },
+                {
+                  "replace": "src/environments/environment.ts",
+                  "with": "src/environments/environment.e2e.ts"
+                }
+              ]
+            },
+            "development": {
+              "optimization": false,
+              "extractLicenses": false,
+              "sourceMap": true,
+              "assets": [
+                {
+                  "glob": "**/*",
+                  "input": "public"
+                }
+              ]
+            }
+          },
+          "defaultConfiguration": "production"
+        },
+        "serve": {
+          "builder": "@angular/build:dev-server",
+          "configurations": {
+            "production": {
+              "buildTarget": "oficina-web:build:production"
+            },
+            "development": {
+              "buildTarget": "oficina-web:build:development"
+            },
+            "demo": {
+              "buildTarget": "oficina-web:build:development,demo"
+            }
+          },
+          "defaultConfiguration": "development",
+          "options": {
+            "proxyConfig": "proxy.conf.json"
+          }
+        },
+        "test": {
+          "builder": "@angular/build:unit-test",
+          "options": {
+            "setupFiles": ["src/test-setup.ts"],
+            "coverageInclude": ["src/app/**/*.ts"],
+            "coverageExclude": [
+              "src/app/**/*.spec.ts",
+              "src/app/dev/dev.routes.production.ts",
+              "src/app/core/api/generated/**",
+              "src/app/mocks/browser/**"
+            ],
+            "coverageReporters": ["text-summary", "html", "lcov"],
+            "coverageThresholds": {
+              "lines": 85,
+              "statements": 85
+            },
+            "runnerConfig": "vitest.config.mts"
+          }
+        },
+        "lint": {
+          "builder": "@angular-eslint/builder:lint",
+          "options": {
+            "lintFilePatterns": [
+              "src/**/*.ts",
+              "src/**/*.html",
+              "e2e/**/*.ts",
+              "playwright.config.ts",
+              "scripts/**/*.mjs"
+            ]
+          }
+        }
+      }
+    }
+  }
+}

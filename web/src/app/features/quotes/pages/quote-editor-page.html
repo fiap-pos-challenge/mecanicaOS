@@ -1,0 +1,197 @@
+<a class="back" routerLink="/quotes">
+  <ui-icon [icon]="icons.back" [size]="16" />
+  {{ text.editor.back }}
+</a>
+
+@switch (store.loadState()) {
+  @case ('loading') {
+    <ui-skeleton height="320px" />
+  }
+  @case ('pending') {
+    <ui-pending-notice [message]="pendingText" />
+  }
+  @case ('notFound') {
+    <p class="alert" role="alert">{{ text.editor.notFound }}</p>
+  }
+  @case ('error') {
+    <div class="alert" role="alert">
+      <span>{{ text.editor.loadError }}</span>
+      <button uiButton size="sm" type="button" (click)="store.load(id() ?? '')">
+        {{ text.retry }}
+      </button>
+    </div>
+  }
+  @case ('ready') {
+    @if (store.quote(); as quote) {
+      <header class="head">
+        <div class="identity">
+          <h1 class="page-title">{{ text.editor.title(quote.number) }}</h1>
+          <p class="meta">
+            @if (stage(); as current) {
+              <ui-status-pill [tone]="current.tone">{{ current.label }}</ui-status-pill>
+            }
+            <span>{{ text.editor.version(quote.version) }}</span>
+            <span>{{ text.editor.serviceOrder(quote.serviceOrderNumber) }}</span>
+          </p>
+          <p class="meta">
+            <span>{{ quote.customer.name }}</span>
+            <ui-plate [value]="quote.vehicle.plate" />
+            <span>{{ quote.vehicle.description }}</span>
+            <span>{{ text.editor.mileage(quote.vehicle.mileage) }}</span>
+          </p>
+        </div>
+        <div class="actions">
+          @if (store.editable()) {
+            <span class="save" role="status" data-testid="save-state">{{ saveText() }}</span>
+            <button uiButton type="button" (click)="store.save()">{{ text.editor.save }}</button>
+          }
+          <button uiButton type="button" (click)="openDocument()">{{ text.editor.preview }}</button>
+          @if (store.canManage() && isPending()) {
+            <button
+              uiButton
+              variant="primary"
+              type="button"
+              [disabled]="store.blocks().length > 0"
+              (click)="openSend()"
+            >
+              {{ text.editor.send }}
+            </button>
+          }
+        </div>
+      </header>
+
+      @if (store.actionError(); as message) {
+        <div class="alert" role="alert" data-testid="quote-error">
+          <span>{{ message }}</span>
+        </div>
+      }
+
+      @if (!store.canManage()) {
+        <p class="notice" role="note">{{ text.editor.readOnly }}</p>
+      } @else if (isPending() && !store.editable()) {
+        <p class="notice" role="note">{{ text.editor.locked }}</p>
+      }
+
+      @if (quote.rejectionReason; as reason) {
+        <p class="notice notice--bad" role="note">{{ text.editor.rejected(reason) }}</p>
+      }
+
+      @if (store.canManage() && isPending() && blocks().length > 0) {
+        <div class="notice" role="note" data-testid="send-blocks">
+          <strong>{{ text.editor.blocksTitle }}</strong>
+          <ul>
+            @for (block of blocks(); track block) {
+              <li>{{ block }}</li>
+            }
+          </ul>
+        </div>
+      }
+
+      @if (delivery(); as current) {
+        <ui-card class="delivery" [headingLevel]="2" [title]="text.delivery.title">
+          <div class="delivery-body" data-testid="delivery">
+            <ui-status-pill [tone]="current.tone">{{ current.label }}</ui-status-pill>
+            <span>{{ current.channel }}</span>
+            <span class="muted">{{ current.expiry }}</span>
+            @if (current.delivery.failureReason; as reason) {
+              <span class="muted">{{ reason }}</span>
+            }
+          </div>
+          <div class="actions">
+            @if (current.canRetry && store.canManage() && isPending()) {
+              <button
+                uiButton
+                size="sm"
+                variant="primary"
+                type="button"
+                [loading]="store.busy()"
+                (click)="retry()"
+              >
+                {{ current.stage === 'Failed' ? text.delivery.retry : text.delivery.regenerate }}
+              </button>
+            }
+            <button uiButton size="sm" type="button" (click)="store.refreshDelivery()">
+              {{ text.delivery.refresh }}
+            </button>
+            <button uiButton size="sm" type="button" (click)="copyLink(current.delivery.link)">
+              {{ text.delivery.copy }}
+            </button>
+          </div>
+        </ui-card>
+      }
+
+      @if (store.canManage()) {
+        <div class="response" role="group" [attr.aria-label]="text.editor.response">
+          @if (isPending()) {
+            <button uiButton size="sm" type="button" (click)="approve()">
+              {{ text.editor.registerApproval }}
+            </button>
+            <button uiButton size="sm" variant="danger" type="button" (click)="openReject()">
+              {{ text.editor.registerRejection }}
+            </button>
+          }
+          @if (quote.status === 'Rejected') {
+            <button uiButton size="sm" variant="primary" type="button" (click)="createVersion()">
+              {{ text.editor.newVersion }}
+            </button>
+          }
+          @if (quote.version > 1 || quote.status === 'Rejected') {
+            <button uiButton size="sm" type="button" (click)="openVersions()">
+              {{ text.editor.versions }}
+            </button>
+          }
+        </div>
+      }
+
+      @if (quote.diagnosis; as diagnosis) {
+        <p class="diagnosis">
+          <strong>{{ text.editor.diagnosis }}:</strong> {{ diagnosis }}
+        </p>
+      }
+
+      @if (store.draft(); as draft) {
+        <div class="layout">
+          @if (store.options(); as options) {
+            <app-quote-builder
+              [options]="options"
+              [editable]="store.editable()"
+              (added)="add($event)"
+            />
+          }
+          <div class="side">
+            <app-quote-items
+              [lines]="draft.lines"
+              [editable]="store.editable()"
+              [stockWarnings]="store.stockWarnings()"
+              [priceChanges]="store.editable() ? store.priceChanges() : []"
+              (quantityChange)="setQuantity($event)"
+              (removed)="store.removeLine($event)"
+              (pricesUpdated)="store.applyCatalogPrices()"
+            />
+            @if (store.options(); as options) {
+              <app-quote-pricing
+                [mode]="draft.discountMode"
+                [manual]="draft.manualDiscount"
+                [payment]="draft.payment"
+                [options]="options"
+                [facts]="quote.customer.facts"
+                [pricing]="store.pricing()"
+                [approval]="quote.approval"
+                [installments]="store.installments()"
+                [editable]="store.editable()"
+                [canApprove]="store.canApproveDiscount()"
+                [busy]="store.busy()"
+                [resetKey]="quote.id"
+                (modeChange)="store.setDiscountMode($event)"
+                (manualChange)="store.setManualDiscount($event)"
+                (paymentChange)="store.setPayment($event)"
+                (approvalRequested)="requestApproval()"
+                (decided)="decide($event)"
+              />
+            }
+          </div>
+        </div>
+      }
+    }
+  }
+}
