@@ -40,11 +40,26 @@ export type CreateCustomerRequest = {
     messagingConsent?: MessagingConsentRequest;
 };
 
+export type CreateServiceRequest = {
+    name?: string | null;
+    description?: string | null;
+    basePrice?: number;
+    estimatedMinutes?: number;
+};
+
 export type CreateUserRequest = {
     name?: string | null;
     email?: string | null;
     password?: string | null;
     role?: Role;
+};
+
+export type CreateVehicleRequest = {
+    plate?: string | null;
+    brand?: string | null;
+    model?: string | null;
+    year?: number;
+    customerId?: string;
 };
 
 export type CurrentUserDto = {
@@ -156,6 +171,26 @@ export type SearchUserRequest = {
 
 export type SensitiveField = 'Document' | 'Email' | 'Phone';
 
+export type ServiceDto = {
+    id?: string;
+    name?: string | null;
+    description?: string | null;
+    basePrice?: number;
+    estimatedMinutes?: number;
+    isActive?: boolean;
+    createdAt?: string;
+    updatedAt?: string | null;
+};
+
+export type ServiceDtoPagedResult = {
+    items?: Array<ServiceDto> | null;
+    page?: number;
+    pageSize?: number;
+    totalItems?: number;
+};
+
+export type ServiceOrderStatus = 'Received' | 'InDiagnosis' | 'WaitingApproval' | 'InProgress' | 'Completed' | 'Delivered';
+
 export type SortDirection = 'Asc' | 'Desc';
 
 export type UpdateCustomerRequest = {
@@ -166,9 +201,22 @@ export type UpdateCustomerRequest = {
     messagingConsent?: MessagingConsentRequest;
 };
 
+export type UpdateServiceRequest = {
+    name?: string | null;
+    description?: string | null;
+    basePrice?: number;
+    estimatedMinutes?: number;
+};
+
 export type UpdateUserRequest = {
     name?: string | null;
     role?: Role;
+};
+
+export type UpdateVehicleRequest = {
+    brand?: string | null;
+    model?: string | null;
+    year?: number;
 };
 
 export type UserDto = {
@@ -191,6 +239,48 @@ export type UserDtoPagedResult = {
 };
 
 export type UserStatus = 'Active' | 'Inactive' | 'InvitationPending';
+
+export type VehicleDetailDto = {
+    id?: string;
+    model?: string | null;
+    brand?: string | null;
+    licensePlate?: string | null;
+    year?: number;
+    owner?: VehicleOwnerDto;
+    serviceOrders?: Array<VehicleServiceOrderSummaryDto> | null;
+    createdAt?: string;
+    updatedAt?: string | null;
+};
+
+export type VehicleDto = {
+    id?: string;
+    model?: string | null;
+    brand?: string | null;
+    licensePlate?: string | null;
+    year?: number;
+    customerId?: string;
+    createdAt?: string;
+    updatedAt?: string | null;
+};
+
+export type VehicleDtoPagedResult = {
+    items?: Array<VehicleDto> | null;
+    page?: number;
+    pageSize?: number;
+    totalItems?: number;
+};
+
+export type VehicleOwnerDto = {
+    id?: string;
+    name?: string | null;
+};
+
+export type VehicleServiceOrderSummaryDto = {
+    number?: number;
+    status?: ServiceOrderStatus;
+    openedAt?: string;
+    completedAt?: string | null;
+};
 
 export type PostApiAuthLoginData = {
     body?: LoginRequest;
@@ -691,6 +781,256 @@ export type PostApiAdminCustomersSearchResponses = {
 
 export type PostApiAdminCustomersSearchResponse = PostApiAdminCustomersSearchResponses[keyof PostApiAdminCustomersSearchResponses];
 
+export type GetApiAdminServicesData = {
+    body?: never;
+    path?: never;
+    query?: {
+        page?: number;
+        pageSize?: number;
+        includeInactive?: boolean;
+    };
+    url: '/api/admin/services';
+};
+
+export type GetApiAdminServicesErrors = {
+    /**
+     * Bad Request
+     */
+    400: ProblemDetails;
+    /**
+     * Unauthorized
+     */
+    401: ProblemDetails;
+    /**
+     * Forbidden
+     */
+    403: ProblemDetails;
+    /**
+     * Internal Server Error
+     */
+    500: ProblemDetails;
+};
+
+export type GetApiAdminServicesError = GetApiAdminServicesErrors[keyof GetApiAdminServicesErrors];
+
+export type GetApiAdminServicesResponses = {
+    /**
+     * OK
+     */
+    200: ServiceDtoPagedResult;
+};
+
+export type GetApiAdminServicesResponse = GetApiAdminServicesResponses[keyof GetApiAdminServicesResponses];
+
+export type PostApiAdminServicesData = {
+    body?: CreateServiceRequest;
+    path?: never;
+    query?: never;
+    url: '/api/admin/services';
+};
+
+export type PostApiAdminServicesErrors = {
+    /**
+     * Bad Request
+     */
+    400: ProblemDetails;
+    /**
+     * Unauthorized
+     */
+    401: ProblemDetails;
+    /**
+     * Forbidden
+     */
+    403: ProblemDetails;
+    /**
+     * Internal Server Error
+     */
+    500: ProblemDetails;
+};
+
+export type PostApiAdminServicesError = PostApiAdminServicesErrors[keyof PostApiAdminServicesErrors];
+
+export type PostApiAdminServicesResponses = {
+    /**
+     * Created
+     */
+    201: ServiceDto;
+};
+
+export type PostApiAdminServicesResponse = PostApiAdminServicesResponses[keyof PostApiAdminServicesResponses];
+
+export type GetApiAdminServicesByIdData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/admin/services/{id}';
+};
+
+export type GetApiAdminServicesByIdErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ProblemDetails;
+    /**
+     * Forbidden
+     */
+    403: ProblemDetails;
+    /**
+     * Not Found
+     */
+    404: ProblemDetails;
+    /**
+     * Internal Server Error
+     */
+    500: ProblemDetails;
+};
+
+export type GetApiAdminServicesByIdError = GetApiAdminServicesByIdErrors[keyof GetApiAdminServicesByIdErrors];
+
+export type GetApiAdminServicesByIdResponses = {
+    /**
+     * OK
+     */
+    200: ServiceDto;
+};
+
+export type GetApiAdminServicesByIdResponse = GetApiAdminServicesByIdResponses[keyof GetApiAdminServicesByIdResponses];
+
+export type PutApiAdminServicesByIdData = {
+    body?: UpdateServiceRequest;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/admin/services/{id}';
+};
+
+export type PutApiAdminServicesByIdErrors = {
+    /**
+     * Bad Request
+     */
+    400: ProblemDetails;
+    /**
+     * Unauthorized
+     */
+    401: ProblemDetails;
+    /**
+     * Forbidden
+     */
+    403: ProblemDetails;
+    /**
+     * Not Found
+     */
+    404: ProblemDetails;
+    /**
+     * Conflict
+     */
+    409: ProblemDetails;
+    /**
+     * Internal Server Error
+     */
+    500: ProblemDetails;
+};
+
+export type PutApiAdminServicesByIdError = PutApiAdminServicesByIdErrors[keyof PutApiAdminServicesByIdErrors];
+
+export type PutApiAdminServicesByIdResponses = {
+    /**
+     * OK
+     */
+    200: ServiceDto;
+};
+
+export type PutApiAdminServicesByIdResponse = PutApiAdminServicesByIdResponses[keyof PutApiAdminServicesByIdResponses];
+
+export type PostApiAdminServicesByIdDeactivateData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/admin/services/{id}/deactivate';
+};
+
+export type PostApiAdminServicesByIdDeactivateErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ProblemDetails;
+    /**
+     * Forbidden
+     */
+    403: ProblemDetails;
+    /**
+     * Not Found
+     */
+    404: ProblemDetails;
+    /**
+     * Conflict
+     */
+    409: ProblemDetails;
+    /**
+     * Internal Server Error
+     */
+    500: ProblemDetails;
+};
+
+export type PostApiAdminServicesByIdDeactivateError = PostApiAdminServicesByIdDeactivateErrors[keyof PostApiAdminServicesByIdDeactivateErrors];
+
+export type PostApiAdminServicesByIdDeactivateResponses = {
+    /**
+     * No Content
+     */
+    204: void;
+};
+
+export type PostApiAdminServicesByIdDeactivateResponse = PostApiAdminServicesByIdDeactivateResponses[keyof PostApiAdminServicesByIdDeactivateResponses];
+
+export type PostApiAdminServicesByIdReactivateData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/admin/services/{id}/reactivate';
+};
+
+export type PostApiAdminServicesByIdReactivateErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ProblemDetails;
+    /**
+     * Forbidden
+     */
+    403: ProblemDetails;
+    /**
+     * Not Found
+     */
+    404: ProblemDetails;
+    /**
+     * Conflict
+     */
+    409: ProblemDetails;
+    /**
+     * Internal Server Error
+     */
+    500: ProblemDetails;
+};
+
+export type PostApiAdminServicesByIdReactivateError = PostApiAdminServicesByIdReactivateErrors[keyof PostApiAdminServicesByIdReactivateErrors];
+
+export type PostApiAdminServicesByIdReactivateResponses = {
+    /**
+     * No Content
+     */
+    204: void;
+};
+
+export type PostApiAdminServicesByIdReactivateResponse = PostApiAdminServicesByIdReactivateResponses[keyof PostApiAdminServicesByIdReactivateResponses];
+
 export type GetApiAdminUsersData = {
     body?: never;
     path?: never;
@@ -1125,3 +1465,214 @@ export type PostApiAdminUsersSearchResponses = {
 };
 
 export type PostApiAdminUsersSearchResponse = PostApiAdminUsersSearchResponses[keyof PostApiAdminUsersSearchResponses];
+
+export type GetApiAdminVehiclesData = {
+    body?: never;
+    path?: never;
+    query?: {
+        page?: number;
+        pageSize?: number;
+        plate?: string;
+    };
+    url: '/api/admin/vehicles';
+};
+
+export type GetApiAdminVehiclesErrors = {
+    /**
+     * Bad Request
+     */
+    400: ProblemDetails;
+    /**
+     * Unauthorized
+     */
+    401: ProblemDetails;
+    /**
+     * Forbidden
+     */
+    403: ProblemDetails;
+    /**
+     * Internal Server Error
+     */
+    500: ProblemDetails;
+};
+
+export type GetApiAdminVehiclesError = GetApiAdminVehiclesErrors[keyof GetApiAdminVehiclesErrors];
+
+export type GetApiAdminVehiclesResponses = {
+    /**
+     * OK
+     */
+    200: VehicleDtoPagedResult;
+};
+
+export type GetApiAdminVehiclesResponse = GetApiAdminVehiclesResponses[keyof GetApiAdminVehiclesResponses];
+
+export type PostApiAdminVehiclesData = {
+    body?: CreateVehicleRequest;
+    path?: never;
+    query?: never;
+    url: '/api/admin/vehicles';
+};
+
+export type PostApiAdminVehiclesErrors = {
+    /**
+     * Bad Request
+     */
+    400: ProblemDetails;
+    /**
+     * Unauthorized
+     */
+    401: ProblemDetails;
+    /**
+     * Forbidden
+     */
+    403: ProblemDetails;
+    /**
+     * Not Found
+     */
+    404: ProblemDetails;
+    /**
+     * Conflict
+     */
+    409: ProblemDetails;
+    /**
+     * Internal Server Error
+     */
+    500: ProblemDetails;
+};
+
+export type PostApiAdminVehiclesError = PostApiAdminVehiclesErrors[keyof PostApiAdminVehiclesErrors];
+
+export type PostApiAdminVehiclesResponses = {
+    /**
+     * Created
+     */
+    201: VehicleDto;
+};
+
+export type PostApiAdminVehiclesResponse = PostApiAdminVehiclesResponses[keyof PostApiAdminVehiclesResponses];
+
+export type DeleteApiAdminVehiclesByIdData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/admin/vehicles/{id}';
+};
+
+export type DeleteApiAdminVehiclesByIdErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ProblemDetails;
+    /**
+     * Forbidden
+     */
+    403: ProblemDetails;
+    /**
+     * Not Found
+     */
+    404: ProblemDetails;
+    /**
+     * Conflict
+     */
+    409: ProblemDetails;
+    /**
+     * Internal Server Error
+     */
+    500: ProblemDetails;
+};
+
+export type DeleteApiAdminVehiclesByIdError = DeleteApiAdminVehiclesByIdErrors[keyof DeleteApiAdminVehiclesByIdErrors];
+
+export type DeleteApiAdminVehiclesByIdResponses = {
+    /**
+     * No Content
+     */
+    204: void;
+};
+
+export type DeleteApiAdminVehiclesByIdResponse = DeleteApiAdminVehiclesByIdResponses[keyof DeleteApiAdminVehiclesByIdResponses];
+
+export type GetApiAdminVehiclesByIdData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/admin/vehicles/{id}';
+};
+
+export type GetApiAdminVehiclesByIdErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ProblemDetails;
+    /**
+     * Forbidden
+     */
+    403: ProblemDetails;
+    /**
+     * Not Found
+     */
+    404: ProblemDetails;
+    /**
+     * Internal Server Error
+     */
+    500: ProblemDetails;
+};
+
+export type GetApiAdminVehiclesByIdError = GetApiAdminVehiclesByIdErrors[keyof GetApiAdminVehiclesByIdErrors];
+
+export type GetApiAdminVehiclesByIdResponses = {
+    /**
+     * OK
+     */
+    200: VehicleDetailDto;
+};
+
+export type GetApiAdminVehiclesByIdResponse = GetApiAdminVehiclesByIdResponses[keyof GetApiAdminVehiclesByIdResponses];
+
+export type PutApiAdminVehiclesByIdData = {
+    body?: UpdateVehicleRequest;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/admin/vehicles/{id}';
+};
+
+export type PutApiAdminVehiclesByIdErrors = {
+    /**
+     * Bad Request
+     */
+    400: ProblemDetails;
+    /**
+     * Unauthorized
+     */
+    401: ProblemDetails;
+    /**
+     * Forbidden
+     */
+    403: ProblemDetails;
+    /**
+     * Not Found
+     */
+    404: ProblemDetails;
+    /**
+     * Internal Server Error
+     */
+    500: ProblemDetails;
+};
+
+export type PutApiAdminVehiclesByIdError = PutApiAdminVehiclesByIdErrors[keyof PutApiAdminVehiclesByIdErrors];
+
+export type PutApiAdminVehiclesByIdResponses = {
+    /**
+     * OK
+     */
+    200: VehicleDto;
+};
+
+export type PutApiAdminVehiclesByIdResponse = PutApiAdminVehiclesByIdResponses[keyof PutApiAdminVehiclesByIdResponses];

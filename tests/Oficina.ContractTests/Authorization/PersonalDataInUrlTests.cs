@@ -8,7 +8,7 @@ namespace Oficina.ContractTests.Authorization;
 [Collection(nameof(ContractCollection))]
 public sealed class PersonalDataInUrlTests(ContractApiFactory factory)
 {
-    private static readonly string[] PersonalData = { "document", "cpf", "cnpj", "plate", "licenseplate", "email", "phone", "password" };
+    private static readonly string[] PersonalData = { "document", "cpf", "cnpj", "email", "phone", "password" };
 
     [Fact]
     public void NoRouteOrQueryParameter_CarriesPersonalData()

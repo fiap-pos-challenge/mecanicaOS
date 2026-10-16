@@ -14,6 +14,16 @@ public static class CatalogErrors
         "O tempo estimado do serviço deve ser maior que zero.",
         ErrorType.Validation);
 
+    public static readonly Error InvalidBasePrice = new(
+        "catalog.invalidBasePrice",
+        "O preço base do serviço deve ser maior que zero.",
+        ErrorType.Validation);
+
+    public static readonly Error NotFound = new(
+        "catalog.notFound",
+        "Serviço não encontrado.",
+        ErrorType.NotFound);
+
     public static readonly Error AlreadyInactive = new(
         "catalog.alreadyInactive",
         "O serviço já está inativo.",
@@ -22,6 +32,11 @@ public static class CatalogErrors
     public static readonly Error AlreadyActive = new(
         "catalog.alreadyActive",
         "O serviço já está ativo.",
+        ErrorType.Conflict);
+
+    public static readonly Error CannotChangeInactive = new(
+        "catalog.cannotChangeInactive",
+        "O serviço está inativo. Reative-o antes de alterar.",
         ErrorType.Conflict);
 
     public static readonly Error ServiceInactive = new(

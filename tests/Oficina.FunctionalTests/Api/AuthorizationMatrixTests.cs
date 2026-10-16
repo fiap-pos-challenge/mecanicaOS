@@ -22,6 +22,12 @@ public sealed class AuthorizationMatrixTests(SqlServerFixture database) : ApiTes
         { "PUT", $"/api/admin/customers/{AnyId}", """{"name":"Maria","phone":"11987654321"}""", nameof(Staff) },
         { "POST", "/api/admin/customers/search", """{"document":"52998224725"}""", nameof(Staff) },
         { "DELETE", $"/api/admin/customers/{AnyId}", null, nameof(AdminOnly) },
+        { "GET", "/api/admin/services", null, nameof(Staff) },
+        { "POST", "/api/admin/services", """{"name":"Troca de óleo","basePrice":150,"estimatedMinutes":45}""", nameof(AdminOnly) },
+        { "GET", $"/api/admin/services/{AnyId}", null, nameof(Staff) },
+        { "PUT", $"/api/admin/services/{AnyId}", """{"name":"Troca de óleo","basePrice":150,"estimatedMinutes":45}""", nameof(AdminOnly) },
+        { "POST", $"/api/admin/services/{AnyId}/deactivate", null, nameof(AdminOnly) },
+        { "POST", $"/api/admin/services/{AnyId}/reactivate", null, nameof(AdminOnly) },
         { "POST", "/api/admin/customers/query", """{"term":"Maria"}""", nameof(Staff) },
         { "POST", $"/api/admin/customers/{AnyId}/reveal", """{"field":"Phone","reason":"View"}""", nameof(Staff) },
         { "GET", "/api/admin/users", null, nameof(AdminOrManager) },
@@ -35,6 +41,11 @@ public sealed class AuthorizationMatrixTests(SqlServerFixture database) : ApiTes
         { "POST", $"/api/admin/users/{AnyId}/deactivate", null, nameof(AdminOnly) },
         { "POST", $"/api/admin/users/{AnyId}/reactivate", null, nameof(AdminOnly) },
         { "POST", "/api/admin/users/search", """{"email":"novo@oficina.com"}""", nameof(AdminOnly) },
+        { "POST", "/api/admin/vehicles", """{"brand":"Fiat","model":"Uno","year": 2025,"customerId":"03df7661-6e42-4d05-bb81-e7aa3b1e0286"}""", nameof(Staff) },
+        { "GET", $"/api/admin/vehicles/{AnyId}", null, nameof(Everyone) },
+        { "GET", "/api/admin/vehicles", null, nameof(Everyone) },
+        { "PUT", $"/api/admin/vehicles/{AnyId}", """{"brand":"Hyundai","model":"HB20","year": 2026}""", nameof(Staff) },
+        { "DELETE", $"/api/admin/vehicles/{AnyId}", null, nameof(AdminOnly) },
     };
 
     [Theory]
