@@ -68,4 +68,19 @@ public static class ServiceOrderErrors
         "serviceOrder.vehicleNotOwnedByCustomer",
         "O veículo informado não pertence a este cliente.",
         ErrorType.Conflict);
+
+    public static readonly Error NotFound = new(
+        "serviceOrder.notFound",
+        "Ordem de serviço não encontrada.",
+        ErrorType.NotFound);
+
+    public static readonly Error InvalidStatus = new(
+        "serviceOrder.invalidStatus",
+        "Informe um status válido: Received, InDiagnosis, WaitingApproval, InProgress, Completed ou Delivered.",
+        ErrorType.Validation);
+
+    public static readonly Error InvalidPeriod = new(
+        "serviceOrder.invalidPeriod",
+        "A data inicial deve ser menor ou igual à data final.",
+        ErrorType.Validation);
 }

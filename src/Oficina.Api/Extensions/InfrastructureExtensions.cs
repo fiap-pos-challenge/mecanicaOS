@@ -5,6 +5,7 @@ using Oficina.Application.Abstractions.Persistence;
 using Oficina.Application.Abstractions.Security;
 using Oficina.Application.Catalog.Queries;
 using Oficina.Application.Customers.Queries;
+using Oficina.Application.ServiceOrders.Queries;
 using Oficina.Application.Users.Queries;
 using Oficina.Application.Vehicles.Queries;
 using Oficina.Domain.Catalog.Repositories;
@@ -20,6 +21,7 @@ using Oficina.Infrastructure.Persistence.Seeding;
 using Oficina.Infrastructure.Queries.Catalog;
 using Oficina.Infrastructure.Queries.Customers;
 using Oficina.Infrastructure.Queries.Identity;
+using Oficina.Infrastructure.Queries.ServiceOrders;
 using Oficina.Infrastructure.Queries.Vehicles;
 using Oficina.Infrastructure.Repositories.Catalog;
 using Oficina.Infrastructure.Repositories.Customers;
@@ -69,6 +71,7 @@ public static class InfrastructureExtensions
         services.AddScoped<IServiceQueries, ServiceQueries>();
         services.AddScoped<IUserQueries, UserQueries>();
         services.AddScoped<IVehicleQueries, VehicleQueries>();
+        services.AddScoped<IServiceOrderQueries, ServiceOrderQueries>();
 
         services.AddHttpContextAccessor();
         services.AddScoped<ICurrentUser, HttpCurrentUser>();
