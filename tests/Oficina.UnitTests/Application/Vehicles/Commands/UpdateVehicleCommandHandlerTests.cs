@@ -65,5 +65,5 @@ public sealed class UpdateVehicleCommandHandlerTests
     }
 
     public UpdateVehicleCommand Command() =>
-        new(_vehicle.Id, "HB20", "Hyundai", 2025);
+        new(_vehicle.Id, "HB20", "Hyundai", 2025, 50_000);
 }

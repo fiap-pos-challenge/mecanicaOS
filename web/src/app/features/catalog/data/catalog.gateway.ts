@@ -6,6 +6,7 @@ import { provideGateway } from '../../../core/config/provide-gateway';
 import { Page } from '../../../core/data/page';
 import {
   CatalogActivationData,
+  CatalogCollectionUrl,
   CatalogCreateData,
   CatalogItemData,
   CatalogKind,
@@ -36,6 +37,10 @@ export abstract class CatalogGateway {
   abstract priceHistory(kind: CatalogKind, id: string): Observable<readonly PriceChange[]>;
 }
 
+function collectionOf(kind: CatalogKind): CatalogCollectionUrl {
+  return `/api/admin/${kind}`;
+}
+
 @Injectable({ providedIn: 'root' })
 export class HttpCatalogGateway extends CatalogGateway {
   private readonly api = inject(ApiClient);
@@ -46,13 +51,12 @@ export class HttpCatalogGateway extends CatalogGateway {
 
   list<K extends CatalogKind>(kind: K, query: CatalogQuery): Observable<Page<CatalogItemMap[K]>> {
     return this.api
-      .send<CatalogListData, CatalogPageDto<unknown>>('GET', '/api/admin/catalog/{kind}', {
-        path: { kind },
+      .send<CatalogListData, CatalogPageDto<unknown>>('GET', collectionOf(kind), {
         query: {
           page: query.page,
           pageSize: query.pageSize,
           ...(query.term.trim() ? { term: query.term.trim() } : {}),
-          ...(query.status ? { status: query.status } : {}),
+          ...(query.status ? { status: query.status } : { includeInactive: true }),
         },
         context: this.context(),
       })
@@ -61,8 +65,8 @@ export class HttpCatalogGateway extends CatalogGateway {
 
   get<K extends CatalogKind>(kind: K, id: string): Observable<CatalogItemMap[K]> {
     return this.api
-      .send<CatalogItemData, unknown>('GET', '/api/admin/catalog/{kind}/{id}', {
-        path: { kind, id },
+      .send<CatalogItemData, unknown>('GET', `${collectionOf(kind)}/{id}` as const, {
+        path: { id },
         context: this.context(),
       })
       .pipe(map((dto) => toCatalogItem(kind, dto)));
@@ -70,8 +74,7 @@ export class HttpCatalogGateway extends CatalogGateway {
 
   create<K extends CatalogKind>(kind: K, input: CatalogInputMap[K]): Observable<CatalogItemMap[K]> {
     return this.api
-      .send<CatalogCreateData, unknown>('POST', '/api/admin/catalog/{kind}', {
-        path: { kind },
+      .send<CatalogCreateData, unknown>('POST', collectionOf(kind), {
         body: toCatalogInputDto(kind, input),
         context: this.context(),
       })
@@ -84,8 +87,8 @@ export class HttpCatalogGateway extends CatalogGateway {
     input: CatalogInputMap[K],
   ): Observable<CatalogItemMap[K]> {
     return this.api
-      .send<CatalogItemData, unknown>('PUT', '/api/admin/catalog/{kind}/{id}', {
-        path: { kind, id },
+      .send<CatalogItemData, unknown>('PUT', `${collectionOf(kind)}/{id}` as const, {
+        path: { id },
         body: toCatalogInputDto(kind, input),
         context: this.context(),
       })
@@ -94,10 +97,14 @@ export class HttpCatalogGateway extends CatalogGateway {
 
   setActive(kind: CatalogKind, id: string, active: boolean): Observable<void> {
     return this.api
-      .send<CatalogActivationData, unknown>('POST', '/api/admin/catalog/{kind}/{id}/{action}', {
-        path: { kind, id, action: active ? 'reactivate' : 'deactivate' },
-        context: this.context(),
-      })
+      .send<CatalogActivationData, unknown>(
+        'POST',
+        `${collectionOf(kind)}/{id}/{action}` as const,
+        {
+          path: { id, action: active ? 'reactivate' : 'deactivate' },
+          context: this.context(),
+        },
+      )
       .pipe(map(() => undefined));
   }
 
@@ -105,8 +112,8 @@ export class HttpCatalogGateway extends CatalogGateway {
     return this.api
       .send<PriceHistoryData, PriceHistoryDto>(
         'GET',
-        '/api/admin/catalog/{kind}/{id}/price-history',
-        { path: { kind, id }, context: this.context() },
+        `${collectionOf(kind)}/{id}/price-history` as const,
+        { path: { id }, context: this.context() },
       )
       .pipe(map((dto) => (dto.items ?? []).map(toPriceChange)));
   }

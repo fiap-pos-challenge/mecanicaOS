@@ -25,6 +25,7 @@ public sealed class VehicleConfiguration : IEntityTypeConfiguration<Vehicle>
             .HasConversion(year => (short)year.Value, value => VehicleYear.Create(value).Value)
             .HasColumnType("smallint")
             .IsRequired();
+        builder.Property(vehicle => vehicle.Mileage).IsRequired();
 
         builder.HasOne<Customer>().WithMany().HasForeignKey(vehicle => vehicle.CustomerId).OnDelete(DeleteBehavior.Restrict);
 

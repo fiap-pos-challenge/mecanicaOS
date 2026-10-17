@@ -55,5 +55,5 @@ public sealed class ServiceOrderOpeningPolicyTests
         Customer.Create("Maria Souza", Document.Create("52998224725").Value, Email.Create("maria@exemplo.com").Value, Phone.Create("11987654321").Value, null).Value;
 
     private static Vehicle CreateVehicle(Guid customerId) =>
-        Vehicle.Create(customerId, LicensePlate.Create("BRA2E19").Value, "Volkswagen", "Gol", VehicleYear.Create(2020).Value, Today).Value;
+        Vehicle.Create(customerId, LicensePlate.Create("BRA2E19").Value, "Volkswagen", "Gol", VehicleYear.Create(2020).Value, 0, Today).Value;
 }

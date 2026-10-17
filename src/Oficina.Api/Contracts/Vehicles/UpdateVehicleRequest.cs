@@ -1,3 +1,3 @@
 namespace Oficina.Api.Contracts.Vehicles;
 
-public sealed record UpdateVehicleRequest(string Brand, string Model, int Year);
+public sealed record UpdateVehicleRequest(string Brand, string Model, int Year, int Mileage);

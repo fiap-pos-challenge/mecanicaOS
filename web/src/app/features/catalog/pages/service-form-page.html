@@ -31,10 +31,6 @@
       }
     </header>
 
-    @if (optionsPending()) {
-      <ui-pending-notice class="pending-block" [message]="pendingText" />
-    }
-
     @if (!canManage()) {
       <p class="notice" role="note">{{ text.readOnly }}</p>
     }
@@ -97,7 +93,9 @@
           [title]="service.usualParts"
           [subtitle]="service.usualPartsHint"
         >
-          @if (canManage()) {
+          @if (optionsPending()) {
+            <ui-pending-notice class="pending-block" [message]="pendingText" />
+          } @else if (canManage()) {
             <div class="picker">
               <ui-field [label]="service.part">
                 <select uiControl [formControl]="partChoice">

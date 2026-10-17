@@ -21,7 +21,7 @@ public sealed class ServiceOrderBuilder
 
     public static Service CreateService(decimal price = 100m, bool active = true)
     {
-        var service = Service.Create("Troca de óleo", null, Money.Create(price).Value, 30).Value;
+        var service = Service.Create("Troca de óleo", null, Money.Create(price).Value, 30, 10m, 90).Value;
         if (!active)
         {
             service.Deactivate();
@@ -32,7 +32,7 @@ public sealed class ServiceOrderBuilder
 
     public static Part CreatePart(decimal price = 25m, decimal stock = 10m, bool active = true)
     {
-        var part = Part.Create(PartCode.Create("FLT-001").Value, "Filtro de óleo", PartType.Part, "un", Money.Create(price).Value, 0m).Value;
+        var part = Part.Create(PartCode.Create("FLT-001").Value, "Filtro de óleo", PartType.Part, "un", Money.Create(price).Value, Money.Zero, 0m, null, null).Value;
         if (stock > 0)
         {
             part.RegisterEntry(Quantity.Create(stock).Value, "Carga inicial", null);

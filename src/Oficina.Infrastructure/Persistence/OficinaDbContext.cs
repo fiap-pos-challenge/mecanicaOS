@@ -25,6 +25,10 @@ public sealed class OficinaDbContext(DbContextOptions<OficinaDbContext> options)
 
     public DbSet<Service> Services => Set<Service>();
 
+    public DbSet<Package> Packages => Set<Package>();
+
+    public DbSet<PriceChange> PriceChanges => Set<PriceChange>();
+
     public DbSet<Part> Parts => Set<Part>();
 
     public DbSet<ServiceOrder> ServiceOrders => Set<ServiceOrder>();

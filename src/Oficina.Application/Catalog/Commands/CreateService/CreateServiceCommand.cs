@@ -8,4 +8,7 @@ public sealed record CreateServiceCommand(
     string Name,
     string? Description,
     decimal BasePrice,
-    int EstimatedMinutes) : IRequest<Result<ServiceDto>>;
+    int EstimatedMinutes,
+    decimal CommissionPercent,
+    int WarrantyDays,
+    IReadOnlyList<UsualPartInput> UsualParts) : IRequest<Result<ServiceDto>>;

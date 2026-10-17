@@ -1,11 +1,16 @@
 using NSubstitute;
+using Microsoft.Extensions.Time.Testing;
 using Oficina.Application.Abstractions.Persistence;
+using Oficina.Application.Abstractions.Security;
 using Oficina.Application.Catalog.Commands.UpdateService;
 using Oficina.Domain.Catalog.Entities;
+using Oficina.Domain.Inventory.Entities;
+using Oficina.Domain.Inventory.Repositories;
 using Oficina.Domain.Catalog.Errors;
 using Oficina.Domain.Catalog.Repositories;
 using Oficina.Domain.Common.Errors;
 using Oficina.Domain.Common.Results;
+using Oficina.Application.Catalog.Dtos;
 using Oficina.UnitTests.Builders;
 
 namespace Oficina.UnitTests.Application.Catalog.Commands;
@@ -13,7 +18,10 @@ namespace Oficina.UnitTests.Application.Catalog.Commands;
 public sealed class UpdateServiceCommandHandlerTests
 {
     private readonly IServiceRepository _services = Substitute.For<IServiceRepository>();
+    private readonly IPartRepository _parts = Substitute.For<IPartRepository>();
+    private readonly IPriceChangeRepository _priceChanges = Substitute.For<IPriceChangeRepository>();
     private readonly IUnitOfWork _unitOfWork = Substitute.For<IUnitOfWork>();
+    private readonly ICurrentUser _currentUser = Substitute.For<ICurrentUser>();
     private readonly UpdateServiceCommandHandler _handler;
     private readonly Service _service = ServiceOrderBuilder.CreateService(price: 100m);
 
@@ -21,7 +29,8 @@ public sealed class UpdateServiceCommandHandlerTests
     {
         _services.GetByIdAsync(_service.Id, Arg.Any<CancellationToken>()).Returns(_service);
         _unitOfWork.CommitAsync(Arg.Any<CancellationToken>()).Returns(Result.Success());
-        _handler = new UpdateServiceCommandHandler(_services, _unitOfWork);
+        _handler = new UpdateServiceCommandHandler(_services, _parts, _priceChanges, _currentUser, _unitOfWork, new FakeTimeProvider());
+        _parts.ListByIdsAsync(Arg.Any<IReadOnlyCollection<Guid>>(), Arg.Any<CancellationToken>()).Returns(new List<Part>());
     }
 
     [Fact]
@@ -35,7 +44,19 @@ public sealed class UpdateServiceCommandHandlerTests
         Assert.Equal(180m, _service.BasePrice.Amount);
         Assert.Equal(60, _service.EstimatedMinutes);
         Assert.Equal(180m, result.Value.BasePrice);
+        Assert.Equal(15m, _service.CommissionPercent);
+        Assert.Equal(180, _service.WarrantyDays);
+        _priceChanges.Received(1).Add(Arg.Is<PriceChange>(change => change.OldValue == 100m && change.NewValue == 180m));
         await _unitOfWork.Received(1).CommitAsync(Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task Handle_SamePrice_DoesNotRecordPriceChange()
+    {
+        var result = await _handler.Handle(Command() with { BasePrice = 100m }, CancellationToken.None);
+
+        Assert.True(result.IsSuccess);
+        _priceChanges.Received(1).Add(null);
     }
 
     [Fact]
@@ -84,5 +105,13 @@ public sealed class UpdateServiceCommandHandlerTests
         Assert.Equal(CommonErrors.ConcurrencyConflict, result.Error);
     }
 
-    private UpdateServiceCommand Command() => new(_service.Id, "Alinhamento 3D", "Com balanceamento", 180m, 60);
+    [Fact]
+    public async Task Handle_UnknownUsualPart_ReturnsInvalidUsualParts()
+    {
+        var result = await _handler.Handle(Command() with { UsualParts = [new UsualPartInput(Guid.CreateVersion7(), 1m)] }, CancellationToken.None);
+
+        Assert.Equal(CatalogErrors.InvalidUsualParts, result.Error);
+    }
+
+    private UpdateServiceCommand Command() => new(_service.Id, "Alinhamento 3D", "Com balanceamento", 180m, 60, 15m, 180, []);
 }

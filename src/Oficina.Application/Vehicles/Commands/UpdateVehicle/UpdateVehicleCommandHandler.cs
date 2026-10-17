@@ -26,7 +26,7 @@ public sealed class UpdateVehicleCommandHandler(IVehicleRepository repository, I
             return invalidYear;
         }
 
-        if (vehicle.ChangeDetails(request.Brand, request.Model, year.Value, timeProvider.GetUtcNow()).Error is { } invalidDetails)
+        if (vehicle.ChangeDetails(request.Brand, request.Model, year.Value, request.Mileage, timeProvider.GetUtcNow()).Error is { } invalidDetails)
         {
             return invalidDetails;
         }

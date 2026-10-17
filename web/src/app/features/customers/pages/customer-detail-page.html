@@ -304,13 +304,15 @@
                     >
                       <ui-icon [icon]="icons.transfer" [size]="16" />
                     </button>
-                    <button
-                      uiIconButton
-                      [label]="vehicleText.remove(vehicle.licensePlate)"
-                      (click)="removeVehicle(vehicle)"
-                    >
-                      <ui-icon [icon]="icons.trash" [size]="16" />
-                    </button>
+                    @if (auth.can('customers.delete')) {
+                      <button
+                        uiIconButton
+                        [label]="vehicleText.remove(vehicle.licensePlate)"
+                        (click)="removeVehicle(vehicle)"
+                      >
+                        <ui-icon [icon]="icons.trash" [size]="16" />
+                      </button>
+                    }
                   </div>
                 </li>
               }

@@ -127,39 +127,39 @@ export interface PackageInputDto {
   } | null;
 }
 
+export type CatalogCollectionUrl = `/api/admin/${CatalogKind}`;
+
 export interface CatalogListData {
-  readonly url: '/api/admin/catalog/{kind}';
-  readonly path: { readonly kind: CatalogKind };
+  readonly url: CatalogCollectionUrl;
   readonly query: {
     readonly page: number;
     readonly pageSize: number;
     readonly term?: string;
     readonly status?: CatalogStatusDto;
+    readonly includeInactive?: boolean;
   };
 }
 
 export interface CatalogCreateData {
-  readonly url: '/api/admin/catalog/{kind}';
-  readonly path: { readonly kind: CatalogKind };
+  readonly url: CatalogCollectionUrl;
   readonly body: ServiceInputDto | PartInputDto | PackageInputDto;
 }
 
 export interface CatalogItemData {
-  readonly url: '/api/admin/catalog/{kind}/{id}';
-  readonly path: { readonly kind: CatalogKind; readonly id: string };
+  readonly url: `${CatalogCollectionUrl}/{id}`;
+  readonly path: { readonly id: string };
   readonly body?: ServiceInputDto | PartInputDto | PackageInputDto;
 }
 
 export interface CatalogActivationData {
-  readonly url: '/api/admin/catalog/{kind}/{id}/{action}';
+  readonly url: `${CatalogCollectionUrl}/{id}/{action}`;
   readonly path: {
-    readonly kind: CatalogKind;
     readonly id: string;
     readonly action: 'deactivate' | 'reactivate';
   };
 }
 
 export interface PriceHistoryData {
-  readonly url: '/api/admin/catalog/{kind}/{id}/price-history';
-  readonly path: { readonly kind: CatalogKind; readonly id: string };
+  readonly url: `${CatalogCollectionUrl}/{id}/price-history`;
+  readonly path: { readonly id: string };
 }

@@ -5,4 +5,4 @@ using Oficina.Domain.Common.Results;
 
 namespace Oficina.Application.Vehicles.Queries.ListVehicles;
 
-public sealed record ListVehiclesQuery(int Page, int PageSize, string? Plate) : IRequest<Result<PagedResult<VehicleDto>>>;
+public sealed record ListVehiclesQuery(int Page, int PageSize) : IRequest<Result<PagedResult<VehicleDto>>>;

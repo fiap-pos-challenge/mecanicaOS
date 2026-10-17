@@ -1043,13 +1043,13 @@
         }
       }
     },
-    "/api/admin/services": {
+    "/api/admin/packages": {
       "get": {
         "tags": [
-          "Services"
+          "Packages"
         ],
-        "summary": "List services",
-        "description": "Returns a page of services ordered by name. Only active services are listed unless includeInactive is true. Roles: Admin, Attendant.",
+        "summary": "List packages",
+        "description": "Returns a page of packages ordered by name, with items, current item prices, items total and savings. The term filters by name. The status filters active or inactive packages; without status, only active packages are listed unless includeInactive is true. Roles: Admin, Manager, Attendant, Mechanic.",
         "parameters": [
           {
             "name": "page",
@@ -1075,6 +1075,1198 @@
             "schema": {
               "type": "boolean",
               "default": false
+            }
+          },
+          {
+            "name": "term",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/CatalogStatus"
+            }
+          }
+        ],
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PackageDtoPagedResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Packages"
+        ],
+        "summary": "Create package",
+        "description": "Creates an active package with name, optional description, 1 to 50 active services or parts (no repetition, quantity greater than zero), price greater than zero and an optional mileage suggestion. The first price goes to the price history. Roles: Admin, Manager.",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PackageRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PackageRequest"
+              }
+            },
+            "application/*\u002Bjson": {
+              "schema": {
+                "$ref": "#/components/schemas/PackageRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PackageDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/packages/{id}": {
+      "get": {
+        "tags": [
+          "Packages"
+        ],
+        "summary": "Get package",
+        "description": "Returns one package, active or inactive, with items total and savings. Roles: Admin, Manager, Attendant, Mechanic.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PackageDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Packages"
+        ],
+        "summary": "Update package",
+        "description": "Replaces name, description, items, price and mileage suggestion of an active package. A new price goes to the price history. Inactive packages must be reactivated first. Roles: Admin, Manager.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PackageRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PackageRequest"
+              }
+            },
+            "application/*\u002Bjson": {
+              "schema": {
+                "$ref": "#/components/schemas/PackageRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PackageDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/packages/{id}/price-history": {
+      "get": {
+        "tags": [
+          "Packages"
+        ],
+        "summary": "Get package price history",
+        "description": "Returns the package price changes, newest first, with the author name. Roles: Admin, Manager, Attendant, Mechanic.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PriceHistoryDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/packages/{id}/deactivate": {
+      "post": {
+        "tags": [
+          "Packages"
+        ],
+        "summary": "Deactivate package",
+        "description": "Hides the package from the default listing and blocks changes. Roles: Admin, Manager.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "204": {
+            "description": "No Content"
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/packages/{id}/reactivate": {
+      "post": {
+        "tags": [
+          "Packages"
+        ],
+        "summary": "Reactivate package",
+        "description": "Returns an inactive package to the default listing and allows changes again. Roles: Admin, Manager.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "204": {
+            "description": "No Content"
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/parts": {
+      "get": {
+        "tags": [
+          "Parts"
+        ],
+        "summary": "List parts",
+        "description": "Returns a page of parts and supplies ordered by name. The term filters by name or exact code. The status filters active or inactive parts; without status, only active parts are listed unless includeInactive is true. The cost is returned only to Admin and Manager. Roles: Admin, Manager, Attendant, Mechanic.",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 1
+            }
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 20
+            }
+          },
+          {
+            "name": "includeInactive",
+            "in": "query",
+            "schema": {
+              "type": "boolean",
+              "default": false
+            }
+          },
+          {
+            "name": "term",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/CatalogStatus"
+            }
+          }
+        ],
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PartDtoPagedResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Parts"
+        ],
+        "summary": "Create part",
+        "description": "Creates an active part or supply with unique code, name, type, unit of measure, sale price, cost, minimum stock, optional supplier and optional EAN-13 barcode. The stock starts at zero. The first cost and price go to the price history. Roles: Admin, Manager.",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PartRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PartRequest"
+              }
+            },
+            "application/*\u002Bjson": {
+              "schema": {
+                "$ref": "#/components/schemas/PartRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PartDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/parts/{id}": {
+      "get": {
+        "tags": [
+          "Parts"
+        ],
+        "summary": "Get part",
+        "description": "Returns one part, active or inactive, with stock. The cost is returned only to Admin and Manager. Roles: Admin, Manager, Attendant, Mechanic.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PartDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Parts"
+        ],
+        "summary": "Update part",
+        "description": "Updates code, name, type, unit of measure, sale price, cost, minimum stock, supplier and barcode. The stock does not change here. New cost or price values go to the price history. Roles: Admin, Manager.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PartRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PartRequest"
+              }
+            },
+            "application/*\u002Bjson": {
+              "schema": {
+                "$ref": "#/components/schemas/PartRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PartDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/parts/{id}/price-history": {
+      "get": {
+        "tags": [
+          "Parts"
+        ],
+        "summary": "Get part price history",
+        "description": "Returns the cost and sale price changes of one part, newest first, with the author name. Cost changes are returned only to Admin and Manager. Roles: Admin, Manager, Attendant, Mechanic.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PriceHistoryDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/parts/{id}/deactivate": {
+      "post": {
+        "tags": [
+          "Parts"
+        ],
+        "summary": "Deactivate part",
+        "description": "Hides the part from the default listing and blocks new service order items. A part used by an active package returns 409 catalog.usedByActivePackage with the package names. Roles: Admin, Manager.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "204": {
+            "description": "No Content"
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/parts/{id}/reactivate": {
+      "post": {
+        "tags": [
+          "Parts"
+        ],
+        "summary": "Reactivate part",
+        "description": "Returns an inactive part to the default listing. Roles: Admin, Manager.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "204": {
+            "description": "No Content"
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/services": {
+      "get": {
+        "tags": [
+          "Services"
+        ],
+        "summary": "List services",
+        "description": "Returns a page of services ordered by name. The term filters by name or description. The status filters active or inactive services; without status, only active services are listed unless includeInactive is true. Roles: Admin, Manager, Attendant, Mechanic.",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 1
+            }
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 20
+            }
+          },
+          {
+            "name": "includeInactive",
+            "in": "query",
+            "schema": {
+              "type": "boolean",
+              "default": false
+            }
+          },
+          {
+            "name": "term",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/CatalogStatus"
             }
           }
         ],
@@ -1136,7 +2328,7 @@
           "Services"
         ],
         "summary": "Create service",
-        "description": "Creates an active catalog service with name, optional description, base price greater than zero and estimated time in minutes greater than zero. Role: Admin.",
+        "description": "Creates an active catalog service with name, optional description, base price greater than zero, estimated time in minutes greater than zero, commission from 0 to 50 percent, warranty from 0 to 3650 days and the parts usually used (existing parts, no repetition). The first price goes to the price history. Roles: Admin, Manager.",
         "requestBody": {
           "content": {
             "application/json": {
@@ -1216,7 +2408,7 @@
           "Services"
         ],
         "summary": "Get service",
-        "description": "Returns one service by id, active or inactive (see isActive). Roles: Admin, Attendant.",
+        "description": "Returns one service by id, active or inactive (see isActive). Roles: Admin, Manager, Attendant, Mechanic.",
         "parameters": [
           {
             "name": "id",
@@ -1286,7 +2478,7 @@
           "Services"
         ],
         "summary": "Update service",
-        "description": "Updates name, description, base price and estimated time of an active service. Inactive services must be reactivated first. Items already added to service orders keep their copied price. Role: Admin.",
+        "description": "Updates name, description, base price, estimated time, commission, warranty and usual parts of an active service. A new base price goes to the price history. Inactive services must be reactivated first. Items already added to service orders keep their copied price. Roles: Admin, Manager.",
         "parameters": [
           {
             "name": "id",
@@ -1391,13 +2583,85 @@
         }
       }
     },
+    "/api/admin/services/{id}/price-history": {
+      "get": {
+        "tags": [
+          "Services"
+        ],
+        "summary": "Get service price history",
+        "description": "Returns the base price changes of one service, newest first, with the author name. Roles: Admin, Manager, Attendant, Mechanic.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PriceHistoryDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/admin/services/{id}/deactivate": {
       "post": {
         "tags": [
           "Services"
         ],
         "summary": "Deactivate service",
-        "description": "Hides the service from the default listing, blocks changes and blocks new service order items. Items already added to service orders are kept. Role: Admin.",
+        "description": "Hides the service from the default listing, blocks changes and blocks new service order items. Items already added to service orders are kept. A service used by an active package returns 409 catalog.usedByActivePackage with the package names. Roles: Admin, Manager.",
         "parameters": [
           {
             "name": "id",
@@ -1472,7 +2736,7 @@
           "Services"
         ],
         "summary": "Reactivate service",
-        "description": "Returns an inactive service to the default listing and allows changes and new service order items again. Role: Admin.",
+        "description": "Returns an inactive service to the default listing and allows changes and new service order items again. Roles: Admin, Manager.",
         "parameters": [
           {
             "name": "id",
@@ -2426,7 +3690,7 @@
           "Vehicles"
         ],
         "summary": "List vehicles",
-        "description": "Returns a page of vehicles ordered by brand, optionally filtered by exact license plate. Roles: Admin, Attendant, Mechanic.",
+        "description": "Returns a page of vehicles ordered by brand. To find a vehicle by license plate, use POST /api/admin/vehicles/search. Roles: Admin, Manager, Attendant, Mechanic.",
         "parameters": [
           {
             "name": "page",
@@ -2444,13 +3708,6 @@
               "type": "integer",
               "format": "int32",
               "default": 20
-            }
-          },
-          {
-            "name": "plate",
-            "in": "query",
-            "schema": {
-              "type": "string"
             }
           }
         ],
@@ -2512,7 +3769,7 @@
           "Vehicles"
         ],
         "summary": "Create vehicle",
-        "description": "Creates a vehicle with license plate, brand, model and year for an existing customer. Roles: Admin, Attendant.",
+        "description": "Creates a vehicle with license plate, brand, model, year and mileage for an existing customer. Roles: Admin, Manager, Attendant.",
         "requestBody": {
           "content": {
             "application/json": {
@@ -2606,6 +3863,168 @@
         }
       }
     },
+    "/api/admin/customers/{customerId}/vehicles": {
+      "get": {
+        "tags": [
+          "Vehicles"
+        ],
+        "summary": "List customer vehicles",
+        "description": "Returns every vehicle of one customer, ordered by brand and model. Roles: Admin, Manager, Attendant, Mechanic.",
+        "parameters": [
+          {
+            "name": "customerId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VehicleListDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/vehicles/search": {
+      "post": {
+        "tags": [
+          "Vehicles"
+        ],
+        "summary": "Find vehicle by license plate",
+        "description": "Finds one vehicle by exact license plate. The plate goes in the body, never in the URL. Roles: Admin, Manager, Attendant, Mechanic.",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SearchVehicleRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SearchVehicleRequest"
+              }
+            },
+            "application/*\u002Bjson": {
+              "schema": {
+                "$ref": "#/components/schemas/SearchVehicleRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VehicleDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/admin/vehicles/{id}": {
       "get": {
         "tags": [
@@ -2682,7 +4101,7 @@
           "Vehicles"
         ],
         "summary": "Update vehicle",
-        "description": "Updates brand, model and year. The license plate and the owning customer cannot change. Roles: Admin, Attendant.",
+        "description": "Updates brand, model, year and mileage. The license plate cannot change; the owner changes through the transfer endpoint. Roles: Admin, Manager, Attendant.",
         "parameters": [
           {
             "name": "id",
@@ -2849,6 +4268,107 @@
           }
         }
       }
+    },
+    "/api/admin/vehicles/{id}/transfer": {
+      "post": {
+        "tags": [
+          "Vehicles"
+        ],
+        "summary": "Transfer vehicle",
+        "description": "Moves the vehicle to another existing customer, keeping its service order history. Roles: Admin, Manager, Attendant.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TransferVehicleRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TransferVehicleRequest"
+              }
+            },
+            "application/*\u002Bjson": {
+              "schema": {
+                "$ref": "#/components/schemas/TransferVehicleRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VehicleDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -2942,6 +4462,21 @@
         },
         "additionalProperties": false
       },
+      "CatalogItemKind": {
+        "enum": [
+          "Service",
+          "Part",
+          "Package"
+        ],
+        "type": "string"
+      },
+      "CatalogStatus": {
+        "enum": [
+          "Active",
+          "Inactive"
+        ],
+        "type": "string"
+      },
       "CreateCustomerRequest": {
         "type": "object",
         "properties": {
@@ -2988,6 +4523,21 @@
           "estimatedMinutes": {
             "type": "integer",
             "format": "int32"
+          },
+          "commissionPercent": {
+            "type": "number",
+            "format": "double"
+          },
+          "warrantyDays": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "usualParts": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/UsualPartRequest"
+            },
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -3016,7 +4566,11 @@
       "CreateVehicleRequest": {
         "type": "object",
         "properties": {
-          "plate": {
+          "customerId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "licensePlate": {
             "type": "string",
             "nullable": true
           },
@@ -3032,9 +4586,9 @@
             "type": "integer",
             "format": "int32"
           },
-          "customerId": {
-            "type": "string",
-            "format": "uuid"
+          "mileage": {
+            "type": "integer",
+            "format": "int32"
           }
         },
         "additionalProperties": false
@@ -3248,6 +4802,360 @@
         },
         "additionalProperties": false
       },
+      "PackageDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string",
+            "nullable": true
+          },
+          "description": {
+            "type": "string",
+            "nullable": true
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PackageItemDto"
+            },
+            "nullable": true
+          },
+          "price": {
+            "type": "number",
+            "format": "double"
+          },
+          "itemsTotal": {
+            "type": "number",
+            "format": "double"
+          },
+          "savings": {
+            "type": "number",
+            "format": "double"
+          },
+          "suggestion": {
+            "$ref": "#/components/schemas/PackageSuggestionDto"
+          },
+          "isActive": {
+            "type": "boolean"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "PackageDtoPagedResult": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PackageDto"
+            },
+            "nullable": true
+          },
+          "page": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "pageSize": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "totalItems": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "additionalProperties": false
+      },
+      "PackageItemBody": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "$ref": "#/components/schemas/CatalogItemKind"
+          },
+          "itemId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "quantity": {
+            "type": "number",
+            "format": "double"
+          }
+        },
+        "additionalProperties": false
+      },
+      "PackageItemDto": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "$ref": "#/components/schemas/CatalogItemKind"
+          },
+          "itemId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "quantity": {
+            "type": "number",
+            "format": "double"
+          },
+          "name": {
+            "type": "string",
+            "nullable": true
+          },
+          "unitPrice": {
+            "type": "number",
+            "format": "double"
+          }
+        },
+        "additionalProperties": false
+      },
+      "PackageRequest": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "nullable": true
+          },
+          "description": {
+            "type": "string",
+            "nullable": true
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PackageItemBody"
+            },
+            "nullable": true
+          },
+          "price": {
+            "type": "number",
+            "format": "double"
+          },
+          "suggestion": {
+            "$ref": "#/components/schemas/PackageSuggestionBody"
+          }
+        },
+        "additionalProperties": false
+      },
+      "PackageSuggestionBody": {
+        "type": "object",
+        "properties": {
+          "minMileage": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "maxMileage": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "PackageSuggestionDto": {
+        "type": "object",
+        "properties": {
+          "minMileage": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "maxMileage": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "PartDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "code": {
+            "type": "string",
+            "nullable": true
+          },
+          "name": {
+            "type": "string",
+            "nullable": true
+          },
+          "type": {
+            "$ref": "#/components/schemas/PartType"
+          },
+          "unitOfMeasure": {
+            "type": "string",
+            "nullable": true
+          },
+          "unitPrice": {
+            "type": "number",
+            "format": "double"
+          },
+          "cost": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "stockQuantity": {
+            "type": "number",
+            "format": "double"
+          },
+          "minimumStock": {
+            "type": "number",
+            "format": "double"
+          },
+          "supplier": {
+            "type": "string",
+            "nullable": true
+          },
+          "barcode": {
+            "type": "string",
+            "nullable": true
+          },
+          "isActive": {
+            "type": "boolean"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "PartDtoPagedResult": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PartDto"
+            },
+            "nullable": true
+          },
+          "page": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "pageSize": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "totalItems": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "additionalProperties": false
+      },
+      "PartRequest": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "nullable": true
+          },
+          "name": {
+            "type": "string",
+            "nullable": true
+          },
+          "type": {
+            "$ref": "#/components/schemas/PartType"
+          },
+          "unitOfMeasure": {
+            "type": "string",
+            "nullable": true
+          },
+          "unitPrice": {
+            "type": "number",
+            "format": "double"
+          },
+          "cost": {
+            "type": "number",
+            "format": "double"
+          },
+          "minimumStock": {
+            "type": "number",
+            "format": "double"
+          },
+          "supplier": {
+            "type": "string",
+            "nullable": true
+          },
+          "barcode": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "PartType": {
+        "enum": [
+          "Part",
+          "Supply"
+        ],
+        "type": "string"
+      },
+      "PriceChangeDto": {
+        "type": "object",
+        "properties": {
+          "field": {
+            "type": "string",
+            "nullable": true
+          },
+          "oldValue": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "newValue": {
+            "type": "number",
+            "format": "double"
+          },
+          "changedBy": {
+            "type": "string",
+            "nullable": true
+          },
+          "changedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "additionalProperties": false
+      },
+      "PriceHistoryDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PriceChangeDto"
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
       "ProblemDetails": {
         "type": "object",
         "properties": {
@@ -3358,6 +5266,16 @@
         },
         "additionalProperties": false
       },
+      "SearchVehicleRequest": {
+        "type": "object",
+        "properties": {
+          "licensePlate": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
       "SensitiveField": {
         "enum": [
           "Document",
@@ -3388,6 +5306,21 @@
           "estimatedMinutes": {
             "type": "integer",
             "format": "int32"
+          },
+          "commissionPercent": {
+            "type": "number",
+            "format": "double"
+          },
+          "warrantyDays": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "usualParts": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/UsualPartDto"
+            },
+            "nullable": true
           },
           "isActive": {
             "type": "boolean"
@@ -3447,6 +5380,16 @@
         ],
         "type": "string"
       },
+      "TransferVehicleRequest": {
+        "type": "object",
+        "properties": {
+          "newCustomerId": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "additionalProperties": false
+      },
       "UpdateCustomerRequest": {
         "type": "object",
         "properties": {
@@ -3489,6 +5432,21 @@
           "estimatedMinutes": {
             "type": "integer",
             "format": "int32"
+          },
+          "commissionPercent": {
+            "type": "number",
+            "format": "double"
+          },
+          "warrantyDays": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "usualParts": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/UsualPartRequest"
+            },
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -3518,6 +5476,10 @@
             "nullable": true
           },
           "year": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "mileage": {
             "type": "integer",
             "format": "int32"
           }
@@ -3598,6 +5560,34 @@
         ],
         "type": "string"
       },
+      "UsualPartDto": {
+        "type": "object",
+        "properties": {
+          "partId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "quantity": {
+            "type": "number",
+            "format": "double"
+          }
+        },
+        "additionalProperties": false
+      },
+      "UsualPartRequest": {
+        "type": "object",
+        "properties": {
+          "partId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "quantity": {
+            "type": "number",
+            "format": "double"
+          }
+        },
+        "additionalProperties": false
+      },
       "VehicleDetailDto": {
         "type": "object",
         "properties": {
@@ -3618,6 +5608,10 @@
             "nullable": true
           },
           "year": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "mileage": {
             "type": "integer",
             "format": "int32"
           },
@@ -3666,6 +5660,10 @@
             "type": "integer",
             "format": "int32"
           },
+          "mileage": {
+            "type": "integer",
+            "format": "int32"
+          },
           "customerId": {
             "type": "string",
             "format": "uuid"
@@ -3703,6 +5701,19 @@
           "totalItems": {
             "type": "integer",
             "format": "int32"
+          }
+        },
+        "additionalProperties": false
+      },
+      "VehicleListDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/VehicleDto"
+            },
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -3763,6 +5774,12 @@
     },
     {
       "name": "Customers"
+    },
+    {
+      "name": "Packages"
+    },
+    {
+      "name": "Parts"
     },
     {
       "name": "Services"

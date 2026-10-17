@@ -1,5 +1,7 @@
+using Oficina.Application.Catalog.Queries;
 using Oficina.Application.Common.Pagination;
 using Oficina.Domain.Catalog.Entities;
+using Oficina.Domain.Catalog.Enums;
 using Oficina.Domain.Common.ValueObjects;
 using Oficina.FunctionalTests.Fixtures;
 using Oficina.Infrastructure.Messaging.Outbox;
@@ -23,7 +25,7 @@ public sealed class ServiceQueriesTests(SqlServerFixture database) : IAsyncLifet
         await SaveAsync(NewService("Revisão"), NewService("Alinhamento"), NewService("Balanceamento"));
         await using var context = database.CreateContext(TimeProvider.System);
 
-        var page = await new ServiceQueries(context).ListAsync(new PageRequest(2, 2), includeInactive: false, CancellationToken);
+        var page = await new ServiceQueries(context).ListAsync(new PageRequest(2, 2), new CatalogFilter(null, true), CancellationToken);
 
         Assert.Equal("Revisão", Assert.Single(page.Items).Name);
         Assert.Equal(2, page.Page);
@@ -41,8 +43,8 @@ public sealed class ServiceQueriesTests(SqlServerFixture database) : IAsyncLifet
         await using var context = database.CreateContext(TimeProvider.System);
         var queries = new ServiceQueries(context);
 
-        var activeOnly = await queries.ListAsync(new PageRequest(1, 20), includeInactive: false, CancellationToken);
-        var all = await queries.ListAsync(new PageRequest(1, 20), includeInactive: true, CancellationToken);
+        var activeOnly = await queries.ListAsync(new PageRequest(1, 20), new CatalogFilter(null, true), CancellationToken);
+        var all = await queries.ListAsync(new PageRequest(1, 20), new CatalogFilter(null, null), CancellationToken);
 
         var active = Assert.Single(activeOnly.Items);
         Assert.Equal("Ativo", active.Name);
@@ -83,7 +85,53 @@ public sealed class ServiceQueriesTests(SqlServerFixture database) : IAsyncLifet
         Assert.Empty(context.ChangeTracker.Entries());
     }
 
-    private static Service NewService(string name) => Service.Create(name, null, Money.Create(100m).Value, 30).Value;
+    [Fact]
+    public async Task ListAsync_FiltersByTermAndStatus()
+    {
+        var inactive = NewService("Troca de pastilha");
+        inactive.Deactivate();
+        await SaveAsync(inactive, NewService("Troca de óleo"), NewService("Alinhamento"));
+        await using var context = database.CreateContext(TimeProvider.System);
+        var queries = new ServiceQueries(context);
+
+        var byTerm = await queries.ListAsync(new PageRequest(1, 20), new CatalogFilter("Troca", null), CancellationToken);
+        var inactiveOnly = await queries.ListAsync(new PageRequest(1, 20), new CatalogFilter(null, false), CancellationToken);
+
+        Assert.Equal(new[] { "Troca de óleo", "Troca de pastilha" }, byTerm.Items.Select(service => service.Name).ToArray());
+        Assert.Equal("Troca de pastilha", Assert.Single(inactiveOnly.Items).Name);
+    }
+
+    [Fact]
+    public async Task PriceHistory_ListAsync_ReturnsNewestFirstWithAuthorNameAndHidesCost()
+    {
+        var service = NewService("Alinhamento");
+        var author = TestData.User("autor.preco@oficina.com");
+        var partId = Guid.CreateVersion7();
+        await SaveAsync(service);
+        await using (var setup = database.CreateContext(TimeProvider.System))
+        {
+            setup.Users.Add(author);
+            setup.PriceChanges.Add(PriceChange.Record(CatalogItemKind.Service, service.Id, PriceField.BasePrice, null, Money.Create(100m).Value, null, DateTimeOffset.UnixEpoch)!);
+            setup.PriceChanges.Add(PriceChange.Record(CatalogItemKind.Service, service.Id, PriceField.BasePrice, Money.Create(100m).Value, Money.Create(120m).Value, author.Id, DateTimeOffset.UnixEpoch.AddDays(1))!);
+            setup.PriceChanges.Add(PriceChange.Record(CatalogItemKind.Part, partId, PriceField.Cost, null, Money.Create(10m).Value, null, DateTimeOffset.UnixEpoch)!);
+            setup.PriceChanges.Add(PriceChange.Record(CatalogItemKind.Part, partId, PriceField.UnitPrice, null, Money.Create(20m).Value, null, DateTimeOffset.UnixEpoch)!);
+            await setup.SaveChangesAsync(CancellationToken);
+        }
+
+        await using var context = database.CreateContext(TimeProvider.System);
+        var history = new PriceHistoryQueries(context);
+        var changes = await history.ListAsync(CatalogItemKind.Service, service.Id, includeCost: false, CancellationToken);
+
+        Assert.Equal(2, changes.Count);
+        Assert.Equal((100m, 120m, author.Name), (changes[0].OldValue!.Value, changes[0].NewValue, changes[0].ChangedBy));
+        Assert.Equal(PriceHistoryQueries.UnknownAuthor, changes[1].ChangedBy);
+        Assert.Null(changes[1].OldValue);
+        Assert.All(changes, change => Assert.Equal(nameof(PriceField.BasePrice), change.Field));
+        Assert.Equal("UnitPrice", Assert.Single(await history.ListAsync(CatalogItemKind.Part, partId, includeCost: false, CancellationToken)).Field);
+        Assert.Equal(2, (await history.ListAsync(CatalogItemKind.Part, partId, includeCost: true, CancellationToken)).Count);
+    }
+
+    private static Service NewService(string name) => Service.Create(name, null, Money.Create(100m).Value, 30, 10m, 90).Value;
 
     private async Task SaveAsync(params Service[] services)
     {

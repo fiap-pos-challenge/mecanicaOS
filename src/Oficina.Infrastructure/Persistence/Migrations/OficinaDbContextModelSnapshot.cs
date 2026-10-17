@@ -24,6 +24,109 @@ namespace Oficina.Infrastructure.Persistence.Migrations
 
             modelBuilder.HasSequence("serviceOrderNumbers");
 
+            modelBuilder.Entity("Oficina.Domain.Catalog.Entities.Package", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("id");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetimeoffset")
+                        .HasColumnName("createdAt");
+
+                    b.Property<DateTimeOffset?>("DeletedAt")
+                        .HasColumnType("datetimeoffset")
+                        .HasColumnName("deletedAt");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)")
+                        .HasColumnName("description");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit")
+                        .HasColumnName("isActive");
+
+                    b.Property<int?>("MaxMileage")
+                        .HasColumnType("int")
+                        .HasColumnName("maxMileage");
+
+                    b.Property<int?>("MinMileage")
+                        .HasColumnType("int")
+                        .HasColumnName("minMileage");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("nvarchar(120)")
+                        .HasColumnName("name");
+
+                    b.Property<decimal>("Price")
+                        .HasPrecision(12, 2)
+                        .HasColumnType("decimal(12,2)")
+                        .HasColumnName("price");
+
+                    b.Property<DateTimeOffset?>("UpdatedAt")
+                        .HasColumnType("datetimeoffset")
+                        .HasColumnName("updatedAt");
+
+                    b.HasKey("Id")
+                        .HasName("pk_packages");
+
+                    b.ToTable("packages", (string)null);
+                });
+
+            modelBuilder.Entity("Oficina.Domain.Catalog.Entities.PriceChange", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("id");
+
+                    b.Property<DateTimeOffset>("ChangedAt")
+                        .HasColumnType("datetimeoffset")
+                        .HasColumnName("changedAt");
+
+                    b.Property<Guid?>("ChangedBy")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("changedBy");
+
+                    b.Property<string>("Field")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(20)")
+                        .HasColumnName("field");
+
+                    b.Property<Guid>("ItemId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("itemId");
+
+                    b.Property<string>("Kind")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(10)")
+                        .HasColumnName("kind");
+
+                    b.Property<decimal>("NewValue")
+                        .HasPrecision(12, 2)
+                        .HasColumnType("decimal(12,2)")
+                        .HasColumnName("newValue");
+
+                    b.Property<decimal?>("OldValue")
+                        .HasPrecision(12, 2)
+                        .HasColumnType("decimal(12,2)")
+                        .HasColumnName("oldValue");
+
+                    b.HasKey("Id")
+                        .HasName("pk_priceChanges");
+
+                    b.HasIndex("Kind", "ItemId", "ChangedAt")
+                        .HasDatabaseName("ix_priceChanges_item");
+
+                    b.ToTable("priceChanges", (string)null);
+                });
+
             modelBuilder.Entity("Oficina.Domain.Catalog.Entities.Service", b =>
                 {
                     b.Property<Guid>("Id")
@@ -34,6 +137,11 @@ namespace Oficina.Infrastructure.Persistence.Migrations
                         .HasPrecision(12, 2)
                         .HasColumnType("decimal(12,2)")
                         .HasColumnName("basePrice");
+
+                    b.Property<decimal>("CommissionPercent")
+                        .HasPrecision(5, 2)
+                        .HasColumnType("decimal(5,2)")
+                        .HasColumnName("commissionPercent");
 
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("datetimeoffset")
@@ -64,6 +172,10 @@ namespace Oficina.Infrastructure.Persistence.Migrations
                     b.Property<DateTimeOffset?>("UpdatedAt")
                         .HasColumnType("datetimeoffset")
                         .HasColumnName("updatedAt");
+
+                    b.Property<int>("WarrantyDays")
+                        .HasColumnType("int")
+                        .HasColumnName("warrantyDays");
 
                     b.HasKey("Id")
                         .HasName("pk_services");
@@ -174,6 +286,10 @@ namespace Oficina.Infrastructure.Persistence.Migrations
                         .IsUnicode(false)
                         .HasColumnType("varchar(7)")
                         .HasColumnName("licensePlate");
+
+                    b.Property<int>("Mileage")
+                        .HasColumnType("int")
+                        .HasColumnName("mileage");
 
                     b.Property<string>("Model")
                         .IsRequired()
@@ -325,12 +441,23 @@ namespace Oficina.Infrastructure.Persistence.Migrations
                         .HasColumnType("uniqueidentifier")
                         .HasColumnName("id");
 
+                    b.Property<string>("Barcode")
+                        .HasMaxLength(13)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(13)")
+                        .HasColumnName("barcode");
+
                     b.Property<string>("Code")
                         .IsRequired()
                         .HasMaxLength(30)
                         .IsUnicode(false)
                         .HasColumnType("varchar(30)")
                         .HasColumnName("code");
+
+                    b.Property<decimal>("Cost")
+                        .HasPrecision(12, 2)
+                        .HasColumnType("decimal(12,2)")
+                        .HasColumnName("cost");
 
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("datetimeoffset")
@@ -359,6 +486,11 @@ namespace Oficina.Infrastructure.Persistence.Migrations
                         .HasPrecision(12, 3)
                         .HasColumnType("decimal(12,3)")
                         .HasColumnName("stockQuantity");
+
+                    b.Property<string>("Supplier")
+                        .HasMaxLength(120)
+                        .HasColumnType("nvarchar(120)")
+                        .HasColumnName("supplier");
 
                     b.Property<string>("Type")
                         .IsRequired()
@@ -891,6 +1023,100 @@ namespace Oficina.Infrastructure.Persistence.Migrations
                         .HasDatabaseName("ix_outboxMessages_processedAt");
 
                     b.ToTable("outboxMessages", (string)null);
+                });
+
+            modelBuilder.Entity("Oficina.Domain.Catalog.Entities.Package", b =>
+                {
+                    b.OwnsMany("Oficina.Domain.Catalog.Entities.PackageItem", "Items", b1 =>
+                        {
+                            b1.Property<Guid>("Id")
+                                .HasColumnType("uniqueidentifier")
+                                .HasColumnName("id");
+
+                            b1.Property<Guid>("ItemId")
+                                .HasColumnType("uniqueidentifier")
+                                .HasColumnName("itemId");
+
+                            b1.Property<string>("Kind")
+                                .IsRequired()
+                                .HasMaxLength(10)
+                                .IsUnicode(false)
+                                .HasColumnType("varchar(10)")
+                                .HasColumnName("kind");
+
+                            b1.Property<decimal>("Quantity")
+                                .HasPrecision(12, 3)
+                                .HasColumnType("decimal(12,3)")
+                                .HasColumnName("quantity");
+
+                            b1.Property<Guid>("packageId")
+                                .HasColumnType("uniqueidentifier")
+                                .HasColumnName("packageId");
+
+                            b1.HasKey("Id")
+                                .HasName("pk_packageItems");
+
+                            b1.HasIndex("packageId")
+                                .HasDatabaseName("ix_packageItems_packageId");
+
+                            b1.HasIndex("Kind", "ItemId")
+                                .HasDatabaseName("ix_packageItems_item");
+
+                            b1.ToTable("packageItems", (string)null);
+
+                            b1.WithOwner()
+                                .HasForeignKey("packageId")
+                                .HasConstraintName("fk_packageItems_packages_packageId");
+                        });
+
+                    b.Navigation("Items");
+                });
+
+            modelBuilder.Entity("Oficina.Domain.Catalog.Entities.Service", b =>
+                {
+                    b.OwnsMany("Oficina.Domain.Catalog.Entities.ServiceUsualPart", "UsualParts", b1 =>
+                        {
+                            b1.Property<Guid>("Id")
+                                .HasColumnType("uniqueidentifier")
+                                .HasColumnName("id");
+
+                            b1.Property<Guid>("PartId")
+                                .HasColumnType("uniqueidentifier")
+                                .HasColumnName("partId");
+
+                            b1.Property<decimal>("Quantity")
+                                .HasPrecision(12, 3)
+                                .HasColumnType("decimal(12,3)")
+                                .HasColumnName("quantity");
+
+                            b1.Property<Guid>("serviceId")
+                                .HasColumnType("uniqueidentifier")
+                                .HasColumnName("serviceId");
+
+                            b1.HasKey("Id")
+                                .HasName("pk_serviceUsualParts");
+
+                            b1.HasIndex("PartId")
+                                .HasDatabaseName("ix_serviceUsualParts_partId");
+
+                            b1.HasIndex("serviceId")
+                                .HasDatabaseName("ix_serviceUsualParts_serviceId");
+
+                            b1.ToTable("serviceUsualParts", (string)null);
+
+                            b1.HasOne("Oficina.Domain.Inventory.Entities.Part", null)
+                                .WithMany()
+                                .HasForeignKey("PartId")
+                                .OnDelete(DeleteBehavior.Restrict)
+                                .IsRequired()
+                                .HasConstraintName("fk_serviceUsualParts_parts_partId");
+
+                            b1.WithOwner()
+                                .HasForeignKey("serviceId")
+                                .HasConstraintName("fk_serviceUsualParts_services_serviceId");
+                        });
+
+                    b.Navigation("UsualParts");
                 });
 
             modelBuilder.Entity("Oficina.Domain.Customers.Entities.Customer", b =>

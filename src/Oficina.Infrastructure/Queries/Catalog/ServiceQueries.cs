@@ -15,9 +15,19 @@ public sealed class ServiceQueries(OficinaDbContext context) : IServiceQueries
         return service?.ToDto();
     }
 
-    public async Task<PagedResult<ServiceDto>> ListAsync(PageRequest page, bool includeInactive, CancellationToken cancellationToken)
+    public async Task<PagedResult<ServiceDto>> ListAsync(PageRequest page, CatalogFilter filter, CancellationToken cancellationToken)
     {
-        var services = context.Services.AsNoTracking().Where(service => includeInactive || service.IsActive);
+        var services = context.Services.AsNoTracking();
+        if (filter.IsActive is { } isActive)
+        {
+            services = services.Where(service => service.IsActive == isActive);
+        }
+
+        if (filter.Term is { } term)
+        {
+            services = services.Where(service => service.Name.Contains(term) || (service.Description != null && service.Description.Contains(term)));
+        }
+
         var totalItems = await services.CountAsync(cancellationToken);
         var items = await services
             .OrderBy(service => service.Name)

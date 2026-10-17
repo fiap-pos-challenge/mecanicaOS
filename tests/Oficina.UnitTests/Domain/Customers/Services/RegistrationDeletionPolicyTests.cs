@@ -70,5 +70,5 @@ public sealed class RegistrationDeletionPolicyTests
         Customer.Create("Maria Souza", Document.Create("52998224725").Value, null, Phone.Create("11987654321").Value, null).Value;
 
     private static Vehicle CreateVehicle() =>
-        Vehicle.Create(Guid.CreateVersion7(), LicensePlate.Create("ABC1234").Value, "Fiat", "Uno", VehicleYear.Create(2010).Value, Today).Value;
+        Vehicle.Create(Guid.CreateVersion7(), LicensePlate.Create("ABC1234").Value, "Fiat", "Uno", VehicleYear.Create(2010).Value, 0, Today).Value;
 }

@@ -16,6 +16,8 @@ public sealed class ServicesApiTests(SqlServerFixture database) : ApiTestBase(da
         description = "Inclui filtro",
         basePrice = 150.50m,
         estimatedMinutes = 45,
+        commissionPercent = 12.5m,
+        warrantyDays = 90,
     };
 
     [Fact]
@@ -33,16 +35,32 @@ public sealed class ServicesApiTests(SqlServerFixture database) : ApiTestBase(da
         Assert.Equal("Troca de óleo", fetched.GetProperty("name").GetString());
         Assert.Equal(150.50m, fetched.GetProperty("basePrice").GetDecimal());
         Assert.Equal(45, fetched.GetProperty("estimatedMinutes").GetInt32());
+        Assert.Equal(12.5m, fetched.GetProperty("commissionPercent").GetDecimal());
+        Assert.Equal(90, fetched.GetProperty("warrantyDays").GetInt32());
 
         using var updated = await admin.PutAsJsonAsync(
             $"/api/admin/services/{id}",
-            new { name = "Troca de óleo sintético", basePrice = 199.90m, estimatedMinutes = 50 },
+            new { name = "Troca de óleo sintético", basePrice = 199.90m, estimatedMinutes = 50, commissionPercent = 15m, warrantyDays = 180 },
             CancellationToken);
         Assert.Equal(HttpStatusCode.OK, updated.StatusCode);
         var updatedBody = await ReadJsonAsync(updated);
         Assert.Equal("Troca de óleo sintético", updatedBody.GetProperty("name").GetString());
         Assert.Equal(199.90m, updatedBody.GetProperty("basePrice").GetDecimal());
         Assert.Equal(System.Text.Json.JsonValueKind.Null, updatedBody.GetProperty("description").ValueKind);
+        Assert.Equal(180, updatedBody.GetProperty("warrantyDays").GetInt32());
+
+        var history = (await ReadJsonAsync(await attendant.GetAsync($"/api/admin/services/{id}/price-history", CancellationToken)))
+            .GetProperty("items").EnumerateArray().ToArray();
+        Assert.Equal(2, history.Length);
+        Assert.Equal(150.50m, history[0].GetProperty("oldValue").GetDecimal());
+        Assert.Equal(199.90m, history[0].GetProperty("newValue").GetDecimal());
+        Assert.Equal("BasePrice", history[0].GetProperty("field").GetString());
+        Assert.Equal(System.Text.Json.JsonValueKind.Null, history[1].GetProperty("oldValue").ValueKind);
+
+        var byTerm = await ReadJsonAsync(await attendant.GetAsync("/api/admin/services?term=sint", CancellationToken));
+        Assert.Equal(1, byTerm.GetProperty("totalItems").GetInt32());
+        var noTerm = await ReadJsonAsync(await attendant.GetAsync("/api/admin/services?term=alinhamento", CancellationToken));
+        Assert.Equal(0, noTerm.GetProperty("totalItems").GetInt32());
 
         var page = await ReadJsonAsync(await attendant.GetAsync("/api/admin/services?page=1&pageSize=10", CancellationToken));
         Assert.Equal(1, page.GetProperty("totalItems").GetInt32());
@@ -59,6 +77,8 @@ public sealed class ServicesApiTests(SqlServerFixture database) : ApiTestBase(da
         Assert.Equal(0, activePage.GetProperty("totalItems").GetInt32());
         var fullPage = await ReadJsonAsync(await attendant.GetAsync("/api/admin/services?includeInactive=true", CancellationToken));
         Assert.Equal(1, fullPage.GetProperty("totalItems").GetInt32());
+        var inactiveOnly = await ReadJsonAsync(await attendant.GetAsync("/api/admin/services?status=Inactive", CancellationToken));
+        Assert.Equal(1, inactiveOnly.GetProperty("totalItems").GetInt32());
 
         await AssertProblemAsync(
             await admin.PutAsJsonAsync($"/api/admin/services/{id}", NewService, CancellationToken),
@@ -84,6 +104,33 @@ public sealed class ServicesApiTests(SqlServerFixture database) : ApiTestBase(da
         var errors = (await ReadJsonAsync(response)).GetProperty("errors").EnumerateArray().ToArray();
         Assert.Equal(new[] { "name", "basePrice", "estimatedMinutes" }, errors.Select(error => error.GetProperty("field").GetString()).ToArray());
         Assert.Equal(CatalogErrors.InvalidBasePrice.Code, errors[1].GetProperty("code").GetString());
+    }
+
+    [Fact]
+    public async Task PriceHistory_UnknownService_Returns404()
+    {
+        using var admin = await ClientAsync(Role.Admin);
+
+        await AssertProblemAsync(
+            await admin.GetAsync($"/api/admin/services/{Guid.CreateVersion7()}/price-history", CancellationToken),
+            HttpStatusCode.NotFound,
+            CatalogErrors.NotFound.Code);
+    }
+
+    [Fact]
+    public async Task Create_InvalidTerms_Returns400()
+    {
+        using var admin = await ClientAsync(Role.Admin);
+
+        using var response = await admin.PostAsJsonAsync(
+            "/api/admin/services",
+            new { name = "Alinhamento", basePrice = 90m, estimatedMinutes = 30, commissionPercent = 60m, warrantyDays = -1 },
+            CancellationToken);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        var codes = (await ReadJsonAsync(response)).GetProperty("errors").EnumerateArray().Select(error => error.GetProperty("code").GetString()).ToArray();
+        Assert.Contains(CatalogErrors.InvalidCommissionPercent.Code, codes);
+        Assert.Contains(CatalogErrors.InvalidWarrantyDays.Code, codes);
     }
 
     [Fact]

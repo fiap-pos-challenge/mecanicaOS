@@ -12,11 +12,12 @@ import { demoApiInterceptor, demoFeatures, REAL_API_FEATURES } from './demo.inte
 import { DEMO_INTERCEPTORS, DEMO_MODE } from './demo-mode';
 
 describe('demo mode', () => {
-  it('keeps login, customers and users on the real API', () => {
+  it('keeps login, customers, users and vehicles on the real API', () => {
     expect(DEMO_MODE).toBe(true);
     expect(DEMO_INTERCEPTORS).toEqual([demoApiInterceptor]);
     expect(demoFeatures(FAKE_FEATURES)).not.toContain('customers');
-    expect(REAL_API_FEATURES).toEqual(['auth', 'customers', 'users']);
+    expect(demoFeatures(FAKE_FEATURES)).not.toContain('vehicles');
+    expect(REAL_API_FEATURES).toEqual(['auth', 'customers', 'users', 'vehicles']);
   });
 
   it('answers the pending features in the browser and lets the real ones through', async () => {

@@ -7,9 +7,9 @@ Sistema para oficinas mecânicas (back-end .NET e front-end Angular), feito no T
 
 Hoje o projeto tem:
 - o domínio completo (clientes, veículos, serviços, peças, estoque e ordem de serviço);
-- as 12 tabelas criadas por migrations;
-- a API de login e de cadastro de clientes, veículos e usuários, com JWT e perfis.
-- a API do catálogo de serviços (cadastro, alteração, desativação e reativação).
+- as 17 tabelas criadas por migrations;
+- a API de login e de cadastro de clientes, veículos (com quilometragem, busca por placa e transferência de dono) e usuários, com JWT e perfis;
+- a API do catálogo: serviços (comissão, garantia e peças usadas normalmente), peças e insumos (custo visível só para Admin e Manager, fornecedor e código de barras EAN-13) e pacotes (soma dos itens e economia), com filtros, histórico de preço, desativação e reativação.
 
 Ele está pronto para o grupo criar as demais APIs.
 
@@ -194,10 +194,10 @@ Abre em `http://localhost:4300` (o `web` normal continua em `http://localhost:42
 
 | Tela | Dados no modo demonstração |
 |---|---|
-| Login, sessão, Clientes (lista, ficha, cadastro), Equipe (lista, convite, ativar/desativar) | **Reais** (API) |
-| Veículos, resumo e histórico do cliente, endereço por CEP, importação e exportação | Fictícios |
+| Login, sessão, Clientes (lista, ficha, cadastro), Veículos do cliente, Equipe (lista, convite, ativar/desativar) | **Reais** (API) |
+| Resumo e histórico do cliente, endereço por CEP, importação e exportação | Fictícios |
 | Perfil profissional e permissões da equipe | Fictícios |
-| Catálogo, Estoque e inventário | Fictícios |
+| Catálogo (serviços, pacotes e peças, para manter os pacotes coerentes com os serviços), Estoque e inventário | Fictícios |
 | Orçamentos, Ordens de serviço, Modo mecânico, Documentos | Fictícios |
 | Portal do cliente (`/o/portal-demo-3324`, confirme com `321`) e verificação de documento | Fictícios |
 | Painel, Relatórios, "Pergunte aos seus dados" | Fictícios |
@@ -205,7 +205,7 @@ Abre em `http://localhost:4300` (o `web` normal continua em `http://localhost:42
 | Configurações (reautenticação: a senha do usuário ou o código `123456`) | Fictícios |
 | Tempo real (SignalR) | Desligado |
 
-Os dados fictícios ficam só na memória do navegador e voltam ao início ao recarregar a página. Os veículos e o histórico fictícios pertencem aos clientes fictícios, não aos clientes reais cadastrados pela API.
+Os dados fictícios ficam só na memória do navegador e voltam ao início ao recarregar a página. O histórico fictício pertence aos clientes fictícios, não aos clientes reais cadastrados pela API.
 
 **Garantia de que nada disso vai para produção:** a API simulada mora em `web/src/testing/` e só entra no build pela substituição de arquivo da configuração `demo` (`src/app/demo/demo-mode.ts` vira `src/testing/demo/demo-mode.ts`). O `npm run check:bundle` (no CI, depois do build de produção) falha se o pacote de produção tiver qualquer marcador da API simulada, e o CI também confere que o build `demo` contém a API simulada (`--expect-fake`), para a checagem não passar por engano.
 
@@ -253,20 +253,20 @@ features: {
   realtime: { api: 'pending' },
   session: { api: 'pending' },
   twoFactor: { api: 'pending' },
-  vehicles: { api: 'pending' },
+  vehicles: { api: 'http' },
   customerInsights: { api: 'pending' },
   addresses: { api: 'pending' },
   jobs: { api: 'pending' },
   teamProfiles: { api: 'pending' },
   roles: { api: 'pending' },
-  catalog: { api: 'pending' },
+  catalog: { api: 'http' },
   inventory: { api: 'pending' },
   quotes: { api: 'pending' },
 },
 ```
 
 - **Modo `pending`:** a porta responde na hora com o erro `feature.pending` (501). As telas continuam inteiras; o que depende da API mostra o bloco "Em construção" e cada ação mostra "Esta funcionalidade ainda está em construção no back-end." Nada é gravado e nenhum dado é inventado.
-- **Telas mistas:** a parte com API funciona normalmente. Ex.: clientes e ficha usam a API real; veículos, histórico, gasto e situação aparecem "Em construção".
+- **Telas mistas:** a parte com API funciona normalmente. Ex.: clientes, ficha e veículos usam a API real; histórico, gasto e situação aparecem "Em construção".
 
 **Quando o back-end publicar uma rota:**
 
@@ -387,7 +387,7 @@ Tela `/customers` (Admin e Attendant; o mecânico não vê o cadastro). No deskt
 
 | Contrato | Rotas | Erros tratados |
 |---|---|---|
-| Veículos (`customers/data/vehicles.contracts.ts`) | `GET /api/admin/customers/{customerId}/vehicles`, `POST /api/admin/vehicles`, `PUT` e `DELETE /api/admin/vehicles/{id}`, `POST /api/admin/vehicles/{id}/transfer`, `POST /api/admin/vehicles/search` (placa no corpo) | 400 placa inválida, 409 placa duplicada, 422 km menor, 422 mesmo dono, 409 OS aberta |
+| Veículos (`customers/data/vehicles.contracts.ts`) | `GET /api/admin/customers/{customerId}/vehicles`, `POST /api/admin/vehicles`, `PUT` e `DELETE /api/admin/vehicles/{id}`, `POST /api/admin/vehicles/{id}/transfer`, `POST /api/admin/vehicles/search` (placa no corpo) | 400 placa inválida, 409 placa duplicada (`vehicle.duplicatedLicensePlate`), 400 km menor (`vehicle.mileageDecrease`), 400 mesmo dono (`vehicle.sameOwner`), 409 OS aberta |
 | Resumo do cliente (`insights.contracts.ts`) | `POST /api/admin/customers/summaries` (até 500 ids), `GET /api/admin/customers/{id}/service-history` | 400, 403 |
 | CEP (`address-lookup.gateway.ts`) | `POST /api/addresses/lookup` | 400 CEP inválido, 404 CEP não encontrado |
 | Filas (`customer-jobs.contracts.ts`) | `POST /api/admin/customers/{id}/data-export` (202), `POST /api/admin/imports/customers` (202, `{ fileName, csv }`), `GET /api/admin/jobs/{id}` | 400 arquivo inválido, 413 acima de 2 MB, 404 tarefa |
@@ -428,15 +428,17 @@ Tela `/catalog` com abas que são rotas: `/catalog/services`, `/catalog/packages
 - **Caminhos tristes:** código duplicado (409 `inventory.duplicatePartCode` no campo), venda abaixo do custo (aviso e confirmação, sem bloquear) e desativar item usado em pacote ativo (409 `catalog.usedByActivePackage`, com os pacotes que bloqueiam).
 - **Cálculos** em centavos (`features/catalog/data/catalog.math.ts`): soma por linha com arredondamento half-up, economia, margem sobre o preço de venda e validação do EAN-13.
 
-**Contrato pronto para o B2** (hoje em `pending`; listas vazias com "Em construção" e salvar responde com a mensagem de construção) em `features/catalog/data/catalog.contracts.ts`, com base nas entidades `Service` e `Part` do domínio e os campos novos do catálogo (comissão, garantia, peças usuais, custo, fornecedor, código de barras e o pacote):
+**Tudo na API real** (`catalog: http`), com o mesmo formato nas três abas: `/api/admin/services`, `/api/admin/parts` e `/api/admin/packages`.
 
 | Rota | Perfis | Observação |
 |---|---|---|
-| `GET /api/admin/catalog/{services\|packages\|parts}?term=&status=&page=&pageSize=` | Todos da oficina | Paginado; `cost` só para Admin e Manager |
-| `GET /api/admin/catalog/{tipo}/{id}` | Todos da oficina | Pacote devolve `itemsTotal` e `savings` |
-| `POST` e `PUT /api/admin/catalog/{tipo}` e `/{id}` | Admin, Manager | 400 por campo, 409 código duplicado |
-| `POST /api/admin/catalog/{tipo}/{id}/deactivate` e `/reactivate` | Admin, Manager | 409 `catalog.usedByActivePackage` com `packages` |
-| `GET /api/admin/catalog/{tipo}/{id}/price-history` | Todos da oficina | Mudanças de custo só para Admin e Manager |
+| `GET /api/admin/{services\|parts\|packages}?term=&status=&includeInactive=&page=&pageSize=` | Todos da oficina | Paginado; `term` no nome (e no código exato da peça); sem `status`, só ativos, a não ser com `includeInactive=true`; `cost` da peça só para Admin e Manager |
+| `GET /api/admin/{tipo}/{id}` | Todos da oficina | Pacote devolve os itens com nome e preço atual, `itemsTotal` e `savings` |
+| `POST` e `PUT /api/admin/{tipo}` e `/{id}` | Admin, Manager | 400 por campo; 409 `inventory.duplicatePartCode` no campo `code`; serviço e pacote inativos recebem 409 até reativar |
+| `POST /api/admin/{tipo}/{id}/deactivate` e `/reactivate` | Admin, Manager | 409 `catalog.usedByActivePackage` com os nomes dos pacotes ativos no `detail` |
+| `GET /api/admin/{tipo}/{id}/price-history` | Todos da oficina | Do mais novo para o mais antigo, com o nome de quem mudou; mudanças de custo só para Admin e Manager |
+
+O histórico de preço fica na tabela `priceChanges` (serviço: preço base; peça: custo e preço de venda; pacote: preço). As peças usadas normalmente no serviço ficam em `serviceUsualParts` e os itens do pacote em `packageItems`.
 
 ### Estoque e inventário
 
@@ -655,8 +657,6 @@ Cada linha é o contrato que o front já usa, com a API simulada de referência 
 | Funcionalidade (chave) | Rotas | Contrato (corpo e resposta) | Erros tratados | Prompt |
 |---|---|---|---|---|
 | Sessão e 2FA (`session`, `twoFactor`) | `POST /api/auth/refresh` (cookie `HttpOnly`), `POST /api/auth/2fa/verify`, `POST /api/auth/logout`, `POST /api/auth/reauthenticate` | `core/auth/session.gateway.ts`, `features/auth/data/two-factor.gateway.ts`, `features/settings/data/settings.contracts.ts` | 401 `identity.invalidTwoFactorCode`, 422 `auth.reauthenticationFailed` | B1 |
-| Veículos (`vehicles`) | `GET`/`POST /api/admin/vehicles`, `GET`/`PUT`/`DELETE /vehicles/{id}`, `POST /vehicles/{id}/transfer`, `POST /vehicles/search`, `GET /api/admin/customers/{id}/vehicles` | `features/customers/data/vehicles.contracts.ts` | 409 `vehicle.duplicateLicensePlate`, 409 `vehicle.hasOpenServiceOrder` | B2 |
-| Catálogo (`catalog`) | `GET`/`POST /api/admin/catalog/{kind}`, `GET`/`PUT /catalog/{kind}/{id}`, `POST /{id}/deactivate` e `/reactivate`, `GET /{id}/price-history` | `features/catalog/data/catalog.contracts.ts` | 409 `catalog.alreadyActive`/`alreadyInactive` | B2 |
 | Endereço por CEP (`addresses`) | `POST /api/addresses/lookup` | `features/customers/data/address-lookup.gateway.ts` | 404 `address.zipCodeNotFound` | B2 |
 | Estoque (`inventory`) | `/api/admin/inventory/stock`, `/stock/{partId}/movements`, `/entries`, `/exits`, `/invoices/read` e `/confirm`, `/counts` (+ `/{id}`, `/{id}/lines`, `/{id}/{action}`), `/purchase-orders` (+ `/suggestions`, `/{id}/send`), `/suppliers` (+ `/{id}`), `/barcodes/lookup` | `features/inventory/data/inventory.contracts.ts` | 409 `inventory.*` (contagem aberta, fechada, pedido enviado, duplicados), 404 `inventory.unknownBarcode` | B3 |
 | Resumo e histórico do cliente (`customerInsights`) | `POST /api/admin/customers/summaries`, `GET /api/admin/customers/{id}/service-history` | `features/customers/data/insights.contracts.ts` | | B4 |
@@ -674,7 +674,7 @@ Cada linha é o contrato que o front já usa, com a API simulada de referência 
 | Pergunte aos seus dados (`assistant`) | `POST /api/admin/assistant/report-definitions` | `features/reports/data/assistant.gateway.ts` | 422 `assistant.notUnderstood` | B8 |
 | Tempo real (`realtime`) | hub SignalR `/api/hubs/realtime`, evento `event` (`serviceOrderStatusChanged`, `paymentConfirmed`, `exportReady`, `notification`) | `core/realtime/realtime.gateway.ts` | | B7 |
 
-Observação: a `develop` já entregou parte do B2 (`/api/admin/vehicles` e `/api/admin/services`). As rotas e os campos são diferentes dos contratos acima (por exemplo, serviços em `/api/admin/services` e não em `/api/admin/catalog/services`); ao ligar `vehicles` e `catalog`, ajuste os contratos do front ou combine com o grupo qual lado muda.
+Veículos (`vehicles`) e o catálogo inteiro (`catalog`: serviços, peças e pacotes) já estão ligados à API real.
 
 ### Mudanças de infraestrutura e decisões registradas
 
@@ -690,9 +690,9 @@ O `npm run e2e` sobe uma stack descartável (`web/e2e/docker-compose.e2e.yml`, p
 
 - Na preparação, o teste entra como `admin@oficina.local` e cria pela API um atendente, um mecânico e um usuário desativado (senha `Oficina@2026`, somente teste).
 - Cobre: login, senha errada, conta desativada, bloqueio após 5 erros, menu por perfil, rota proibida por URL, volta ao endereço pedido, logout, recarga da página e inatividade (relógio simulado).
-- Clientes, contra a API real: criar, revelar, editar, buscar, excluir, documento inválido e duplicado (409), envio desabilitado sem consentimento. Veículos, resumo e histórico mostram "Em construção" e salvar veículo responde com a mensagem de construção. Tudo em desktop e celular.
+- Clientes, contra a API real: criar, revelar, editar, buscar, excluir, documento inválido e duplicado (409), envio desabilitado sem consentimento. Veículos contra a API real: cadastrar e editar, com a quilometragem menor recusada no campo. Resumo e histórico mostram "Em construção". Tudo em desktop e celular.
 - Equipe, contra a API real: convidar, ler o link no arquivo `.eml` que a API grava em `web/e2e/.mail/` (pasta montada no container e apagada no fim), criar a senha, entrar com o convidado, link já usado, e-mail repetido, desativar e reativar e o Admin sem poder se desativar. Perfil profissional e permissões mostram "Em construção".
-- Catálogo e estoque sem API: abas vazias com "Em construção", formulários e diálogos completos (entrada em três modos, inventário no celular, fornecedores) respondendo com a mensagem de construção, e mecânico sem custos nem movimentação.
+- Catálogo contra a API real: cadastrar serviço e alterar o preço com histórico, cadastrar peça com margem e histórico de custo e venda, código repetido recusado, montar pacote com economia e desativar peça usada em pacote bloqueado com o nome do pacote. Estoque sem API: telas vazias com "Em construção", formulários e diálogos completos (entrada em três modos, inventário no celular, fornecedores) respondendo com a mensagem de construção, e mecânico sem custos nem movimentação.
 - Orçamentos sem API: o build do E2E usa `--configuration production,e2e` (mesma imagem nginx; o `environment.e2e.ts` só troca `quotes` para `http`) e o teste responde `/api/admin/quotes/**` com `page.route`, usando a mesma API simulada dos testes unitários (o contrato do B4). Cobre, em desktop e celular: novo orçamento a partir da OS, montador com aviso de estoque, regra automática, desconto acima do limite com pedido de aprovação, pagamento com parcelas, rascunho salvo, pré-visualização, envio que falha e é reenviado até "aberto pelo cliente", aprovação no balcão, recusa com motivo, nova versão, comparação de versões, preço alterado no catálogo e link expirado.
 - Ordens de serviço, modo mecânico, portal e documentos sem API: o `environment.e2e.ts` também liga `serviceOrders`, `portal` e `documents`, e o `page.route` responde com a mesma API simulada. Cobre, em desktop e celular: arrastar no quadro (mouse no desktop, toque no celular), transição bloqueada, mover pelo teclado, lista, agenda, detalhe, conflito de versão, modo mecânico offline com a fila no IndexedDB e a sincronização na volta da rede, PWA (manifesto, service worker, abrir sem rede e cache e fila apagados no logout), portal (tela neutra para link inválido e expirado, bloqueio após 3 erros, aprovação parcial com Pix, cartão recusado na volta do provedor, recusa com motivo) e o recibo baixado e verificado.
 - Painel e relatórios sem API: o `environment.e2e.ts` liga `dashboard` e `reports`, e o `page.route` responde com a mesma API simulada (contrato do B7). Cobre, em desktop e celular: indicadores e gráficos desenhados de verdade (canvas, sem erro de CSP ou Trusted Types), ação direta de um aviso, troca de período, painel personalizado e mantido ao voltar à tela, construtor com agrupamento desabilitado, combinação incompatível, período sem dados, salvar, agendar, exportar até o link de download, exportação grande na fila e excluir.
@@ -801,17 +801,30 @@ Fora de Development, a API não cria o Admin de teste e não publica o Swagger. 
 | `POST /api/admin/customers/query` | Admin, Manager, Attendant | 200 paginado; `term` (nome ou CPF/CNPJ completo), `documentType`, `sort` (Name, CreatedAt) e `direction` no corpo |
 | `POST /api/admin/customers/{id}/reveal` | Admin, Manager, Attendant | 200 com o campo aberto (`Document`, `Email` ou `Phone`); grava quem viu, quando e por quê |
 | `DELETE /api/admin/customers/{id}` | Admin | 204 |
-| `GET /api/admin/vehicles?page=1&pageSize=20&plate=` | Admin, Attendant, Mechanic | 200 com `{ items, page, pageSize, totalItems }` (`plate` filtra pela placa exata) |
-| `POST /api/admin/vehicles` | Admin, Attendant | 201 |
-| `GET /api/admin/vehicles/{id}` | Admin, Attendant, Mechanic | 200 com dono (id e nome) e histórico de ordens de serviço |
-| `PUT /api/admin/vehicles/{id}` | Admin, Attendant | 200 |
+| `GET /api/admin/vehicles?page=1&pageSize=20` | Admin, Manager, Attendant, Mechanic | 200 com `{ items, page, pageSize, totalItems }` |
+| `POST /api/admin/vehicles/search` | Admin, Manager, Attendant, Mechanic | 200 com o veículo (placa no corpo, nunca na URL); 404 `vehicle.notFound` |
+| `GET /api/admin/customers/{id}/vehicles` | Admin, Manager, Attendant, Mechanic | 200 com `{ items }` |
+| `POST /api/admin/vehicles` | Admin, Manager, Attendant | 201; `licensePlate`, `brand`, `model`, `year` e `mileage` (0 a 9.999.999) |
+| `GET /api/admin/vehicles/{id}` | Admin, Manager, Attendant, Mechanic | 200 com dono (id e nome) e histórico de ordens de serviço |
+| `PUT /api/admin/vehicles/{id}` | Admin, Manager, Attendant | 200; quilometragem menor recebe 400 `vehicle.mileageDecrease` |
+| `POST /api/admin/vehicles/{id}/transfer` | Admin, Manager, Attendant | 200; `newCustomerId` no corpo; mesmo dono recebe 400 `vehicle.sameOwner` |
 | `DELETE /api/admin/vehicles/{id}` | Admin | 204 |
-| `GET /api/admin/services?page=1&pageSize=20&includeInactive=false` | Admin, Attendant | 200 com `{ items, page, pageSize, totalItems }` (só ativos, a não ser com `includeInactive=true`) |
-| `POST /api/admin/services` | Admin | 201 |
-| `GET /api/admin/services/{id}` | Admin, Attendant | 200 (ativo ou inativo, indicado em `isActive`) |
-| `PUT /api/admin/services/{id}` | Admin | 200 (serviço inativo recebe 409; reative antes de alterar) |
-| `POST /api/admin/services/{id}/deactivate` | Admin | 204 |
-| `POST /api/admin/services/{id}/reactivate` | Admin | 204 |
+| `GET /api/admin/services?page=1&pageSize=20&term=&status=&includeInactive=false` | Admin, Manager, Attendant, Mechanic | 200 com `{ items, page, pageSize, totalItems }`; `term` busca no nome e na descrição; `status` (`Active`, `Inactive`) filtra; sem `status`, só ativos, a não ser com `includeInactive=true` |
+| `POST /api/admin/services` | Admin, Manager | 201; `commissionPercent` (0 a 50) e `warrantyDays` (0 a 3650); grava o preço inicial no histórico |
+| `GET /api/admin/services/{id}` | Admin, Manager, Attendant, Mechanic | 200 (ativo ou inativo, indicado em `isActive`) |
+| `GET /api/admin/services/{id}/price-history` | Admin, Manager, Attendant, Mechanic | 200 com `{ items }` do mais novo para o mais antigo (`field`, `oldValue`, `newValue`, `changedBy`, `changedAt`) |
+| `PUT /api/admin/services/{id}` | Admin, Manager | 200 (serviço inativo recebe 409; reative antes de alterar); preço novo vai para o histórico |
+| `POST /api/admin/services/{id}/deactivate` | Admin, Manager | 204 |
+| `POST /api/admin/services/{id}/reactivate` | Admin, Manager | 204 |
+| `GET /api/admin/parts?page=1&pageSize=20&term=&status=&includeInactive=false` | Admin, Manager, Attendant, Mechanic | 200 paginado; `cost` só para Admin e Manager |
+| `POST /api/admin/parts` | Admin, Manager | 201; `code` único (409 `inventory.duplicatePartCode`), `barcode` EAN-13 opcional; grava custo e venda no histórico |
+| `GET /api/admin/parts/{id}` e `/price-history` | Admin, Manager, Attendant, Mechanic | 200; custo e mudanças de custo só para Admin e Manager |
+| `PUT /api/admin/parts/{id}` | Admin, Manager | 200; o estoque não muda aqui |
+| `POST /api/admin/parts/{id}/deactivate` e `/reactivate` | Admin, Manager | 204; peça em pacote ativo recebe 409 `catalog.usedByActivePackage` |
+| `GET /api/admin/packages?page=1&pageSize=20&term=&status=&includeInactive=false` | Admin, Manager, Attendant, Mechanic | 200 paginado com `itemsTotal` e `savings` |
+| `POST /api/admin/packages` e `PUT /api/admin/packages/{id}` | Admin, Manager | 201/200; 1 a 50 serviços ou peças ativos, sem repetir; `suggestion { minMileage, maxMileage }` opcional |
+| `GET /api/admin/packages/{id}` e `/price-history` | Admin, Manager, Attendant, Mechanic | 200 |
+| `POST /api/admin/packages/{id}/deactivate` e `/reactivate` | Admin, Manager | 204 |
 | `GET /api/admin/users` | Admin | 200 |
 | `POST /api/admin/users` | Admin | 201 |
 | `GET /api/admin/users/{id}` | Admin | 200 |
@@ -864,9 +877,7 @@ Detalhes das convenções: [instructions/arquitetura.md](instructions/arquitetur
 ## Próximos passos (para o grupo)
 
 O domínio e as tabelas já existem. Faltam as APIs de:
-- serviços;
-- veículos;
-- peças e estoque;
+- estoque (entradas, saídas, contagens, fornecedores e pedidos de compra; o front já tem o contrato em `inventory.contracts.ts`);
 - ordens de serviço (abertura, diagnóstico, orçamento, aprovação, execução, finalização e entrega);
 - consulta pública da OS pelo cliente;
 - métricas.

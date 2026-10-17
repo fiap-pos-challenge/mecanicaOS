@@ -24,6 +24,27 @@ public static class InventoryErrors
         "O estoque mínimo não pode ser negativo e deve ter no máximo 3 casas decimais.",
         ErrorType.Validation);
 
+    public static readonly Error InvalidSupplier = new(
+        "inventory.invalidSupplier",
+        "Informe o fornecedor com até 120 caracteres.",
+        ErrorType.Validation);
+
+    public static readonly Error InvalidBarcode = new(
+        "inventory.invalidBarcode",
+        "Informe um código de barras EAN-13 válido.",
+        ErrorType.Validation);
+
+    public static readonly Error DuplicatePartCode = new(
+        "inventory.duplicatePartCode",
+        "Já existe uma peça ou insumo com este código.",
+        ErrorType.Conflict,
+        [new FieldError("code", "inventory.duplicatePartCode", "Já existe uma peça ou insumo com este código.")]);
+
+    public static readonly Error NotFound = new(
+        "inventory.partNotFound",
+        "Peça ou insumo não encontrado.",
+        ErrorType.NotFound);
+
     public static readonly Error InvalidReason = new(
         "inventory.invalidReason",
         "Informe o motivo da movimentação de estoque.",

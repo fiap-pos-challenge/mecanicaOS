@@ -1,4 +1,5 @@
 import { messages } from '../../../app/core/i18n/messages.pt-BR';
+import { FakeRequest, FakeResult } from '../fake-request';
 import { FakeBackendState, FakeFeatureApi } from '../fake-api/fake-backend';
 import {
   created,
@@ -33,6 +34,22 @@ export const CATALOG_PATHS = {
 } as const;
 
 type Kind = 'services' | 'packages' | 'parts';
+
+const PUBLISHED_PATH = /^\/api\/admin\/(services|packages|parts)(\/.*)?$/;
+
+function toCatalogPath(path: string): string {
+  return path.replace(PUBLISHED_PATH, '/api/admin/catalog/$1$2');
+}
+
+class CatalogRouter extends FakeRouter {
+  override handles(path: string, method?: string): boolean {
+    return super.handles(toCatalogPath(path), method);
+  }
+
+  override dispatch(request: FakeRequest): FakeResult | null {
+    return super.dispatch({ ...request, path: toCatalogPath(request.path) });
+  }
+}
 type FieldErrors = ReturnType<typeof fieldError>[];
 
 const readers: readonly FakeRole[] = ['Admin', 'Manager', 'Attendant', 'Mechanic'];
@@ -364,7 +381,7 @@ export function createCatalogFakeApi(state: FakeBackendState): FakeFeatureApi {
         };
   };
 
-  const router = new FakeRouter()
+  const router = new CatalogRouter()
     .on('GET', CATALOG_PATHS.collection, (request, params) => {
       const principal = authorize(request, users(), readers);
       const kind = readKind(params['kind']);

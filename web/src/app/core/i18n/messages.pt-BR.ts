@@ -2300,7 +2300,7 @@ export const messages = {
     production: 'Perfil profissional e produtividade ainda estão em construção no back-end.',
     roles: 'As permissões por perfil virão do back-end, ainda em construção.',
     catalog:
-      'O catálogo ainda está em construção no back-end. Os itens aparecem aqui quando a API for publicada.',
+      'Pacotes e peças ainda estão em construção no back-end. Os itens aparecem aqui quando a API for publicada.',
     priceHistory: 'O histórico de preço ainda está em construção no back-end.',
     inventory:
       'O estoque ainda está em construção no back-end. Os dados aparecem aqui quando a API for publicada.',

@@ -28,7 +28,7 @@ function resolve(environment: AppEnvironment, custom = false): SampleGateway {
   TestBed.configureTestingModule({
     providers: [
       { provide: APP_ENVIRONMENT, useValue: environment },
-      provideGateway(SampleGateway, 'catalog', {
+      provideGateway(SampleGateway, 'inventory', {
         http: HttpSampleGateway,
         ...(custom ? { pending: PendingSampleGateway } : {}),
       }),

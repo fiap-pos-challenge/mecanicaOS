@@ -1,17 +1,20 @@
 using Oficina.Application.Catalog.Dtos;
 using Oficina.Domain.Catalog.Entities;
-using Oficina.Domain.Common.ValueObjects;
-using Riok.Mapperly.Abstractions;
 
 namespace Oficina.Application.Catalog.Mappers;
 
-[Mapper]
-public static partial class ServiceMapper
+public static class ServiceMapper
 {
-    [MapperIgnoreSource(nameof(Service.DomainEvents))]
-    [MapperIgnoreSource(nameof(Service.DeletedAt))]
-    [MapperIgnoreSource(nameof(Service.IsDeleted))]
-    public static partial ServiceDto ToDto(this Service service);
-
-    private static decimal MoneyToDecimal(Money money) => money.Amount;
+    public static ServiceDto ToDto(this Service service) => new(
+        service.Id,
+        service.Name,
+        service.Description,
+        service.BasePrice.Amount,
+        service.EstimatedMinutes,
+        service.CommissionPercent,
+        service.WarrantyDays,
+        service.UsualParts.Select(part => new UsualPartDto(part.PartId, part.Quantity.Value)).ToList(),
+        service.IsActive,
+        service.CreatedAt,
+        service.UpdatedAt);
 }

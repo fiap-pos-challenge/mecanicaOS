@@ -69,12 +69,17 @@ public static class InfrastructureExtensions
         services.AddScoped<IVehicleRepository, VehicleRepository>();
         services.AddScoped<IServiceRepository, ServiceRepository>();
         services.AddScoped<IPartRepository, PartRepository>();
+        services.AddScoped<IPackageRepository, PackageRepository>();
+        services.AddScoped<IPriceChangeRepository, PriceChangeRepository>();
         services.AddScoped<IUserRepository, UserRepository>();
         services.AddScoped<IServiceOrderRepository, ServiceOrderRepository>();
         services.AddScoped<ISensitiveDataAccessRepository, SensitiveDataAccessRepository>();
         services.AddScoped<IUserInvitationRepository, UserInvitationRepository>();
         services.AddScoped<ICustomerQueries, CustomerQueries>();
         services.AddScoped<IServiceQueries, ServiceQueries>();
+        services.AddScoped<IPartQueries, PartQueries>();
+        services.AddScoped<IPackageQueries, PackageQueries>();
+        services.AddScoped<IPriceHistoryQueries, PriceHistoryQueries>();
         services.AddScoped<IUserQueries, UserQueries>();
         services.AddScoped<IVehicleQueries, VehicleQueries>();
 

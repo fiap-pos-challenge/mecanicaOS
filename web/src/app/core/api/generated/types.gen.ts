@@ -31,6 +31,10 @@ export type AddressRequest = {
     state?: string | null;
 };
 
+export type CatalogItemKind = 'Service' | 'Part' | 'Package';
+
+export type CatalogStatus = 'Active' | 'Inactive';
+
 export type CreateCustomerRequest = {
     name?: string | null;
     document?: string | null;
@@ -45,6 +49,9 @@ export type CreateServiceRequest = {
     description?: string | null;
     basePrice?: number;
     estimatedMinutes?: number;
+    commissionPercent?: number;
+    warrantyDays?: number;
+    usualParts?: Array<UsualPartRequest> | null;
 };
 
 export type CreateUserRequest = {
@@ -55,11 +62,12 @@ export type CreateUserRequest = {
 };
 
 export type CreateVehicleRequest = {
-    plate?: string | null;
+    customerId?: string;
+    licensePlate?: string | null;
     brand?: string | null;
     model?: string | null;
     year?: number;
-    customerId?: string;
+    mileage?: number;
 };
 
 export type CurrentUserDto = {
@@ -131,6 +139,109 @@ export type MessagingConsentRequest = {
     email?: boolean;
 };
 
+export type PackageDto = {
+    id?: string;
+    name?: string | null;
+    description?: string | null;
+    items?: Array<PackageItemDto> | null;
+    price?: number;
+    itemsTotal?: number;
+    savings?: number;
+    suggestion?: PackageSuggestionDto;
+    isActive?: boolean;
+    createdAt?: string;
+    updatedAt?: string | null;
+};
+
+export type PackageDtoPagedResult = {
+    items?: Array<PackageDto> | null;
+    page?: number;
+    pageSize?: number;
+    totalItems?: number;
+};
+
+export type PackageItemBody = {
+    kind?: CatalogItemKind;
+    itemId?: string;
+    quantity?: number;
+};
+
+export type PackageItemDto = {
+    kind?: CatalogItemKind;
+    itemId?: string;
+    quantity?: number;
+    name?: string | null;
+    unitPrice?: number;
+};
+
+export type PackageRequest = {
+    name?: string | null;
+    description?: string | null;
+    items?: Array<PackageItemBody> | null;
+    price?: number;
+    suggestion?: PackageSuggestionBody;
+};
+
+export type PackageSuggestionBody = {
+    minMileage?: number | null;
+    maxMileage?: number | null;
+};
+
+export type PackageSuggestionDto = {
+    minMileage?: number | null;
+    maxMileage?: number | null;
+};
+
+export type PartDto = {
+    id?: string;
+    code?: string | null;
+    name?: string | null;
+    type?: PartType;
+    unitOfMeasure?: string | null;
+    unitPrice?: number;
+    cost?: number | null;
+    stockQuantity?: number;
+    minimumStock?: number;
+    supplier?: string | null;
+    barcode?: string | null;
+    isActive?: boolean;
+    createdAt?: string;
+    updatedAt?: string | null;
+};
+
+export type PartDtoPagedResult = {
+    items?: Array<PartDto> | null;
+    page?: number;
+    pageSize?: number;
+    totalItems?: number;
+};
+
+export type PartRequest = {
+    code?: string | null;
+    name?: string | null;
+    type?: PartType;
+    unitOfMeasure?: string | null;
+    unitPrice?: number;
+    cost?: number;
+    minimumStock?: number;
+    supplier?: string | null;
+    barcode?: string | null;
+};
+
+export type PartType = 'Part' | 'Supply';
+
+export type PriceChangeDto = {
+    field?: string | null;
+    oldValue?: number | null;
+    newValue?: number;
+    changedBy?: string | null;
+    changedAt?: string;
+};
+
+export type PriceHistoryDto = {
+    items?: Array<PriceChangeDto> | null;
+};
+
 export type ProblemDetails = {
     type?: string | null;
     title?: string | null;
@@ -169,6 +280,10 @@ export type SearchUserRequest = {
     email?: string | null;
 };
 
+export type SearchVehicleRequest = {
+    licensePlate?: string | null;
+};
+
 export type SensitiveField = 'Document' | 'Email' | 'Phone';
 
 export type ServiceDto = {
@@ -177,6 +292,9 @@ export type ServiceDto = {
     description?: string | null;
     basePrice?: number;
     estimatedMinutes?: number;
+    commissionPercent?: number;
+    warrantyDays?: number;
+    usualParts?: Array<UsualPartDto> | null;
     isActive?: boolean;
     createdAt?: string;
     updatedAt?: string | null;
@@ -193,6 +311,10 @@ export type ServiceOrderStatus = 'Received' | 'InDiagnosis' | 'WaitingApproval' 
 
 export type SortDirection = 'Asc' | 'Desc';
 
+export type TransferVehicleRequest = {
+    newCustomerId?: string;
+};
+
 export type UpdateCustomerRequest = {
     name?: string | null;
     email?: string | null;
@@ -206,6 +328,9 @@ export type UpdateServiceRequest = {
     description?: string | null;
     basePrice?: number;
     estimatedMinutes?: number;
+    commissionPercent?: number;
+    warrantyDays?: number;
+    usualParts?: Array<UsualPartRequest> | null;
 };
 
 export type UpdateUserRequest = {
@@ -217,6 +342,7 @@ export type UpdateVehicleRequest = {
     brand?: string | null;
     model?: string | null;
     year?: number;
+    mileage?: number;
 };
 
 export type UserDto = {
@@ -240,12 +366,23 @@ export type UserDtoPagedResult = {
 
 export type UserStatus = 'Active' | 'Inactive' | 'InvitationPending';
 
+export type UsualPartDto = {
+    partId?: string;
+    quantity?: number;
+};
+
+export type UsualPartRequest = {
+    partId?: string;
+    quantity?: number;
+};
+
 export type VehicleDetailDto = {
     id?: string;
     model?: string | null;
     brand?: string | null;
     licensePlate?: string | null;
     year?: number;
+    mileage?: number;
     owner?: VehicleOwnerDto;
     serviceOrders?: Array<VehicleServiceOrderSummaryDto> | null;
     createdAt?: string;
@@ -258,6 +395,7 @@ export type VehicleDto = {
     brand?: string | null;
     licensePlate?: string | null;
     year?: number;
+    mileage?: number;
     customerId?: string;
     createdAt?: string;
     updatedAt?: string | null;
@@ -268,6 +406,10 @@ export type VehicleDtoPagedResult = {
     page?: number;
     pageSize?: number;
     totalItems?: number;
+};
+
+export type VehicleListDto = {
+    items?: Array<VehicleDto> | null;
 };
 
 export type VehicleOwnerDto = {
@@ -781,6 +923,592 @@ export type PostApiAdminCustomersSearchResponses = {
 
 export type PostApiAdminCustomersSearchResponse = PostApiAdminCustomersSearchResponses[keyof PostApiAdminCustomersSearchResponses];
 
+export type GetApiAdminPackagesData = {
+    body?: never;
+    path?: never;
+    query?: {
+        page?: number;
+        pageSize?: number;
+        includeInactive?: boolean;
+        term?: string;
+        status?: CatalogStatus;
+    };
+    url: '/api/admin/packages';
+};
+
+export type GetApiAdminPackagesErrors = {
+    /**
+     * Bad Request
+     */
+    400: ProblemDetails;
+    /**
+     * Unauthorized
+     */
+    401: ProblemDetails;
+    /**
+     * Forbidden
+     */
+    403: ProblemDetails;
+    /**
+     * Internal Server Error
+     */
+    500: ProblemDetails;
+};
+
+export type GetApiAdminPackagesError = GetApiAdminPackagesErrors[keyof GetApiAdminPackagesErrors];
+
+export type GetApiAdminPackagesResponses = {
+    /**
+     * OK
+     */
+    200: PackageDtoPagedResult;
+};
+
+export type GetApiAdminPackagesResponse = GetApiAdminPackagesResponses[keyof GetApiAdminPackagesResponses];
+
+export type PostApiAdminPackagesData = {
+    body?: PackageRequest;
+    path?: never;
+    query?: never;
+    url: '/api/admin/packages';
+};
+
+export type PostApiAdminPackagesErrors = {
+    /**
+     * Bad Request
+     */
+    400: ProblemDetails;
+    /**
+     * Unauthorized
+     */
+    401: ProblemDetails;
+    /**
+     * Forbidden
+     */
+    403: ProblemDetails;
+    /**
+     * Internal Server Error
+     */
+    500: ProblemDetails;
+};
+
+export type PostApiAdminPackagesError = PostApiAdminPackagesErrors[keyof PostApiAdminPackagesErrors];
+
+export type PostApiAdminPackagesResponses = {
+    /**
+     * Created
+     */
+    201: PackageDto;
+};
+
+export type PostApiAdminPackagesResponse = PostApiAdminPackagesResponses[keyof PostApiAdminPackagesResponses];
+
+export type GetApiAdminPackagesByIdData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/admin/packages/{id}';
+};
+
+export type GetApiAdminPackagesByIdErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ProblemDetails;
+    /**
+     * Forbidden
+     */
+    403: ProblemDetails;
+    /**
+     * Not Found
+     */
+    404: ProblemDetails;
+    /**
+     * Internal Server Error
+     */
+    500: ProblemDetails;
+};
+
+export type GetApiAdminPackagesByIdError = GetApiAdminPackagesByIdErrors[keyof GetApiAdminPackagesByIdErrors];
+
+export type GetApiAdminPackagesByIdResponses = {
+    /**
+     * OK
+     */
+    200: PackageDto;
+};
+
+export type GetApiAdminPackagesByIdResponse = GetApiAdminPackagesByIdResponses[keyof GetApiAdminPackagesByIdResponses];
+
+export type PutApiAdminPackagesByIdData = {
+    body?: PackageRequest;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/admin/packages/{id}';
+};
+
+export type PutApiAdminPackagesByIdErrors = {
+    /**
+     * Bad Request
+     */
+    400: ProblemDetails;
+    /**
+     * Unauthorized
+     */
+    401: ProblemDetails;
+    /**
+     * Forbidden
+     */
+    403: ProblemDetails;
+    /**
+     * Not Found
+     */
+    404: ProblemDetails;
+    /**
+     * Conflict
+     */
+    409: ProblemDetails;
+    /**
+     * Internal Server Error
+     */
+    500: ProblemDetails;
+};
+
+export type PutApiAdminPackagesByIdError = PutApiAdminPackagesByIdErrors[keyof PutApiAdminPackagesByIdErrors];
+
+export type PutApiAdminPackagesByIdResponses = {
+    /**
+     * OK
+     */
+    200: PackageDto;
+};
+
+export type PutApiAdminPackagesByIdResponse = PutApiAdminPackagesByIdResponses[keyof PutApiAdminPackagesByIdResponses];
+
+export type GetApiAdminPackagesByIdPriceHistoryData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/admin/packages/{id}/price-history';
+};
+
+export type GetApiAdminPackagesByIdPriceHistoryErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ProblemDetails;
+    /**
+     * Forbidden
+     */
+    403: ProblemDetails;
+    /**
+     * Not Found
+     */
+    404: ProblemDetails;
+    /**
+     * Internal Server Error
+     */
+    500: ProblemDetails;
+};
+
+export type GetApiAdminPackagesByIdPriceHistoryError = GetApiAdminPackagesByIdPriceHistoryErrors[keyof GetApiAdminPackagesByIdPriceHistoryErrors];
+
+export type GetApiAdminPackagesByIdPriceHistoryResponses = {
+    /**
+     * OK
+     */
+    200: PriceHistoryDto;
+};
+
+export type GetApiAdminPackagesByIdPriceHistoryResponse = GetApiAdminPackagesByIdPriceHistoryResponses[keyof GetApiAdminPackagesByIdPriceHistoryResponses];
+
+export type PostApiAdminPackagesByIdDeactivateData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/admin/packages/{id}/deactivate';
+};
+
+export type PostApiAdminPackagesByIdDeactivateErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ProblemDetails;
+    /**
+     * Forbidden
+     */
+    403: ProblemDetails;
+    /**
+     * Not Found
+     */
+    404: ProblemDetails;
+    /**
+     * Conflict
+     */
+    409: ProblemDetails;
+    /**
+     * Internal Server Error
+     */
+    500: ProblemDetails;
+};
+
+export type PostApiAdminPackagesByIdDeactivateError = PostApiAdminPackagesByIdDeactivateErrors[keyof PostApiAdminPackagesByIdDeactivateErrors];
+
+export type PostApiAdminPackagesByIdDeactivateResponses = {
+    /**
+     * No Content
+     */
+    204: void;
+};
+
+export type PostApiAdminPackagesByIdDeactivateResponse = PostApiAdminPackagesByIdDeactivateResponses[keyof PostApiAdminPackagesByIdDeactivateResponses];
+
+export type PostApiAdminPackagesByIdReactivateData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/admin/packages/{id}/reactivate';
+};
+
+export type PostApiAdminPackagesByIdReactivateErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ProblemDetails;
+    /**
+     * Forbidden
+     */
+    403: ProblemDetails;
+    /**
+     * Not Found
+     */
+    404: ProblemDetails;
+    /**
+     * Conflict
+     */
+    409: ProblemDetails;
+    /**
+     * Internal Server Error
+     */
+    500: ProblemDetails;
+};
+
+export type PostApiAdminPackagesByIdReactivateError = PostApiAdminPackagesByIdReactivateErrors[keyof PostApiAdminPackagesByIdReactivateErrors];
+
+export type PostApiAdminPackagesByIdReactivateResponses = {
+    /**
+     * No Content
+     */
+    204: void;
+};
+
+export type PostApiAdminPackagesByIdReactivateResponse = PostApiAdminPackagesByIdReactivateResponses[keyof PostApiAdminPackagesByIdReactivateResponses];
+
+export type GetApiAdminPartsData = {
+    body?: never;
+    path?: never;
+    query?: {
+        page?: number;
+        pageSize?: number;
+        includeInactive?: boolean;
+        term?: string;
+        status?: CatalogStatus;
+    };
+    url: '/api/admin/parts';
+};
+
+export type GetApiAdminPartsErrors = {
+    /**
+     * Bad Request
+     */
+    400: ProblemDetails;
+    /**
+     * Unauthorized
+     */
+    401: ProblemDetails;
+    /**
+     * Forbidden
+     */
+    403: ProblemDetails;
+    /**
+     * Internal Server Error
+     */
+    500: ProblemDetails;
+};
+
+export type GetApiAdminPartsError = GetApiAdminPartsErrors[keyof GetApiAdminPartsErrors];
+
+export type GetApiAdminPartsResponses = {
+    /**
+     * OK
+     */
+    200: PartDtoPagedResult;
+};
+
+export type GetApiAdminPartsResponse = GetApiAdminPartsResponses[keyof GetApiAdminPartsResponses];
+
+export type PostApiAdminPartsData = {
+    body?: PartRequest;
+    path?: never;
+    query?: never;
+    url: '/api/admin/parts';
+};
+
+export type PostApiAdminPartsErrors = {
+    /**
+     * Bad Request
+     */
+    400: ProblemDetails;
+    /**
+     * Unauthorized
+     */
+    401: ProblemDetails;
+    /**
+     * Forbidden
+     */
+    403: ProblemDetails;
+    /**
+     * Conflict
+     */
+    409: ProblemDetails;
+    /**
+     * Internal Server Error
+     */
+    500: ProblemDetails;
+};
+
+export type PostApiAdminPartsError = PostApiAdminPartsErrors[keyof PostApiAdminPartsErrors];
+
+export type PostApiAdminPartsResponses = {
+    /**
+     * Created
+     */
+    201: PartDto;
+};
+
+export type PostApiAdminPartsResponse = PostApiAdminPartsResponses[keyof PostApiAdminPartsResponses];
+
+export type GetApiAdminPartsByIdData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/admin/parts/{id}';
+};
+
+export type GetApiAdminPartsByIdErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ProblemDetails;
+    /**
+     * Forbidden
+     */
+    403: ProblemDetails;
+    /**
+     * Not Found
+     */
+    404: ProblemDetails;
+    /**
+     * Internal Server Error
+     */
+    500: ProblemDetails;
+};
+
+export type GetApiAdminPartsByIdError = GetApiAdminPartsByIdErrors[keyof GetApiAdminPartsByIdErrors];
+
+export type GetApiAdminPartsByIdResponses = {
+    /**
+     * OK
+     */
+    200: PartDto;
+};
+
+export type GetApiAdminPartsByIdResponse = GetApiAdminPartsByIdResponses[keyof GetApiAdminPartsByIdResponses];
+
+export type PutApiAdminPartsByIdData = {
+    body?: PartRequest;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/admin/parts/{id}';
+};
+
+export type PutApiAdminPartsByIdErrors = {
+    /**
+     * Bad Request
+     */
+    400: ProblemDetails;
+    /**
+     * Unauthorized
+     */
+    401: ProblemDetails;
+    /**
+     * Forbidden
+     */
+    403: ProblemDetails;
+    /**
+     * Not Found
+     */
+    404: ProblemDetails;
+    /**
+     * Conflict
+     */
+    409: ProblemDetails;
+    /**
+     * Internal Server Error
+     */
+    500: ProblemDetails;
+};
+
+export type PutApiAdminPartsByIdError = PutApiAdminPartsByIdErrors[keyof PutApiAdminPartsByIdErrors];
+
+export type PutApiAdminPartsByIdResponses = {
+    /**
+     * OK
+     */
+    200: PartDto;
+};
+
+export type PutApiAdminPartsByIdResponse = PutApiAdminPartsByIdResponses[keyof PutApiAdminPartsByIdResponses];
+
+export type GetApiAdminPartsByIdPriceHistoryData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/admin/parts/{id}/price-history';
+};
+
+export type GetApiAdminPartsByIdPriceHistoryErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ProblemDetails;
+    /**
+     * Forbidden
+     */
+    403: ProblemDetails;
+    /**
+     * Not Found
+     */
+    404: ProblemDetails;
+    /**
+     * Internal Server Error
+     */
+    500: ProblemDetails;
+};
+
+export type GetApiAdminPartsByIdPriceHistoryError = GetApiAdminPartsByIdPriceHistoryErrors[keyof GetApiAdminPartsByIdPriceHistoryErrors];
+
+export type GetApiAdminPartsByIdPriceHistoryResponses = {
+    /**
+     * OK
+     */
+    200: PriceHistoryDto;
+};
+
+export type GetApiAdminPartsByIdPriceHistoryResponse = GetApiAdminPartsByIdPriceHistoryResponses[keyof GetApiAdminPartsByIdPriceHistoryResponses];
+
+export type PostApiAdminPartsByIdDeactivateData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/admin/parts/{id}/deactivate';
+};
+
+export type PostApiAdminPartsByIdDeactivateErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ProblemDetails;
+    /**
+     * Forbidden
+     */
+    403: ProblemDetails;
+    /**
+     * Not Found
+     */
+    404: ProblemDetails;
+    /**
+     * Conflict
+     */
+    409: ProblemDetails;
+    /**
+     * Internal Server Error
+     */
+    500: ProblemDetails;
+};
+
+export type PostApiAdminPartsByIdDeactivateError = PostApiAdminPartsByIdDeactivateErrors[keyof PostApiAdminPartsByIdDeactivateErrors];
+
+export type PostApiAdminPartsByIdDeactivateResponses = {
+    /**
+     * No Content
+     */
+    204: void;
+};
+
+export type PostApiAdminPartsByIdDeactivateResponse = PostApiAdminPartsByIdDeactivateResponses[keyof PostApiAdminPartsByIdDeactivateResponses];
+
+export type PostApiAdminPartsByIdReactivateData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/admin/parts/{id}/reactivate';
+};
+
+export type PostApiAdminPartsByIdReactivateErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ProblemDetails;
+    /**
+     * Forbidden
+     */
+    403: ProblemDetails;
+    /**
+     * Not Found
+     */
+    404: ProblemDetails;
+    /**
+     * Conflict
+     */
+    409: ProblemDetails;
+    /**
+     * Internal Server Error
+     */
+    500: ProblemDetails;
+};
+
+export type PostApiAdminPartsByIdReactivateError = PostApiAdminPartsByIdReactivateErrors[keyof PostApiAdminPartsByIdReactivateErrors];
+
+export type PostApiAdminPartsByIdReactivateResponses = {
+    /**
+     * No Content
+     */
+    204: void;
+};
+
+export type PostApiAdminPartsByIdReactivateResponse = PostApiAdminPartsByIdReactivateResponses[keyof PostApiAdminPartsByIdReactivateResponses];
+
 export type GetApiAdminServicesData = {
     body?: never;
     path?: never;
@@ -788,6 +1516,8 @@ export type GetApiAdminServicesData = {
         page?: number;
         pageSize?: number;
         includeInactive?: boolean;
+        term?: string;
+        status?: CatalogStatus;
     };
     url: '/api/admin/services';
 };
@@ -944,6 +1674,45 @@ export type PutApiAdminServicesByIdResponses = {
 };
 
 export type PutApiAdminServicesByIdResponse = PutApiAdminServicesByIdResponses[keyof PutApiAdminServicesByIdResponses];
+
+export type GetApiAdminServicesByIdPriceHistoryData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/admin/services/{id}/price-history';
+};
+
+export type GetApiAdminServicesByIdPriceHistoryErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ProblemDetails;
+    /**
+     * Forbidden
+     */
+    403: ProblemDetails;
+    /**
+     * Not Found
+     */
+    404: ProblemDetails;
+    /**
+     * Internal Server Error
+     */
+    500: ProblemDetails;
+};
+
+export type GetApiAdminServicesByIdPriceHistoryError = GetApiAdminServicesByIdPriceHistoryErrors[keyof GetApiAdminServicesByIdPriceHistoryErrors];
+
+export type GetApiAdminServicesByIdPriceHistoryResponses = {
+    /**
+     * OK
+     */
+    200: PriceHistoryDto;
+};
+
+export type GetApiAdminServicesByIdPriceHistoryResponse = GetApiAdminServicesByIdPriceHistoryResponses[keyof GetApiAdminServicesByIdPriceHistoryResponses];
 
 export type PostApiAdminServicesByIdDeactivateData = {
     body?: never;
@@ -1472,7 +2241,6 @@ export type GetApiAdminVehiclesData = {
     query?: {
         page?: number;
         pageSize?: number;
-        plate?: string;
     };
     url: '/api/admin/vehicles';
 };
@@ -1551,6 +2319,86 @@ export type PostApiAdminVehiclesResponses = {
 };
 
 export type PostApiAdminVehiclesResponse = PostApiAdminVehiclesResponses[keyof PostApiAdminVehiclesResponses];
+
+export type GetApiAdminCustomersByCustomerIdVehiclesData = {
+    body?: never;
+    path: {
+        customerId: string;
+    };
+    query?: never;
+    url: '/api/admin/customers/{customerId}/vehicles';
+};
+
+export type GetApiAdminCustomersByCustomerIdVehiclesErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ProblemDetails;
+    /**
+     * Forbidden
+     */
+    403: ProblemDetails;
+    /**
+     * Not Found
+     */
+    404: ProblemDetails;
+    /**
+     * Internal Server Error
+     */
+    500: ProblemDetails;
+};
+
+export type GetApiAdminCustomersByCustomerIdVehiclesError = GetApiAdminCustomersByCustomerIdVehiclesErrors[keyof GetApiAdminCustomersByCustomerIdVehiclesErrors];
+
+export type GetApiAdminCustomersByCustomerIdVehiclesResponses = {
+    /**
+     * OK
+     */
+    200: VehicleListDto;
+};
+
+export type GetApiAdminCustomersByCustomerIdVehiclesResponse = GetApiAdminCustomersByCustomerIdVehiclesResponses[keyof GetApiAdminCustomersByCustomerIdVehiclesResponses];
+
+export type PostApiAdminVehiclesSearchData = {
+    body?: SearchVehicleRequest;
+    path?: never;
+    query?: never;
+    url: '/api/admin/vehicles/search';
+};
+
+export type PostApiAdminVehiclesSearchErrors = {
+    /**
+     * Bad Request
+     */
+    400: ProblemDetails;
+    /**
+     * Unauthorized
+     */
+    401: ProblemDetails;
+    /**
+     * Forbidden
+     */
+    403: ProblemDetails;
+    /**
+     * Not Found
+     */
+    404: ProblemDetails;
+    /**
+     * Internal Server Error
+     */
+    500: ProblemDetails;
+};
+
+export type PostApiAdminVehiclesSearchError = PostApiAdminVehiclesSearchErrors[keyof PostApiAdminVehiclesSearchErrors];
+
+export type PostApiAdminVehiclesSearchResponses = {
+    /**
+     * OK
+     */
+    200: VehicleDto;
+};
+
+export type PostApiAdminVehiclesSearchResponse = PostApiAdminVehiclesSearchResponses[keyof PostApiAdminVehiclesSearchResponses];
 
 export type DeleteApiAdminVehiclesByIdData = {
     body?: never;
@@ -1676,3 +2524,46 @@ export type PutApiAdminVehiclesByIdResponses = {
 };
 
 export type PutApiAdminVehiclesByIdResponse = PutApiAdminVehiclesByIdResponses[keyof PutApiAdminVehiclesByIdResponses];
+
+export type PostApiAdminVehiclesByIdTransferData = {
+    body?: TransferVehicleRequest;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/admin/vehicles/{id}/transfer';
+};
+
+export type PostApiAdminVehiclesByIdTransferErrors = {
+    /**
+     * Bad Request
+     */
+    400: ProblemDetails;
+    /**
+     * Unauthorized
+     */
+    401: ProblemDetails;
+    /**
+     * Forbidden
+     */
+    403: ProblemDetails;
+    /**
+     * Not Found
+     */
+    404: ProblemDetails;
+    /**
+     * Internal Server Error
+     */
+    500: ProblemDetails;
+};
+
+export type PostApiAdminVehiclesByIdTransferError = PostApiAdminVehiclesByIdTransferErrors[keyof PostApiAdminVehiclesByIdTransferErrors];
+
+export type PostApiAdminVehiclesByIdTransferResponses = {
+    /**
+     * OK
+     */
+    200: VehicleDto;
+};
+
+export type PostApiAdminVehiclesByIdTransferResponse = PostApiAdminVehiclesByIdTransferResponses[keyof PostApiAdminVehiclesByIdTransferResponses];

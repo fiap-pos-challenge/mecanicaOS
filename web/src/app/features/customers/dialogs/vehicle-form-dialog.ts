@@ -150,7 +150,7 @@ export class VehicleFormDialog {
     }
 
     const field =
-      error.code === 'vehicle.duplicateLicensePlate'
+      error.code === 'vehicle.duplicatedLicensePlate'
         ? this.form.controls.licensePlate
         : error.code === 'vehicle.mileageDecrease'
           ? this.form.controls.mileage

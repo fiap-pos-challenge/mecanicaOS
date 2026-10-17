@@ -33,5 +33,5 @@ public sealed class UpdateServiceCommandValidatorTests
         Assert.Equal(code, failure.ErrorCode);
     }
 
-    private static UpdateServiceCommand Command() => new(Guid.CreateVersion7(), "Alinhamento", null, 90m, 30);
+    private static UpdateServiceCommand Command() => new(Guid.CreateVersion7(), "Alinhamento", null, 90m, 30, 10m, 90, []);
 }

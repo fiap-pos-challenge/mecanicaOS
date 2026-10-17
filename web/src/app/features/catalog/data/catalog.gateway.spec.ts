@@ -305,4 +305,23 @@ describe.each(API_MODES)('CatalogGateway (%s)', (mode) => {
       service?.name,
     );
   });
+
+  it('sends each kind to its published API', async () => {
+    const gateway = await setup();
+
+    await firstValueFrom(gateway.list('services', all));
+    await firstValueFrom(gateway.list('parts', all));
+    await firstValueFrom(gateway.list('packages', all));
+
+    if (mode === 'http') {
+      for (const kind of ['services', 'parts', 'packages']) {
+        expect(
+          harness.requests.some((request) => request.url.includes(`/api/admin/${kind}?`)),
+        ).toBe(true);
+      }
+      expect(harness.requests.some((request) => request.url.includes('includeInactive=true'))).toBe(
+        true,
+      );
+    }
+  });
 });

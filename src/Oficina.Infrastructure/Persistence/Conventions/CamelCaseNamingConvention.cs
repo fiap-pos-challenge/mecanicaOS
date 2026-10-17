@@ -18,14 +18,14 @@ public sealed class CamelCaseNamingConvention : IModelFinalizingConvention
 
             NameColumns(entityType);
 
-            if (entityType.IsOwned())
+            if (SharesOwnerTable(entityType))
             {
                 continue;
             }
 
             entityType.FindPrimaryKey()?.SetName($"pk_{table}");
 
-            foreach (var foreignKey in entityType.GetForeignKeys().Where(foreignKey => !foreignKey.IsOwnership))
+            foreach (var foreignKey in entityType.GetForeignKeys())
             {
                 var principalTable = foreignKey.PrincipalEntityType.GetTableName();
                 foreignKey.SetConstraintName($"fk_{table}_{principalTable}_{JoinColumns(foreignKey.Properties)}");
@@ -42,7 +42,7 @@ public sealed class CamelCaseNamingConvention : IModelFinalizingConvention
     {
         foreach (var property in entityType.GetDeclaredProperties())
         {
-            var isOwnedKey = entityType.IsOwned() && property.IsPrimaryKey();
+            var isOwnedKey = SharesOwnerTable(entityType) && property.IsPrimaryKey();
             if (isOwnedKey || property.GetColumnNameConfigurationSource() == ConfigurationSource.Explicit)
             {
                 continue;
@@ -51,6 +51,9 @@ public sealed class CamelCaseNamingConvention : IModelFinalizingConvention
             property.SetColumnName(ToCamelCase(property.Name));
         }
     }
+
+    private static bool SharesOwnerTable(IConventionEntityType entityType) =>
+        entityType.FindOwnership() is { } ownership && ownership.PrincipalEntityType.GetTableName() == entityType.GetTableName();
 
     private static string JoinColumns(IEnumerable<IConventionProperty> properties) =>
         string.Join("_", properties.Select(property => property.GetColumnName()));

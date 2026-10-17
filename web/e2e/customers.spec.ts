@@ -24,6 +24,13 @@ export function randomCpf(): string {
   return [...base, first, second].join('');
 }
 
+function randomPlate(): string {
+  const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+  const letter = (): string => letters[Math.floor(Math.random() * letters.length)] ?? 'A';
+  const digit = (): number => Math.floor(Math.random() * 10);
+  return `${letter()}${letter()}${letter()}${digit()}${letter()}${digit()}${digit()}`;
+}
+
 function maskedCpf(cpf: string): string {
   return `•••.${cpf.slice(3, 6)}.${cpf.slice(6, 9)}-••`;
 }
@@ -132,24 +139,36 @@ test.describe('customers against the real API', () => {
     await expect(page.getByText(detail.noEmailAddress)).toBeVisible();
   });
 
-  test('keeps vehicles, summary and history under construction until the API exists', async ({
+  test('registers and edits a vehicle on the real API, keeping summary and history pending', async ({
     page,
   }) => {
-    await createCustomer(page, `Sem API E2E ${Date.now() % 100000}`, randomCpf());
+    await createCustomer(page, `Veículo E2E ${Date.now() % 100000}`, randomCpf());
     const vehicles = page.getByRole('region', { name: detail.vehicles });
+    const plate = randomPlate();
 
-    await expect(vehicles.getByText(messages.pending.vehicles)).toBeVisible();
+    await expect(vehicles.getByText(messages.pending.vehicles)).toHaveCount(0);
     await expect(page.getByText(messages.pending.history)).toBeVisible();
     await expect(page.getByText(messages.pending.customerSummary).last()).toBeVisible();
 
     await page.getByRole('button', { name: detail.addVehicle }).click();
     const dialog = page.getByRole('dialog', { name: vehicle.newTitle });
-    await dialog.getByLabel(vehicle.plate).fill('bra2e19');
+    await dialog.getByLabel(vehicle.plate).fill(plate.toLowerCase());
     await dialog.getByLabel(vehicle.brand).fill('Chevrolet');
     await dialog.getByLabel(vehicle.model).fill('Onix');
     await dialog.getByLabel(vehicle.year).fill('2023');
     await dialog.getByLabel(vehicle.mileage).fill('15000');
     await dialog.getByRole('button', { name: vehicle.save }).click();
-    await expect(dialog.getByText(messages.errors.featurePending)).toBeVisible();
+    await expect(dialog).toHaveCount(0);
+    await expect(vehicles.getByText(vehicle.summary('Chevrolet', 'Onix', 2023))).toBeVisible();
+
+    await vehicles.getByRole('button', { name: vehicle.edit(plate) }).click();
+    const edit = page.getByRole('dialog', { name: vehicle.editTitle });
+    await edit.getByLabel(vehicle.mileage).fill('1000');
+    await edit.getByRole('button', { name: vehicle.save }).click();
+    await expect(edit.getByText(messages.fake.mileageDecrease)).toBeVisible();
+    await edit.getByLabel(vehicle.mileage).fill('16000');
+    await edit.getByRole('button', { name: vehicle.save }).click();
+    await expect(edit).toHaveCount(0);
+    await expectNoSeriousAxeViolations(page);
   });
 });

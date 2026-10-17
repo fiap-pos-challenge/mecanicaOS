@@ -113,7 +113,7 @@ export function createVehiclesFakeApi(state: FakeBackendState): FakeFeatureApi {
       }
 
       if (plateInUse(plate)) {
-        return problem(409, 'vehicle.duplicateLicensePlate', text.plateInUse);
+        return problem(409, 'vehicle.duplicatedLicensePlate', text.plateInUse);
       }
 
       const vehicle: FakeVehicleRecord = {
@@ -149,7 +149,7 @@ export function createVehiclesFakeApi(state: FakeBackendState): FakeFeatureApi {
 
       const mileage = readNumber(body, 'mileage') ?? vehicle.mileage;
       if (mileage < vehicle.mileage) {
-        return problem(422, 'vehicle.mileageDecrease', text.mileageDecrease);
+        return problem(400, 'vehicle.mileageDecrease', text.mileageDecrease);
       }
 
       Object.assign(vehicle, {

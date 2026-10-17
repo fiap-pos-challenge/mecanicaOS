@@ -105,7 +105,7 @@ describe.each(API_MODES)('VehiclesGateway (%s)', (mode) => {
       firstValueFrom(gateway.create(input(owner, { licensePlate: 'RSL1A23' }))),
     ).rejects.toMatchObject({
       status: 409,
-      code: 'vehicle.duplicateLicensePlate',
+      code: 'vehicle.duplicatedLicensePlate',
     });
     const fleet = await firstValueFrom(gateway.listByCustomer(owners[2] ?? ''));
     await expect(
@@ -117,7 +117,7 @@ describe.each(API_MODES)('VehiclesGateway (%s)', (mode) => {
           mileage: 10,
         }),
       ),
-    ).rejects.toMatchObject({ status: 422, code: 'vehicle.mileageDecrease' });
+    ).rejects.toMatchObject({ status: 400, code: 'vehicle.mileageDecrease' });
     await expect(
       firstValueFrom(
         gateway.update(fleet[0]?.id ?? '', { brand: '', model: 'Master', year: 2019, mileage: 10 }),

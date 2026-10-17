@@ -1,7 +1,8 @@
 import { TestBed } from '@angular/core/testing';
 import { render, screen, within } from '@testing-library/angular';
 import userEvent from '@testing-library/user-event';
-import { provideTestApi } from '../../testing/api';
+import { provideTestApi, testEnvironment } from '../../testing/api';
+import { APP_ENVIRONMENT } from '../core/config/app-environment';
 import { signInWithFakeApi } from '../../testing/auth';
 import { FakeBackend } from '../../testing/fake-api/fake-backend.service';
 import { messages } from '../core/i18n/messages.pt-BR';
@@ -28,6 +29,17 @@ const providers = [
   provideCatalogData(),
 ];
 
+const catalogPending = [
+  ...providers,
+  {
+    provide: APP_ENVIRONMENT,
+    useValue: {
+      ...testEnvironment('pending'),
+      features: { ...testEnvironment('pending').features, catalog: { api: 'pending' } },
+    },
+  },
+];
+
 async function notice(message: string): Promise<HTMLElement> {
   const element = await screen.findByText(message);
   expect(element.closest('[data-testid="pending-notice"]')).not.toBeNull();
@@ -47,7 +59,7 @@ describe('screens whose back-end API is not published yet', () => {
     await notice(pending.customerSummary);
   });
 
-  it('shows the real customer with vehicles and history under construction', async () => {
+  it('shows the real customer and vehicles with the history under construction', async () => {
     const view = await render(CustomerDetailPage, {
       providers,
       inputs: { id: '' },
@@ -62,8 +74,8 @@ describe('screens whose back-end API is not published yet', () => {
     view.fixture.componentRef.setInput('id', id);
 
     expect(await screen.findByRole('heading', { level: 2, name: 'Joana Prado' })).toBeVisible();
-    await notice(pending.vehicles);
     await notice(pending.history);
+    expect(screen.queryByText(pending.vehicles)).toBeNull();
     await notice(pending.customerSummary);
     await userEvent.click(
       screen.getByRole('button', { name: new RegExp(messages.customers.detail.addVehicle) }),
@@ -135,7 +147,7 @@ describe('screens whose back-end API is not published yet', () => {
 
   it('shows an empty catalog list and keeps the forms with the construction message', async () => {
     const list = await render(CatalogListPage, {
-      providers,
+      providers: catalogPending,
       inputs: { kind: 'parts' },
       configureTestBed: () => {
         signInWithFakeApi('Admin');
@@ -149,7 +161,7 @@ describe('screens whose back-end API is not published yet', () => {
   it('keeps the new part form and answers the save with the construction message', async () => {
     const user = userEvent.setup();
     await render(PartFormPage, {
-      providers,
+      providers: catalogPending,
       inputs: { id: null },
       configureTestBed: () => {
         signInWithFakeApi('Admin');
@@ -173,7 +185,7 @@ describe('screens whose back-end API is not published yet', () => {
 
   it('opens the package form with the construction notice and an existing item as pending', async () => {
     const view = await render(PackageFormPage, {
-      providers,
+      providers: catalogPending,
       inputs: { id: null },
       configureTestBed: () => {
         signInWithFakeApi('Admin');

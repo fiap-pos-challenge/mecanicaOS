@@ -15,7 +15,7 @@ public sealed class PartTests
     [Fact]
     public void Create_WithValidData_StartsActiveWithZeroStockAndNoMovements()
     {
-        var result = Part.Create(Code, " Filtro de óleo ", PartType.Part, " un ", Price, 5m);
+        var result = Part.Create(Code, " Filtro de óleo ", PartType.Part, " un ", Price, Money.Zero, 5m, null, null);
 
         Assert.True(result.IsSuccess);
         var part = result.Value;
@@ -36,7 +36,7 @@ public sealed class PartTests
     [InlineData("F")]
     public void Create_WithTooShortName_ReturnsInvalidName(string name)
     {
-        Assert.Equal(InventoryErrors.InvalidName, Part.Create(Code, name, PartType.Part, "un", Price, 0m).Error);
+        Assert.Equal(InventoryErrors.InvalidName, Part.Create(Code, name, PartType.Part, "un", Price, Money.Zero, 0m, null, null).Error);
     }
 
     [Theory]
@@ -44,7 +44,7 @@ public sealed class PartTests
     [InlineData("unidade-longa")]
     public void Create_WithInvalidUnit_ReturnsInvalidUnitOfMeasure(string unit)
     {
-        Assert.Equal(InventoryErrors.InvalidUnitOfMeasure, Part.Create(Code, "Filtro", PartType.Part, unit, Price, 0m).Error);
+        Assert.Equal(InventoryErrors.InvalidUnitOfMeasure, Part.Create(Code, "Filtro", PartType.Part, unit, Price, Money.Zero, 0m, null, null).Error);
     }
 
     [Theory]
@@ -54,7 +54,7 @@ public sealed class PartTests
     {
         var value = decimal.Parse(minimumStock, System.Globalization.CultureInfo.InvariantCulture);
 
-        Assert.Equal(InventoryErrors.InvalidMinimumStock, Part.Create(Code, "Filtro", PartType.Supply, "l", Price, value).Error);
+        Assert.Equal(InventoryErrors.InvalidMinimumStock, Part.Create(Code, "Filtro", PartType.Supply, "l", Price, Money.Zero, value, null, null).Error);
     }
 
     [Fact]
@@ -63,7 +63,7 @@ public sealed class PartTests
         var part = CreatePartWithStock(10m);
         var newPrice = Money.Create(40m).Value;
 
-        var result = part.ChangeDetails("Filtro de óleo premium", PartType.Part, "pc", newPrice, 2m);
+        var result = part.ChangeDetails(Code, "Filtro de óleo premium", PartType.Part, "pc", newPrice, Money.Zero, 2m, null, null);
 
         Assert.True(result.IsSuccess);
         Assert.Equal("Filtro de óleo premium", part.Name);
@@ -75,11 +75,49 @@ public sealed class PartTests
     }
 
     [Fact]
+    public void ChangeDetails_WithCostSupplierAndBarcode_KeepsTrimmedValues()
+    {
+        var part = CreatePartWithStock(0m);
+        var newCode = PartCode.Create("flt-002").Value;
+
+        var result = part.ChangeDetails(newCode, "Filtro", PartType.Part, "un", Price, Money.Create(20m).Value, 1m, "  Auto Peças  ", " 7891234567895 ");
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal("FLT-002", part.Code.Value);
+        Assert.Equal(20m, part.Cost.Amount);
+        Assert.Equal("Auto Peças", part.Supplier);
+        Assert.Equal("7891234567895", part.Barcode);
+    }
+
+    [Theory]
+    [InlineData("7891234567890")]
+    [InlineData("789123456789")]
+    [InlineData("789123456789A")]
+    public void Create_WithInvalidBarcode_ReturnsInvalidBarcode(string barcode)
+    {
+        Assert.Equal(InventoryErrors.InvalidBarcode, Part.Create(Code, "Filtro", PartType.Part, "un", Price, Money.Zero, 0m, null, barcode).Error);
+        Assert.False(Part.IsValidBarcode(barcode));
+    }
+
+    [Fact]
+    public void Create_WithLongSupplier_ReturnsInvalidSupplier() =>
+        Assert.Equal(InventoryErrors.InvalidSupplier, Part.Create(Code, "Filtro", PartType.Part, "un", Price, Money.Zero, 0m, new string('s', 121), null).Error);
+
+    [Fact]
+    public void Create_WithBlankSupplierAndBarcode_KeepsNull()
+    {
+        var part = Part.Create(Code, "Filtro", PartType.Part, "un", Price, Money.Zero, 0m, " ", "").Value;
+
+        Assert.Null(part.Supplier);
+        Assert.Null(part.Barcode);
+    }
+
+    [Fact]
     public void ChangeDetails_WithInvalidName_KeepsPreviousData()
     {
         var part = CreatePartWithStock(0m);
 
-        var result = part.ChangeDetails("", PartType.Supply, "l", Price, 1m);
+        var result = part.ChangeDetails(Code, "", PartType.Supply, "l", Price, Money.Zero, 1m, null, null);
 
         Assert.Equal(InventoryErrors.InvalidName, result.Error);
         Assert.Equal("Filtro de óleo", part.Name);
@@ -165,7 +203,7 @@ public sealed class PartTests
     [InlineData("8", false)]
     public void IsBelowMinimum_ComparesStockWithMinimum(string stock, bool expected)
     {
-        var part = Part.Create(Code, "Filtro de óleo", PartType.Part, "un", Price, 5m).Value;
+        var part = Part.Create(Code, "Filtro de óleo", PartType.Part, "un", Price, Money.Zero, 5m, null, null).Value;
         part.RegisterEntry(Quantity.Create(decimal.Parse(stock, System.Globalization.CultureInfo.InvariantCulture)).Value, "Carga inicial", UserId);
 
         Assert.Equal(expected, part.IsBelowMinimum);
@@ -187,7 +225,7 @@ public sealed class PartTests
 
     private static Part CreatePartWithStock(decimal stock)
     {
-        var part = Part.Create(Code, "Filtro de óleo", PartType.Part, "un", Price, 1m).Value;
+        var part = Part.Create(Code, "Filtro de óleo", PartType.Part, "un", Price, Money.Zero, 1m, null, null).Value;
         if (stock > 0)
         {
             part.RegisterEntry(Quantity.Create(stock).Value, "Carga inicial", UserId);

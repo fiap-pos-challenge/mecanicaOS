@@ -46,6 +46,7 @@ public sealed class MigrationTests(SqlServerFixture database)
             "customerId|uniqueidentifier|NO",
             "licensePlate|varchar(7)|NO",
             "brand|nvarchar(60)|NO",
+            "mileage|int|NO",
             "model|nvarchar(60)|NO",
             "year|smallint|NO"),
         ["services"] = WithAudit(
@@ -54,7 +55,43 @@ public sealed class MigrationTests(SqlServerFixture database)
             "description|nvarchar(max)|YES",
             "basePrice|decimal(12,2)|NO",
             "estimatedMinutes|int|NO",
+            "commissionPercent|decimal(5,2)|NO",
+            "warrantyDays|int|NO",
             "isActive|bit|NO"),
+        ["priceChanges"] = new[]
+        {
+            "id|uniqueidentifier|NO",
+            "kind|varchar(10)|NO",
+            "itemId|uniqueidentifier|NO",
+            "field|varchar(20)|NO",
+            "oldValue|decimal(12,2)|YES",
+            "newValue|decimal(12,2)|NO",
+            "changedBy|uniqueidentifier|YES",
+            "changedAt|datetimeoffset|NO",
+        },
+        ["serviceUsualParts"] = new[]
+        {
+            "id|uniqueidentifier|NO",
+            "serviceId|uniqueidentifier|NO",
+            "partId|uniqueidentifier|NO",
+            "quantity|decimal(12,3)|NO",
+        },
+        ["packages"] = WithAudit(
+            "id|uniqueidentifier|NO",
+            "name|nvarchar(120)|NO",
+            "description|nvarchar(500)|YES",
+            "price|decimal(12,2)|NO",
+            "minMileage|int|YES",
+            "maxMileage|int|YES",
+            "isActive|bit|NO"),
+        ["packageItems"] = new[]
+        {
+            "id|uniqueidentifier|NO",
+            "packageId|uniqueidentifier|NO",
+            "kind|varchar(10)|NO",
+            "itemId|uniqueidentifier|NO",
+            "quantity|decimal(12,3)|NO",
+        },
         ["parts"] = WithAudit(
             "id|uniqueidentifier|NO",
             "code|varchar(30)|NO",
@@ -62,6 +99,9 @@ public sealed class MigrationTests(SqlServerFixture database)
             "type|varchar(10)|NO",
             "unitOfMeasure|varchar(10)|NO",
             "unitPrice|decimal(12,2)|NO",
+            "cost|decimal(12,2)|NO",
+            "supplier|nvarchar(120)|YES",
+            "barcode|varchar(13)|YES",
             "stockQuantity|decimal(12,3)|NO",
             "minimumStock|decimal(12,3)|NO",
             "isActive|bit|NO",
@@ -155,7 +195,7 @@ public sealed class MigrationTests(SqlServerFixture database)
     };
 
     [Fact]
-    public async Task Database_HasExactlyTheFourteenModelTables()
+    public async Task Database_HasExactlyTheSeventeenModelTables()
     {
         var rows = await database.QueryAsync(
             "SELECT TABLE_NAME AS name FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE = 'BASE TABLE' AND TABLE_NAME <> '__EFMigrationsHistory'");

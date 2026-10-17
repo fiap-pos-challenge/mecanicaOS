@@ -22,12 +22,16 @@ public sealed class CreateServiceCommandValidatorTests
     [InlineData("Name", "catalog.invalidName")]
     [InlineData("BasePrice", "catalog.invalidBasePrice")]
     [InlineData("EstimatedMinutes", "catalog.invalidEstimatedMinutes")]
+    [InlineData("CommissionPercent", "catalog.invalidCommissionPercent")]
+    [InlineData("WarrantyDays", "catalog.invalidWarrantyDays")]
     public void Validate_InvalidField_ReturnsTheCatalogCode(string field, string code)
     {
         var command = field switch
         {
             "Name" => Command() with { Name = new string('a', 121) },
             "BasePrice" => Command() with { BasePrice = 0m },
+            "CommissionPercent" => Command() with { CommissionPercent = -1m },
+            "WarrantyDays" => Command() with { WarrantyDays = 3651 },
             _ => Command() with { EstimatedMinutes = 0 },
         };
 
@@ -47,5 +51,5 @@ public sealed class CreateServiceCommandValidatorTests
         Assert.Equal("catalog.invalidBasePrice", Assert.Single(_validator.Validate(command).Errors).ErrorCode);
     }
 
-    private static CreateServiceCommand Command() => new("Troca de óleo", "Inclui filtro", 150m, 45);
+    private static CreateServiceCommand Command() => new("Troca de óleo", "Inclui filtro", 150m, 45, 10m, 90, []);
 }

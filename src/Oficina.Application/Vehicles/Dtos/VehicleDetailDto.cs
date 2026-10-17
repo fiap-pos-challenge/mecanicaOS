@@ -12,6 +12,7 @@ public sealed record VehicleDetailDto(
     string Brand,
     string LicensePlate,
     int Year,
+    int Mileage,
     VehicleOwnerDto Owner,
     IReadOnlyList<VehicleServiceOrderSummaryDto> ServiceOrders,
     DateTimeOffset CreatedAt,

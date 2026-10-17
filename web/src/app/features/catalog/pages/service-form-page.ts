@@ -278,17 +278,11 @@ export class ServiceFormPage {
     this.error.set(null);
     try {
       const [parts, service] = await Promise.all([
-        firstValueFrom(
-          this.gateway.list('parts', {
-            page: 1,
-            pageSize: MAX_PAGE_SIZE,
-            term: '',
-            status: null,
-          }),
-        ),
+        this.loadParts(),
         id ? firstValueFrom(this.gateway.get('services', id)) : Promise.resolve(null),
       ]);
-      this.parts.set(parts.items);
+      this.optionsPending.set(parts === null);
+      this.parts.set(parts ?? []);
       if (service) {
         this.fill(service);
       } else {
@@ -300,13 +294,6 @@ export class ServiceFormPage {
       this.applyAccess();
       this.state.set('ready');
     } catch (error) {
-      if (isFeaturePending(error) && !this.id()) {
-        this.optionsPending.set(true);
-        this.applyAccess();
-        this.state.set('ready');
-        return;
-      }
-
       this.state.set(
         isFeaturePending(error)
           ? 'pending'
@@ -314,6 +301,21 @@ export class ServiceFormPage {
             ? 'notFound'
             : 'error',
       );
+    }
+  }
+
+  private async loadParts(): Promise<readonly CatalogPart[] | null> {
+    try {
+      const parts = await firstValueFrom(
+        this.gateway.list('parts', { page: 1, pageSize: MAX_PAGE_SIZE, term: '', status: null }),
+      );
+      return parts.items;
+    } catch (error) {
+      if (isFeaturePending(error)) {
+        return null;
+      }
+
+      throw error;
     }
   }
 }

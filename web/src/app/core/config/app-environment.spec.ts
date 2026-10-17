@@ -25,11 +25,11 @@ describe('environments', () => {
     }).toEqual(environment);
   });
 
-  it('keeps the real API in the demo build only for login, customers and users', () => {
+  it('keeps the real API in production only for login, customers, users, vehicles and catalog', () => {
     const real = Object.entries(environment.features)
       .filter(([, settings]) => settings.api === 'http')
       .map(([name]) => name);
-    expect(real).toEqual(['auth', 'customers', 'users']);
+    expect(real).toEqual(['auth', 'customers', 'users', 'vehicles', 'catalog']);
     for (const [name, settings] of Object.entries(demoEnvironment.features)) {
       expect(settings.api).toBe(
         ['realtime', 'session', 'twoFactor'].includes(name) ? 'pending' : 'http',
