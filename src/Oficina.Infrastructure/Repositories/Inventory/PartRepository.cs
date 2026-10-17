@@ -20,5 +20,11 @@ public sealed class PartRepository(OficinaDbContext context) : IPartRepository
         context.Parts.IgnoreQueryFilters()
             .AnyAsync(part => part.Code == code && part.DeletedAt == null && part.Id != exceptId, cancellationToken);
 
+    public async Task<IReadOnlyList<Part>> ListActiveInLocationAsync(string location, CancellationToken cancellationToken) =>
+        await context.Parts.Where(part => part.IsActive && part.Location == location).ToListAsync(cancellationToken);
+
+    public Task<Part?> GetByBarcodeAsync(string barcode, CancellationToken cancellationToken) =>
+        context.Parts.FirstOrDefaultAsync(part => part.Barcode == barcode, cancellationToken);
+
     public void Add(Part part) => context.Parts.Add(part);
 }

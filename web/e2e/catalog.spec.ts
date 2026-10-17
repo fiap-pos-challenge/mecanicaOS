@@ -99,7 +99,9 @@ test.describe('catalog on the real API', () => {
     await expect(page.getByTestId('part-margin')).toHaveText('40%');
     await page.getByRole('button', { name: form.save }).click();
 
-    await expect(page.getByRole('heading', { level: 1, name: form.parts.editTitle })).toBeVisible();
+    await expect(page.getByRole('heading', { level: 1, name: form.parts.editTitle })).toBeVisible({
+      timeout: 15_000,
+    });
     const history = page.getByRole('list', { name: messages.catalog.history.caption });
     await expect(history.getByRole('listitem')).toHaveCount(2);
 

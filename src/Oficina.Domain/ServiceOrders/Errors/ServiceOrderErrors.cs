@@ -68,4 +68,52 @@ public static class ServiceOrderErrors
         "serviceOrder.vehicleNotOwnedByCustomer",
         "O veículo informado não pertence a este cliente.",
         ErrorType.Conflict);
+
+    public static readonly Error NotFound = new(
+        "serviceOrder.notFound",
+        "Ordem de serviço não encontrada.",
+        ErrorType.NotFound);
+
+    public static readonly Error InvalidStatus = new(
+        "serviceOrder.invalidStatus",
+        "Informe um status válido: Received, InDiagnosis, WaitingApproval, InProgress, Completed ou Delivered.",
+        ErrorType.Validation);
+
+    public static readonly Error InvalidPeriod = new(
+        "serviceOrder.invalidPeriod",
+        "A data inicial deve ser menor ou igual à data final.",
+        ErrorType.Validation);
+
+    public static readonly Error VersionConflict = new(
+        "serviceOrders.versionConflict",
+        "A OS mudou enquanto você editava. Os dados foram atualizados.",
+        ErrorType.Conflict);
+
+    public static readonly Error InvalidChecklist = new(
+        "serviceOrders.invalidChecklist",
+        "Marque cada item do checklist como Ok, Atenção ou Trocar.",
+        ErrorType.Validation);
+
+    public static readonly Error InvalidPhotoType = new(
+        "serviceOrders.photoType",
+        "Envie a foto em JPG, PNG ou WebP.",
+        ErrorType.Validation,
+        [new FieldError("contentType", "serviceOrders.photoType", "Envie a foto em JPG, PNG ou WebP.")]);
+
+    public static readonly Error PhotoTooLarge = new(
+        "serviceOrders.photoSize",
+        "A foto passou do tamanho máximo de 5 MB.",
+        ErrorType.Validation,
+        [new FieldError("dataUrl", "serviceOrders.photoSize", "A foto passou do tamanho máximo de 5 MB.")]);
+
+    public static readonly Error InvalidDescription = new(
+        "serviceOrders.invalidDescription",
+        "Descreva o problema com pelo menos 3 caracteres.",
+        ErrorType.Validation,
+        [new FieldError("description", "serviceOrders.invalidDescription", "Descreva o problema com pelo menos 3 caracteres.")]);
+
+    public static readonly Error InvalidPromise = new(
+        "serviceOrders.invalidPromise",
+        "A data prometida precisa ser futura.",
+        ErrorType.Validation);
 }

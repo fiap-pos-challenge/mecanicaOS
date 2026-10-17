@@ -96,7 +96,7 @@ const hoursFromNow = (hours: number): string =>
 
 const CHECKLIST = ['Óleo e filtros', 'Freios', 'Suspensão dianteira', 'Pneus', 'Luzes', 'Bateria'];
 
-function checklist(): FakeChecklistItem[] {
+export function checklist(): FakeChecklistItem[] {
   return CHECKLIST.map((label) => ({ id: fakeId(), label, state: null }));
 }
 

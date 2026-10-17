@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { messages } from '../../../core/i18n/messages.pt-BR';
 import { UiButton } from '../../../shared/ui/button/button';
@@ -20,10 +20,12 @@ import { OrderCard } from '../components/order-card';
 import {
   SERVICE_ORDER_STATUSES,
   ServiceOrderCard,
+  ServiceOrderDetail,
   ServiceOrderStatus,
 } from '../data/service-order.models';
 import { agenda, NO_FILTERS, tagsOf } from '../data/service-order.rules';
 import { provideServiceOrderData } from '../data/service-order.gateway';
+import { OpenOrderDialog } from '../dialogs/open-order-dialog';
 import { ReasonDialog } from '../dialogs/reason-dialog';
 import {
   fieldValue,
@@ -63,6 +65,7 @@ export class ServiceOrdersPage {
   private readonly dialogs = inject(UiDialogService);
   private readonly toast = inject(ToastService);
   private readonly auth = inject(AuthStore);
+  private readonly router = inject(Router);
 
   protected readonly screen = messages.screens.serviceOrders;
   protected readonly text = messages.serviceOrders;
@@ -160,6 +163,19 @@ export class ServiceOrdersPage {
   protected setMechanic(event: Event): void {
     const value = (event.target as HTMLSelectElement).value;
     this.store.setFilters({ mechanic: value === '' ? null : value });
+  }
+
+  protected async openOrder(): Promise<void> {
+    const order = await firstValueFrom(
+      this.dialogs.open<OpenOrderDialog, null, ServiceOrderDetail>(OpenOrderDialog).closed,
+    );
+    if (!order) {
+      return;
+    }
+
+    this.toast.show(this.text.opened(order.number), { tone: 'success' });
+    await this.store.load();
+    await this.router.navigate(['/service-orders', order.id]);
   }
 
   protected async move(request: MoveRequest): Promise<void> {

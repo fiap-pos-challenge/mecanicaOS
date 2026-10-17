@@ -11,7 +11,7 @@ public sealed class CamelCaseNamingConvention : IModelFinalizingConvention
     {
         foreach (var entityType in modelBuilder.Metadata.GetEntityTypes())
         {
-            if (entityType.GetTableName() is not { } table)
+            if (entityType.GetTableName() is not { } table || entityType.IsMappedToJson())
             {
                 continue;
             }

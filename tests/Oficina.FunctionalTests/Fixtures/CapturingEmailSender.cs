@@ -9,6 +9,16 @@ public sealed class CapturingEmailSender : IEmailSender
 
     public IReadOnlyList<InvitationMessage> Invitations => _invitations.ToArray();
 
+    private readonly ConcurrentQueue<EmailMessage> _messages = new();
+
+    public IReadOnlyList<EmailMessage> Messages => _messages.ToArray();
+
+    public Task<bool> SendAsync(EmailMessage message, CancellationToken cancellationToken)
+    {
+        _messages.Enqueue(message);
+        return Task.FromResult(true);
+    }
+
     public Task SendInvitationAsync(InvitationMessage message, CancellationToken cancellationToken)
     {
         _invitations.Enqueue(message);

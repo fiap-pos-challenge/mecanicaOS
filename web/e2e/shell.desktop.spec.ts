@@ -29,6 +29,7 @@ test.describe('desktop menu', () => {
       'false',
     );
 
+    await page.context().clearCookies();
     await page.reload();
     await signIn(page, ACCOUNTS.admin);
     await expect(page.getByRole('button', { name: text.expandMenu })).toBeVisible();

@@ -1,4 +1,4 @@
-import { Route, Routes } from '@angular/router';
+import { Routes } from '@angular/router';
 import { pageTitle, messages } from './core/i18n/messages.pt-BR';
 import { devRoutes } from './dev/dev.routes';
 import {
@@ -14,18 +14,6 @@ import { INVENTORY_ROUTES } from './features/inventory/inventory.routes';
 import { QUOTE_ROUTES } from './features/quotes/quotes.routes';
 import { SERVICE_ORDER_ROUTES } from './features/service-orders/service-orders.routes';
 import { TEAM_ROUTES } from './features/team/team.routes';
-import { Screen, SCREENS } from './layout/screens';
-
-const underConstruction = () =>
-  import('./layout/pages/under-construction-page').then((module) => module.UnderConstructionPage);
-
-const screenRoute = (screen: Screen): Route => ({
-  path: screen.path,
-  title: pageTitle(screen.label),
-  data: { screen: screen.label },
-  loadComponent: underConstruction,
-  ...(screen.insideShell ? { canActivate: [permissionGuard(screen.permission)] } : {}),
-});
 
 export const routes: Routes = [
   {
@@ -71,7 +59,12 @@ export const routes: Routes = [
     loadComponent: () =>
       import('./features/documents/pages/verify-page').then((module) => module.VerifyPage),
   },
-  ...SCREENS.filter((screen) => !screen.insideShell).map(screenRoute),
+  {
+    path: 'portal',
+    title: pageTitle(messages.screens.portal),
+    loadComponent: () =>
+      import('./features/portal/pages/track-page').then((module) => module.TrackPage),
+  },
   {
     path: '',
     canActivate: [authGuard],
@@ -127,23 +120,29 @@ export const routes: Routes = [
             (module) => module.MECHANIC_CHILD_ROUTES,
           ),
       },
-      ...SCREENS.filter(
-        (screen) =>
-          screen.insideShell &&
-          ![
-            'dashboard',
-            'customers',
-            'team',
-            'catalog',
-            'inventory',
-            'quotes',
-            'serviceOrders',
-            'mechanic',
-            'reports',
-            'automations',
-            'settings',
-          ].includes(screen.id),
-      ).map(screenRoute),
+      {
+        path: 'finance',
+        title: pageTitle(messages.screens.finance),
+        canActivate: [permissionGuard('finance.view')],
+        loadComponent: () =>
+          import('./features/finance/pages/finance-page').then((module) => module.FinancePage),
+      },
+      {
+        path: 'documents',
+        title: pageTitle(messages.screens.documents),
+        canActivate: [permissionGuard('documents.view')],
+        loadComponent: () =>
+          import('./features/documents/pages/documents-page').then(
+            (module) => module.DocumentsPage,
+          ),
+      },
+      {
+        path: 'platform',
+        title: pageTitle(messages.screens.platform),
+        canActivate: [permissionGuard('platform.view')],
+        loadComponent: () =>
+          import('./features/finance/pages/platform-page').then((module) => module.PlatformPage),
+      },
       {
         path: 'forbidden',
         title: pageTitle(messages.pages.forbidden.screen),

@@ -43,6 +43,19 @@ public static class SecurityExtensions
                     RoleClaimType = JwtTokenGenerator.RoleClaimType,
                     NameClaimType = "sub",
                 };
+                bearer.Events = new JwtBearerEvents
+                {
+                    OnMessageReceived = context =>
+                    {
+                        if (context.Request.Path.StartsWithSegments(Oficina.Api.Realtime.RealtimeHub.Route, StringComparison.OrdinalIgnoreCase)
+                            && context.Request.Query.TryGetValue("access_token", out var token))
+                        {
+                            context.Token = token;
+                        }
+
+                        return Task.CompletedTask;
+                    },
+                };
             });
 
         services.AddAuthorizationBuilder()
@@ -50,14 +63,16 @@ public static class SecurityExtensions
             .AddPolicy(Policies.Authenticated, policy => policy.RequireAuthenticatedUser())
             .AddPolicy(Policies.AdminOnly, policy => policy.RequireAuthenticatedUser().RequireRole(nameof(Role.Admin)))
             .AddPolicy(Policies.AdminOrManager, policy => policy.RequireAuthenticatedUser().RequireRole(nameof(Role.Admin), nameof(Role.Manager)))
-            .AddPolicy(Policies.Staff, policy => policy.RequireAuthenticatedUser().RequireRole(nameof(Role.Admin), nameof(Role.Manager), nameof(Role.Attendant)));
+            .AddPolicy(Policies.Staff, policy => policy.RequireAuthenticatedUser().RequireRole(nameof(Role.Admin), nameof(Role.Manager), nameof(Role.Attendant)))
+            .AddPolicy(Policies.Mechanics, policy => policy.RequireAuthenticatedUser().RequireRole(nameof(Role.Admin), nameof(Role.Manager), nameof(Role.Mechanic)));
         services.AddSingleton<IAuthorizationMiddlewareResultHandler, ProblemDetailsAuthorizationResultHandler>();
 
         var cors = configuration.GetSection(CorsSettings.SectionName).Get<CorsSettings>();
         services.AddCors(options => options.AddPolicy(CorsSettings.PolicyName, policy => policy
             .WithOrigins(cors?.AllowedOrigins ?? Array.Empty<string>())
             .WithMethods(HttpMethods.Get, HttpMethods.Post, HttpMethods.Put, HttpMethods.Delete)
-            .WithHeaders("Authorization", "Content-Type")));
+            .WithHeaders("Authorization", "Content-Type", "X-Reauthentication", "X-Portal-Session", "X-Requested-With", "X-SignalR-User-Agent")
+            .AllowCredentials()));
 
         var loginPermitLimit = configuration.GetValue(LoginPermitLimitKey, LoginPermitLimit);
         services.AddRateLimiter(options =>

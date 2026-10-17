@@ -91,4 +91,34 @@ public static class IdentityErrors
     {
         RetryAfter = retryAfter,
     };
+
+    public static readonly Error InvalidTwoFactorCode = new(
+        "identity.invalidTwoFactorCode",
+        "Código de verificação inválido ou expirado. Entre de novo.",
+        ErrorType.Unauthorized);
+
+    public static readonly Error SessionExpired = new(
+        "identity.sessionExpired",
+        "Sua sessão expirou. Entre de novo.",
+        ErrorType.Unauthorized);
+
+    public static readonly Error ReauthenticationFailed = new(
+        "auth.reauthenticationFailed",
+        "Senha ou código inválido.",
+        ErrorType.BusinessRule);
+
+    public static readonly Error ReauthenticationRequired = new(
+        "settings.reauthenticationRequired",
+        "Confirme sua identidade para continuar.",
+        ErrorType.Forbidden);
+
+    public static readonly Error TwoFactorNotSetUp = new(
+        "identity.twoFactorNotSetUp",
+        "Gere a chave de verificação em duas etapas antes de ativar.",
+        ErrorType.Conflict);
+
+    public static readonly Error SessionNotFound = new(
+        "identity.sessionNotFound",
+        "Sessão não encontrada.",
+        ErrorType.NotFound);
 }

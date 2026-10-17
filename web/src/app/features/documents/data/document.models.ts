@@ -43,3 +43,19 @@ export interface DocumentVerification {
 }
 
 export type DocumentChannel = 'WhatsApp' | 'Email';
+
+export interface DocumentSummary {
+  readonly code: string;
+  readonly kind: DocumentKind;
+  readonly number: number;
+  readonly customerName: string;
+  readonly total: Cents;
+  readonly issuedAt: string;
+}
+
+export interface DocumentFilter {
+  readonly kind: DocumentKind | null;
+  readonly code: string;
+  readonly page: number;
+  readonly pageSize: number;
+}

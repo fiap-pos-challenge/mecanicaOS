@@ -39,6 +39,10 @@ public sealed class User : AggregateRoot
 
     public DateTimeOffset? LockoutEndAt { get; private set; }
 
+    public string? TwoFactorSecret { get; private set; }
+
+    public bool TwoFactorEnabled { get; private set; }
+
     public bool IsActiveAdmin => IsActive && Role == Role.Admin;
 
     public bool HasPendingInvitation => PasswordHash is null;
@@ -128,6 +132,29 @@ public sealed class User : AggregateRoot
     }
 
     public void Delete() => IsActive = false;
+
+    public void PrepareTwoFactor(string secret)
+    {
+        TwoFactorSecret = secret;
+        TwoFactorEnabled = false;
+    }
+
+    public Result EnableTwoFactor()
+    {
+        if (TwoFactorSecret is null)
+        {
+            return IdentityErrors.TwoFactorNotSetUp;
+        }
+
+        TwoFactorEnabled = true;
+        return Result.Success();
+    }
+
+    public void DisableTwoFactor()
+    {
+        TwoFactorEnabled = false;
+        TwoFactorSecret = null;
+    }
 
     public bool IsLockedOut(DateTimeOffset now) => LockoutEndAt > now;
 

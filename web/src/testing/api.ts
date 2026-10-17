@@ -20,6 +20,14 @@ export const TEST_ORIGIN = 'http://localhost';
 
 export type TestApiMode = 'http' | 'mock' | 'pending';
 
+const PENDING_BASELINE: readonly FeatureName[] = [
+  'auth',
+  'customers',
+  'users',
+  'vehicles',
+  'catalog',
+];
+
 export function testEnvironment(mode: TestApiMode = 'http'): AppEnvironment {
   const features = Object.fromEntries(
     (Object.keys(environment.features) as FeatureName[]).map((feature) => [
@@ -27,7 +35,9 @@ export function testEnvironment(mode: TestApiMode = 'http'): AppEnvironment {
       {
         api:
           mode === 'pending'
-            ? environment.features[feature].api
+            ? PENDING_BASELINE.includes(feature)
+              ? 'http'
+              : 'pending'
             : feature === 'realtime'
               ? 'pending'
               : 'http',

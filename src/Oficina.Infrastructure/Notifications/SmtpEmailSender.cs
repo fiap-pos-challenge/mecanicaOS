@@ -43,6 +43,35 @@ public sealed partial class SmtpEmailSender(IOptions<EmailOptions> options, ILog
         }
     }
 
+    public async Task<bool> SendAsync(EmailMessage message, CancellationToken cancellationToken)
+    {
+        var settings = options.Value;
+        var pickupDirectory = string.IsNullOrWhiteSpace(settings.PickupDirectory) ? null : settings.PickupDirectory;
+        if (pickupDirectory is null && string.IsNullOrWhiteSpace(settings.SmtpHost))
+        {
+            LogDeliveryDisabled();
+            return false;
+        }
+
+        using var mail = new MailMessage(settings.From, message.To) { Subject = message.Subject, Body = message.HtmlBody, IsBodyHtml = true };
+        try
+        {
+            using var client = pickupDirectory is null ? SmtpServerClient(settings) : PickupClient(pickupDirectory);
+            await client.SendMailAsync(mail, cancellationToken);
+            return true;
+        }
+        catch (SmtpException exception)
+        {
+            LogDeliveryFailed(exception.StatusCode);
+            return false;
+        }
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or FormatException)
+        {
+            LogPickupDirectoryFailed();
+            return false;
+        }
+    }
+
     private static SmtpClient PickupClient(string directory) => new()
     {
         DeliveryMethod = SmtpDeliveryMethod.SpecifiedPickupDirectory,

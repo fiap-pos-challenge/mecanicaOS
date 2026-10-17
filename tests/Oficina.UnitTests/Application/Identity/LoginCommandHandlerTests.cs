@@ -4,6 +4,7 @@ using Oficina.Application.Abstractions.Persistence;
 using Oficina.Application.Abstractions.Security;
 using Oficina.Application.Identity.Commands.Login;
 using Oficina.Application.Identity.Dtos;
+using Oficina.Application.Identity.Sessions;
 using Oficina.Domain.Common.Errors;
 using Oficina.Domain.Common.Results;
 using Oficina.Domain.Common.ValueObjects;
@@ -23,6 +24,8 @@ public sealed class LoginCommandHandlerTests
     private readonly IPasswordHasher _hasher = Substitute.For<IPasswordHasher>();
     private readonly ITokenGenerator _tokens = Substitute.For<ITokenGenerator>();
     private readonly IUnitOfWork _unitOfWork = Substitute.For<IUnitOfWork>();
+    private readonly IUserSessionRepository _sessions = Substitute.For<IUserSessionRepository>();
+    private readonly ITwoFactorChallengeRepository _challenges = Substitute.For<ITwoFactorChallengeRepository>();
     private readonly FakeTimeProvider _clock = new(Now);
     private readonly LoginCommandHandler _handler;
 
@@ -30,9 +33,9 @@ public sealed class LoginCommandHandlerTests
     {
         _hasher.Verify(UserTestData.StrongPassword, UserTestData.PasswordHash).Returns(true);
         _hasher.DummyHash.Returns(DummyHash);
-        _tokens.Generate(Arg.Any<User>()).Returns(new AccessToken("jwt", ExpiresAt));
+        _tokens.Generate(Arg.Any<User>(), Arg.Any<Guid?>()).Returns(new AccessToken("jwt", ExpiresAt));
         _unitOfWork.CommitAsync(Arg.Any<CancellationToken>()).Returns(Result.Success());
-        _handler = new LoginCommandHandler(_users, _hasher, _tokens, _unitOfWork, _clock);
+        _handler = new LoginCommandHandler(_users, _hasher, new SessionIssuer(_sessions, _tokens), _challenges, _unitOfWork, _clock);
     }
 
     [Fact]
@@ -43,10 +46,29 @@ public sealed class LoginCommandHandlerTests
 
         var result = await _handler.Handle(new LoginCommand(" ANA@oficina.com", UserTestData.StrongPassword), CancellationToken.None);
 
-        Assert.Equal(new LoginResponse("jwt", ExpiresAt), result.Value);
+        Assert.Equal(new LoginResponse("jwt", ExpiresAt, false, null), result.Value.Response);
+        Assert.NotNull(result.Value.RefreshToken);
+        _sessions.Received(1).Add(Arg.Is<UserSession>(session => session.UserId == user.Id));
         Assert.Equal(0, user.FailedLoginAttempts);
-        _tokens.Received(1).Generate(user);
+        _tokens.Received(1).Generate(user, Arg.Any<Guid?>());
         await _unitOfWork.Received(1).CommitAsync(Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task Handle_UserWithTwoFactor_OpensAChallengeWithoutToken()
+    {
+        var user = Register(UserTestData.User());
+        user.PrepareTwoFactor(Totp.NewSecret());
+        user.EnableTwoFactor();
+
+        var result = await _handler.Handle(new LoginCommand("ana@oficina.com", UserTestData.StrongPassword), CancellationToken.None);
+
+        Assert.True(result.Value.Response.RequiresTwoFactor);
+        Assert.NotNull(result.Value.Response.ChallengeId);
+        Assert.Null(result.Value.Response.AccessToken);
+        Assert.Null(result.Value.RefreshToken);
+        _challenges.Received(1).Add(Arg.Is<TwoFactorChallenge>(challenge => challenge.UserId == user.Id));
+        _tokens.DidNotReceive().Generate(Arg.Any<User>(), Arg.Any<Guid?>());
     }
 
     [Fact]
@@ -59,14 +81,14 @@ public sealed class LoginCommandHandlerTests
         Assert.Equal(IdentityErrors.InvalidCredentials, result.Error);
         Assert.Equal(1, user.FailedLoginAttempts);
         await _unitOfWork.Received(1).CommitAsync(Arg.Any<CancellationToken>());
-        _tokens.DidNotReceive().Generate(Arg.Any<User>());
+        _tokens.DidNotReceive().Generate(Arg.Any<User>(), Arg.Any<Guid?>());
     }
 
     [Fact]
     public async Task Handle_FifthWrongPassword_LocksTheAccount()
     {
         Register(UserTestData.User());
-        Result<LoginResponse>? result = null;
+        Result<LoginResult>? result = null;
 
         for (var attempt = 0; attempt < User.MaxFailedLoginAttempts; attempt++)
         {
@@ -106,7 +128,7 @@ public sealed class LoginCommandHandlerTests
 
         Assert.Equal(IdentityErrors.AccountDisabled, result.Error);
         _hasher.Received(1).Verify(UserTestData.StrongPassword, UserTestData.PasswordHash);
-        _tokens.DidNotReceive().Generate(Arg.Any<User>());
+        _tokens.DidNotReceive().Generate(Arg.Any<User>(), Arg.Any<Guid?>());
     }
 
     [Fact]
@@ -139,7 +161,7 @@ public sealed class LoginCommandHandlerTests
 
         Assert.Equal(IdentityErrors.InvalidCredentials, result.Error);
         _hasher.Received(1).Verify(UserTestData.StrongPassword, DummyHash);
-        _tokens.DidNotReceive().Generate(Arg.Any<User>());
+        _tokens.DidNotReceive().Generate(Arg.Any<User>(), Arg.Any<Guid?>());
     }
 
     [Theory]
@@ -155,7 +177,6 @@ public sealed class LoginCommandHandlerTests
             CancellationToken.None);
 
         Assert.Equal(CommonErrors.ConcurrencyConflict, result.Error);
-        _tokens.DidNotReceive().Generate(Arg.Any<User>());
     }
 
     [Fact]
@@ -167,7 +188,7 @@ public sealed class LoginCommandHandlerTests
 
         Assert.Equal(IdentityErrors.InvalidCredentials, result.Error);
         Assert.Equal(0, invited.FailedLoginAttempts);
-        _tokens.DidNotReceive().Generate(Arg.Any<User>());
+        _tokens.DidNotReceive().Generate(Arg.Any<User>(), Arg.Any<Guid?>());
     }
 
     private User Register(User user)

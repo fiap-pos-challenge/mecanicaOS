@@ -34,5 +34,7 @@ export const environment: AppEnvironment = {
     notifications: { api: 'http' },
     assistant: { api: 'http' },
     settings: { api: 'http' },
+    finance: { api: 'http' },
+    platform: { api: 'http' },
   },
 };

@@ -211,7 +211,7 @@ export const BoardStore = signalStore(
       const realtime = inject(RealtimeGateway);
       const pollMs = inject(SERVICE_ORDER_POLL_MS);
       const destroyRef = inject(DestroyRef);
-      void realtime.connect();
+      realtime.connect().catch(() => undefined);
       const subscription = realtime.events$.subscribe((event) => {
         if (event.type === 'serviceOrderStatusChanged') {
           void store.reloadCard(event.serviceOrderId, 'remote');

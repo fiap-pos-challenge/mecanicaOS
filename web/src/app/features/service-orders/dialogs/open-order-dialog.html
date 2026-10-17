@@ -1,0 +1,69 @@
+<ui-dialog-layout [title]="text.title">
+  <div class="dialog-form">
+    @if (customer(); as chosen) {
+      <div class="chosen">
+        <span
+          >{{ text.customer }}: <strong>{{ chosen.name }}</strong></span
+        >
+        <button uiButton size="sm" type="button" (click)="changeCustomer()">
+          {{ text.changeCustomer }}
+        </button>
+      </div>
+      @if (vehiclesLoading()) {
+        <p class="notice" role="status">{{ text.loadingVehicles }}</p>
+      } @else if (customerVehicles().length === 0) {
+        <p class="notice" role="status">{{ text.noVehicles }}</p>
+      } @else {
+        <fieldset class="options">
+          <legend class="label">{{ text.vehicle }}</legend>
+          @for (item of customerVehicles(); track item.id) {
+            <label class="option">
+              <input
+                type="radio"
+                name="vehicle"
+                [value]="item.id"
+                [checked]="vehicle() === item.id"
+                (change)="chooseVehicle(item.id)"
+              />
+              <span>{{ item.brand }} {{ item.model }} {{ item.year }}</span>
+              <span class="option-doc">{{ plate(item.licensePlate) }}</span>
+            </label>
+          }
+        </fieldset>
+      }
+    } @else {
+      <ui-field [label]="text.search">
+        <input uiControl type="search" autocomplete="off" [formControl]="search" />
+      </ui-field>
+      @if (candidates().length > 0) {
+        <ul class="options" [attr.aria-label]="text.results">
+          @for (item of candidates(); track item.id) {
+            <li>
+              <button class="option" type="button" (click)="chooseCustomer(item)">
+                <span>{{ item.name }}</span>
+                <span class="option-doc">{{ item.maskedDocument }}</span>
+              </button>
+            </li>
+          }
+        </ul>
+      } @else if (searched()) {
+        <p class="notice" role="status">{{ text.noResults }}</p>
+      }
+    }
+    <ui-field [label]="text.problem" [hint]="text.problemHint">
+      <textarea uiControl rows="3" [maxlength]="maxLength" [formControl]="problem"></textarea>
+    </ui-field>
+    <ui-field [label]="text.promisedAt">
+      <input uiControl type="datetime-local" [formControl]="promisedAt" />
+    </ui-field>
+    @if (error(); as message) {
+      <p class="alert" role="alert">{{ message }}</p>
+    }
+    <div class="footer">
+      <button uiButton type="button" (click)="ref.close()">{{ text.cancel }}</button>
+      <button uiButton variant="primary" type="button" [loading]="saving()" (click)="confirm()">
+        {{ text.confirm }}
+      </button>
+    </div>
+  </div>
+</ui-dialog-layout>

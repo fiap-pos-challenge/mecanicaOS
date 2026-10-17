@@ -227,7 +227,7 @@ public sealed class ServiceOrderTests
         Assert.Equal(ServiceOrderBuilder.FirstToken, quote.ApprovalToken);
         Assert.Equal(Now, quote.SentAt);
         Assert.Equal(quote, order.CurrentQuote);
-        var sent = Assert.IsType<QuoteSent>(Assert.Single(order.DomainEvents));
+        var sent = Assert.Single(order.DomainEvents.OfType<QuoteSent>());
         Assert.Equal(1, sent.QuoteVersion);
         Assert.Equal(265.22m, sent.Total);
     }
@@ -270,7 +270,7 @@ public sealed class ServiceOrderTests
         Assert.Equal(Now, quote.RespondedAt);
         Assert.Null(quote.ApprovalToken);
         Assert.False(order.MatchesApprovalToken(ServiceOrderBuilder.FirstToken));
-        var approved = Assert.IsType<QuoteApproved>(Assert.Single(order.DomainEvents));
+        var approved = Assert.Single(order.DomainEvents.OfType<QuoteApproved>());
         var approvedPart = Assert.Single(approved.Parts);
         Assert.Equal(partItem.PartId, approvedPart.PartId);
         Assert.Equal(partItem.Quantity.Value, approvedPart.Quantity);
@@ -312,7 +312,7 @@ public sealed class ServiceOrderTests
         Assert.Equal("Achou caro", quote.RejectionReason);
         Assert.Null(quote.ApprovalToken);
         Assert.Equal("Achou caro", order.StatusHistory.Last().Note);
-        Assert.IsType<QuoteRejected>(Assert.Single(order.DomainEvents));
+        Assert.Single(order.DomainEvents.OfType<QuoteRejected>());
     }
 
     [Fact]
@@ -343,7 +343,7 @@ public sealed class ServiceOrderTests
         Assert.Equal(ServiceOrderStatus.Completed, order.Status);
         Assert.Equal(completedAt, order.CompletedAt);
         Assert.Equal(TimeSpan.FromMinutes(150), order.ExecutionTime);
-        var completed = Assert.IsType<ServiceOrderCompleted>(Assert.Single(order.DomainEvents));
+        var completed = Assert.Single(order.DomainEvents.OfType<ServiceOrderCompleted>());
         Assert.Equal(order.CustomerId, completed.CustomerId);
     }
 

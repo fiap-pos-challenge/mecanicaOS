@@ -55,6 +55,7 @@ export async function interceptFakeApis(page: Page): Promise<FakeBackendState> {
     );
   }
 
+  await page.route('**/api/hubs/**', (route) => route.abort());
   await page.route('**/documents/exemplo.pdf', (route) =>
     route.fulfill({ status: 200, contentType: 'application/pdf', body: SAMPLE_PDF }),
   );

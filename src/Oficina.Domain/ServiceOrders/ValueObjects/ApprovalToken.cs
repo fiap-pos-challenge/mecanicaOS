@@ -1,3 +1,5 @@
+using System.Security.Cryptography;
+using System.Text;
 using Oficina.Domain.Common.Results;
 using Oficina.Domain.Common.ValueObjects;
 using Oficina.Domain.ServiceOrders.Errors;
@@ -11,6 +13,17 @@ public sealed class ApprovalToken : ValueObject
     private ApprovalToken(string hash) => Hash = hash;
 
     public string Hash { get; }
+
+    public static Result<ApprovalToken> FromRawToken(string rawToken)
+    {
+        if (string.IsNullOrWhiteSpace(rawToken))
+        {
+            return ServiceOrderErrors.InvalidApprovalToken;
+        }
+
+        var hash = SHA256.HashData(Encoding.UTF8.GetBytes(rawToken.Trim()));
+        return Create(Convert.ToHexString(hash));
+    }
 
     public static Result<ApprovalToken> Create(string hash)
     {

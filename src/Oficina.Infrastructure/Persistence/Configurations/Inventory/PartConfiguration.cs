@@ -30,6 +30,7 @@ public sealed class PartConfiguration : IEntityTypeConfiguration<Part>
         builder.Property(part => part.StockQuantity).HasPrecision(12, 3).IsRequired();
         builder.Property(part => part.MinimumStock).HasPrecision(12, 3).IsRequired();
         builder.Property(part => part.IsActive).IsRequired();
+        builder.Property(part => part.Location).HasMaxLength(Part.LocationMaxLength).IsUnicode(false).IsRequired().HasDefaultValue(Part.DefaultLocation);
         builder.Property<byte[]>(ConcurrencyToken.RowVersion).IsRowVersion().IsRequired();
 
         builder.HasMany(part => part.StockMovements)

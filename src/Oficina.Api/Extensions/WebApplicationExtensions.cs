@@ -22,6 +22,7 @@ public static class WebApplicationExtensions
 
         app.MapControllers();
         app.MapHealthChecks(HealthRoute).AllowAnonymous();
+        app.MapHub<Oficina.Api.Realtime.RealtimeHub>(Oficina.Api.Realtime.RealtimeHub.Route);
 
         return app;
     }

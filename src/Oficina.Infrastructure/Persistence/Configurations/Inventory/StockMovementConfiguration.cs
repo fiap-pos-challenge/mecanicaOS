@@ -19,6 +19,9 @@ public sealed class StockMovementConfiguration : IEntityTypeConfiguration<StockM
         builder.Property(movement => movement.Quantity).HasConversion<QuantityConverter>().HasPrecision(12, 3).IsRequired();
         builder.Property(movement => movement.BalanceAfter).HasPrecision(12, 3).IsRequired();
         builder.Property(movement => movement.Reason).IsRequired();
+        builder.Property(movement => movement.ServiceOrderNumber);
+        builder.Property(movement => movement.Negative).IsRequired();
+        builder.Ignore(movement => movement.SignedQuantity);
 
         builder.HasOne<ServiceOrder>().WithMany().HasForeignKey(movement => movement.ServiceOrderId).OnDelete(DeleteBehavior.Restrict);
         builder.HasOne<User>().WithMany().HasForeignKey(movement => movement.UserId).OnDelete(DeleteBehavior.Restrict);

@@ -27,7 +27,9 @@ export type FeatureName =
   | 'automations'
   | 'notifications'
   | 'assistant'
-  | 'settings';
+  | 'settings'
+  | 'finance'
+  | 'platform';
 
 export interface FeatureSettings {
   readonly api: ApiMode;

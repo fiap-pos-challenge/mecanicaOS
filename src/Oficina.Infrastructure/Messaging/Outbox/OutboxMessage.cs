@@ -48,6 +48,12 @@ public sealed class OutboxMessage
         Error = null;
     }
 
+    public void ResetAttempts()
+    {
+        Attempts = 0;
+        Error = null;
+    }
+
     public void RecordFailure(string error)
     {
         Attempts++;

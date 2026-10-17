@@ -10,10 +10,13 @@ import { PaymentMethod } from '../../quotes/data/quote.models';
 import {
   DocumentChannel,
   DocumentDownload,
+  DocumentFilter,
   DocumentKind,
   DocumentModel,
+  DocumentSummary,
   DocumentVerification,
 } from './document.models';
+import { Page } from '../../../core/data/page';
 
 export const PORTAL_SESSION_HEADER = 'X-Portal-Session';
 
@@ -52,6 +55,36 @@ interface DocumentData {
   readonly body?: { readonly channel: DocumentChannel };
 }
 
+interface DocumentListData {
+  readonly url: '/api/admin/documents';
+  readonly query: {
+    readonly kind?: DocumentKind;
+    readonly code?: string;
+    readonly page: number;
+    readonly pageSize: number;
+  };
+}
+
+interface DocumentSummaryDto {
+  readonly code?: string;
+  readonly kind?: DocumentKind;
+  readonly number?: number;
+  readonly customerName?: string;
+  readonly total?: number;
+  readonly issuedAt?: string;
+}
+
+export function toDocumentSummary(dto: DocumentSummaryDto): DocumentSummary {
+  return {
+    code: required(dto.code, 'code'),
+    kind: required(dto.kind, 'kind'),
+    number: required(dto.number, 'number'),
+    customerName: dto.customerName ?? '',
+    total: centsFromDecimal(dto.total ?? 0),
+    issuedAt: required(dto.issuedAt, 'issuedAt'),
+  };
+}
+
 export function toDocument(dto: DocumentDto): DocumentModel {
   return {
     kind: required(dto.kind, 'kind'),
@@ -82,6 +115,7 @@ export function publicContext(): HttpContext {
 }
 
 export abstract class DocumentsGateway {
+  abstract list(filter: DocumentFilter): Observable<Page<DocumentSummary>>;
   abstract get(code: string, portalSession?: string): Observable<DocumentModel>;
   abstract download(code: string, portalSession?: string): Observable<DocumentDownload>;
   abstract send(code: string, channel: DocumentChannel): Observable<void>;
@@ -100,6 +134,34 @@ export class HttpDocumentsGateway extends DocumentsGateway {
         this.options(code, portalSession),
       )
       .pipe(map(toDocument));
+  }
+
+  list(filter: DocumentFilter): Observable<Page<DocumentSummary>> {
+    return this.api
+      .send<
+        DocumentListData,
+        {
+          items?: readonly DocumentSummaryDto[];
+          page?: number;
+          pageSize?: number;
+          totalItems?: number;
+        }
+      >('GET', '/api/admin/documents', {
+        query: {
+          ...(filter.kind ? { kind: filter.kind } : {}),
+          ...(filter.code.trim() ? { code: filter.code.trim() } : {}),
+          page: filter.page,
+          pageSize: filter.pageSize,
+        },
+      })
+      .pipe(
+        map((dto) => ({
+          items: (dto.items ?? []).map(toDocumentSummary),
+          page: dto.page ?? filter.page,
+          pageSize: dto.pageSize ?? filter.pageSize,
+          totalItems: dto.totalItems ?? 0,
+        })),
+      );
   }
 
   download(code: string, portalSession?: string): Observable<DocumentDownload> {

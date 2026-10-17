@@ -17,6 +17,8 @@ public static class ProblemResponses
         ErrorType.TooManyRequests => StatusCodes.Status429TooManyRequests,
         ErrorType.NotFound => StatusCodes.Status404NotFound,
         ErrorType.Conflict => StatusCodes.Status409Conflict,
+        ErrorType.Locked => StatusCodes.Status423Locked,
+        ErrorType.TooLarge => StatusCodes.Status413PayloadTooLarge,
         ErrorType.BusinessRule => StatusCodes.Status422UnprocessableEntity,
         _ => StatusCodes.Status500InternalServerError,
     };

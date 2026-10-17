@@ -15,6 +15,7 @@ import { automationsHandlers } from './automations/automations.handlers';
 import { notificationsHandlers } from './notifications/notifications.handlers';
 import { assistantHandlers } from './assistant/assistant.handlers';
 import { settingsHandlers } from './settings/settings.handlers';
+import { financeHandlers } from './finance/finance.handlers';
 import { quotesHandlers } from './quotes/quotes.handlers';
 import { serviceOrdersHandlers } from './service-orders/service-orders.handlers';
 import { rolesHandlers } from './roles/roles.handlers';
@@ -47,5 +48,6 @@ export function createHandlers(
     ...notificationsHandlers(apis.notifications, options),
     ...assistantHandlers(apis.assistant, options),
     ...settingsHandlers(apis.settings, options),
+    ...financeHandlers(apis.finance, options),
   ];
 }

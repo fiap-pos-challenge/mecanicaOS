@@ -123,25 +123,24 @@ test.describe('team against the real API', () => {
     await expect(card(page, name).getByText(messages.team.statuses.Inactive)).toHaveCount(0);
   });
 
-  test('keeps the professional profile and the permissions under construction', async ({
-    page,
-  }) => {
+  test('saves the professional profile and shows the fixed permissions', async ({ page }) => {
     await loginAs(page, ACCOUNTS.admin);
     await openTeam(page);
-    await expect(page.getByText(messages.pending.production)).toBeVisible();
+    await expect(page.getByText(messages.pending.production)).toHaveCount(0);
     await page.getByRole('radio', { name: messages.roles.Mechanic }).click();
     await page.getByRole('list', { name: list.caption }).getByRole('link').first().click();
     await expect(page.getByRole('heading', { level: 2, name: member.profile })).toBeVisible();
-    await expect(page.getByText(messages.pending.production).first()).toBeVisible();
+    await expect(page.getByText(messages.pending.production)).toHaveCount(0);
     await page.getByLabel(member.commission).fill('12');
     await page.getByRole('button', { name: member.saveProfile }).click();
-    await expect(page.getByText(messages.errors.featurePending)).toBeVisible();
+    await expect(page.getByText(member.profileSaved)).toBeVisible();
 
     await openTeam(page);
     await page.getByRole('link', { name: list.permissions }).click();
     await expect(
       page.getByRole('heading', { level: 1, name: messages.team.permissions.title }),
     ).toBeVisible();
-    await expect(page.getByText(messages.pending.roles)).toBeVisible();
+    await expect(page.getByText(messages.pending.roles)).toHaveCount(0);
+    await expect(page.getByText(messages.team.permissions.readOnly)).toBeVisible();
   });
 });

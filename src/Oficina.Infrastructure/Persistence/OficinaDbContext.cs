@@ -8,6 +8,7 @@ using Oficina.Domain.Identity.Entities;
 using Oficina.Domain.Inventory.Entities;
 using Oficina.Domain.Privacy.Entities;
 using Oficina.Domain.ServiceOrders.Entities;
+using Oficina.Domain.Team.Entities;
 using Oficina.Infrastructure.Messaging.Outbox;
 using Oficina.Infrastructure.Persistence.Conventions;
 
@@ -31,13 +32,59 @@ public sealed class OficinaDbContext(DbContextOptions<OficinaDbContext> options)
 
     public DbSet<Part> Parts => Set<Part>();
 
+    public DbSet<StockMovement> StockMovements => Set<StockMovement>();
+
+    public DbSet<Supplier> Suppliers => Set<Supplier>();
+
+    public DbSet<StockCount> StockCounts => Set<StockCount>();
+
+    public DbSet<PurchaseOrder> PurchaseOrders => Set<PurchaseOrder>();
+
     public DbSet<ServiceOrder> ServiceOrders => Set<ServiceOrder>();
+
+    public DbSet<TimeEntry> TimeEntries => Set<TimeEntry>();
+
+    public DbSet<ServiceOrderPhoto> ServiceOrderPhotos => Set<ServiceOrderPhoto>();
 
     public DbSet<OutboxMessage> OutboxMessages => Set<OutboxMessage>();
 
     public DbSet<SensitiveDataAccess> SensitiveDataAccesses => Set<SensitiveDataAccess>();
 
     public DbSet<UserInvitation> UserInvitations => Set<UserInvitation>();
+
+    public DbSet<UserSession> UserSessions => Set<UserSession>();
+
+    public DbSet<TeamProfile> TeamProfiles => Set<TeamProfile>();
+
+    public DbSet<Domain.Quotes.Entities.Estimate> Estimates => Set<Domain.Quotes.Entities.Estimate>();
+
+    public DbSet<Domain.Settings.Entities.SettingsDocument> SettingsDocuments => Set<Domain.Settings.Entities.SettingsDocument>();
+
+    public DbSet<Domain.Portal.Entities.PortalSession> PortalSessions => Set<Domain.Portal.Entities.PortalSession>();
+
+    public DbSet<Domain.Portal.Entities.PortalCharge> PortalCharges => Set<Domain.Portal.Entities.PortalCharge>();
+
+    public DbSet<Domain.Documents.Entities.IssuedDocument> IssuedDocuments => Set<Domain.Documents.Entities.IssuedDocument>();
+
+    public DbSet<Domain.Audit.Entities.AuditEntry> AuditEntries => Set<Domain.Audit.Entities.AuditEntry>();
+
+    public DbSet<Domain.Jobs.Entities.BackgroundJob> BackgroundJobs => Set<Domain.Jobs.Entities.BackgroundJob>();
+
+    public DbSet<Domain.Dashboard.DashboardAction> DashboardActions => Set<Domain.Dashboard.DashboardAction>();
+
+    public DbSet<Domain.Reports.SavedReport> SavedReports => Set<Domain.Reports.SavedReport>();
+
+    public DbSet<Domain.Notifications.Notification> Notifications => Set<Domain.Notifications.Notification>();
+
+    public DbSet<Domain.Notifications.NotificationRead> NotificationReads => Set<Domain.Notifications.NotificationRead>();
+
+    public DbSet<Domain.Automations.AutomationRule> AutomationRules => Set<Domain.Automations.AutomationRule>();
+
+    public DbSet<Domain.Automations.AutomationExecution> AutomationExecutions => Set<Domain.Automations.AutomationExecution>();
+
+    public DbSet<TwoFactorChallenge> TwoFactorChallenges => Set<TwoFactorChallenge>();
+
+    public DbSet<Reauthentication> Reauthentications => Set<Reauthentication>();
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder) =>
         optionsBuilder.ConfigureWarnings(warnings =>

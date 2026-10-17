@@ -1,6 +1,7 @@
 import { messages } from '../../../app/core/i18n/messages.pt-BR';
 import { FakeBackendState, FakeFeatureApi } from '../fake-api/fake-backend';
 import {
+  created,
   fieldError,
   FakeRouter,
   ok,
@@ -13,6 +14,7 @@ import { fakeId, fakeNow } from '../fake-api/fake-ids';
 import { authorize, FakePrincipal, FakeRole, isPrincipal } from '../fake-api/fake-session';
 import { FakeRequest, FakeResult } from '../fake-request';
 import {
+  checklist,
   FAKE_MECHANIC_NAME,
   FakeBoardOrder,
   FakeChecklistItem,
@@ -233,6 +235,73 @@ export function createServiceOrdersFakeApi(state: FakeBackendState): FakeFeature
 
       const items = [...db().orders].sort((a, b) => b.number - a.number).map(card);
       return ok({ items, page: 1, pageSize: items.length, totalItems: items.length });
+    })
+    .on('POST', SERVICE_ORDER_PATHS.collection, (request) => {
+      const principal = guard(request, desk);
+      if (!isPrincipal(principal)) {
+        return principal;
+      }
+
+      const body = readBody(request);
+      const customer = state.database.customers.find(
+        (candidate) => candidate.id === readText(body, 'customerId'),
+      );
+      const vehicle = state.database.vehicles.find(
+        (candidate) => candidate.id === readText(body, 'vehicleId'),
+      );
+      const complaint = readText(body, 'problemDescription').trim();
+      if (complaint.length < 3) {
+        return validation([
+          fieldError('problemDescription', 'serviceOrders.invalidDescription', text.invalidField),
+        ]);
+      }
+
+      if (!customer) {
+        return problem(404, 'customer.notFound', text.customerNotFound);
+      }
+
+      if (!vehicle || vehicle.customerId !== customer.id) {
+        return problem(404, 'vehicle.notFound', text.vehicleNotFound);
+      }
+
+      const now = fakeNow();
+      const order: FakeBoardOrder = {
+        id: fakeId(),
+        number: Math.max(0, ...db().orders.map((item) => item.number)) + 1,
+        status: 'Received',
+        version: 1,
+        customerId: customer.id,
+        plate: vehicle.licensePlate,
+        vehicle: `${vehicle.brand} ${vehicle.model} ${vehicle.year}`,
+        mileage: vehicle.mileage,
+        summary: complaint,
+        complaint,
+        mechanicName: null,
+        promisedAt: typeof body['promisedAt'] === 'string' ? body['promisedAt'] : null,
+        tags: [],
+        quoteItems: [],
+        quoteStatus: null,
+        discount: 0,
+        history: [
+          {
+            previousStatus: null,
+            newStatus: 'Received',
+            changedBy: nameOf(principal),
+            note: null,
+            changedAt: now,
+          },
+        ],
+        checklist: checklist(),
+        photos: [],
+        diagnosis: '',
+        sentToQuote: false,
+        timeEntries: [],
+        parts: [],
+        documents: [],
+        updatedAt: now,
+      };
+      db().orders.push(order);
+      return created(detail(order));
     })
     .on('GET', SERVICE_ORDER_PATHS.mine, (request) => {
       const principal = guard(request, mechanics);

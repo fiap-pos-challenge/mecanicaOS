@@ -6,7 +6,7 @@ import { messages } from '../../../core/i18n/messages.pt-BR';
 import { UiDialogLayout } from '../../../shared/ui/dialog/dialog';
 import { UiSkeleton } from '../../../shared/ui/skeleton/skeleton';
 import { DocumentModel } from '../data/document.models';
-import { DocumentsGateway } from '../data/documents.gateway';
+import { DocumentsGateway, provideDocumentsData } from '../data/documents.gateway';
 import { DocumentViewer } from './document-viewer';
 
 export interface DocumentDialogData {
@@ -19,6 +19,7 @@ export interface DocumentDialogData {
 @Component({
   selector: 'app-document-dialog',
   imports: [DocumentViewer, UiDialogLayout, UiSkeleton],
+  providers: [provideDocumentsData()],
   template: `
     <ui-dialog-layout [title]="text.preview">
       @if (document(); as current) {

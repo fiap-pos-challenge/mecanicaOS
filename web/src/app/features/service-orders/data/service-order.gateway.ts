@@ -7,16 +7,23 @@ import {
   ServiceOrderDetailDto,
   ServiceOrderItemData,
   ServiceOrderListData,
+  ServiceOrderOpenData,
   ServiceOrderTransitionData,
 } from './service-order.contracts';
 import { toServiceOrderCard, toServiceOrderDetail } from './service-order.mappers';
-import { ServiceOrderCard, ServiceOrderDetail, TransitionInput } from './service-order.models';
+import {
+  OpenOrderInput,
+  ServiceOrderCard,
+  ServiceOrderDetail,
+  TransitionInput,
+} from './service-order.models';
 
-export const BOARD_PAGE_SIZE = 200;
+export const BOARD_PAGE_SIZE = 100;
 
 export abstract class ServiceOrderGateway {
   abstract board(): Observable<readonly ServiceOrderCard[]>;
   abstract get(id: string): Observable<ServiceOrderDetail>;
+  abstract open(input: OpenOrderInput): Observable<ServiceOrderDetail>;
   abstract transition(id: string, input: TransitionInput): Observable<ServiceOrderDetail>;
   abstract startTime(id: string): Observable<ServiceOrderDetail>;
   abstract stopTime(id: string): Observable<ServiceOrderDetail>;
@@ -38,6 +45,20 @@ export class HttpServiceOrderGateway extends ServiceOrderGateway {
 
   get(id: string): Observable<ServiceOrderDetail> {
     return this.item('GET', '/api/admin/service-orders/{id}', id);
+  }
+
+  open(input: OpenOrderInput): Observable<ServiceOrderDetail> {
+    return this.api
+      .send<ServiceOrderOpenData, ServiceOrderDetailDto>('POST', '/api/admin/service-orders', {
+        body: {
+          customerId: input.customerId,
+          vehicleId: input.vehicleId,
+          problemDescription: input.problemDescription.trim(),
+          promisedAt: input.promisedAt,
+          mileage: input.mileage,
+        },
+      })
+      .pipe(map(toServiceOrderDetail));
   }
 
   transition(id: string, input: TransitionInput): Observable<ServiceOrderDetail> {

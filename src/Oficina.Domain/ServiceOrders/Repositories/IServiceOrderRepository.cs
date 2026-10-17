@@ -7,6 +7,8 @@ public interface IServiceOrderRepository
 {
     Task<ServiceOrder?> GetByIdAsync(Guid id, CancellationToken cancellationToken);
 
+    Task<ServiceOrder?> GetByApprovalTokenAsync(ApprovalToken approvalToken, CancellationToken cancellationToken);
+
     Task<ServiceOrderNumber> NextNumberAsync(CancellationToken cancellationToken);
 
     Task<bool> HasOpenOrderForVehicleAsync(Guid vehicleId, CancellationToken cancellationToken);

@@ -20,6 +20,7 @@ import { createAutomationsFakeApi } from './automations/automations.fake-api';
 import { createNotificationsFakeApi } from './notifications/notifications.fake-api';
 import { createAssistantFakeApi } from './assistant/assistant.fake-api';
 import { createSettingsFakeApi } from './settings/settings.fake-api';
+import { createFinanceFakeApi } from './finance/finance.fake-api';
 import { createQuotesFakeApi } from './quotes/quotes.fake-api';
 import { createServiceOrdersFakeApi } from './service-orders/service-orders.fake-api';
 import { createRolesFakeApi } from './roles/roles.fake-api';
@@ -58,6 +59,7 @@ export function createFakeApis(state = createFakeBackendState()): Readonly<
     notifications: createNotificationsFakeApi(state),
     assistant: createAssistantFakeApi(state),
     settings: createSettingsFakeApi(state),
+    finance: createFinanceFakeApi(state),
   };
 }
 

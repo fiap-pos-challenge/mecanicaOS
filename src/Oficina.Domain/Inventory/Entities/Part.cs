@@ -15,6 +15,8 @@ public sealed class Part : AggregateRoot
     public const int UnitOfMeasureMaxLength = 10;
     public const int SupplierMaxLength = 120;
     public const int BarcodeLength = 13;
+    public const int LocationMaxLength = 10;
+    public const string DefaultLocation = "GERAL";
     private const decimal QuantityPrecision = 1000m;
     private const string ServiceOrderReasonPrefix = "serviceOrder:";
 
@@ -47,6 +49,7 @@ public sealed class Part : AggregateRoot
         Barcode = barcode;
         IsActive = isActive;
         _stockMovements = new List<StockMovement>();
+        Location = DefaultLocation;
     }
 
     public PartCode Code { get; private set; }
@@ -70,6 +73,8 @@ public sealed class Part : AggregateRoot
     public decimal MinimumStock { get; private set; }
 
     public bool IsActive { get; private set; }
+
+    public string Location { get; private set; }
 
     public bool IsBelowMinimum => StockQuantity < MinimumStock;
 
@@ -173,8 +178,60 @@ public sealed class Part : AggregateRoot
 
         StockQuantity -= quantity.Value;
         var reason = ServiceOrderReasonPrefix + serviceOrderNumber.ToString(CultureInfo.InvariantCulture);
-        _stockMovements.Add(StockMovement.Record(Id, StockMovementType.Deduction, quantity, StockQuantity, reason, serviceOrderId, userId));
+        _stockMovements.Add(StockMovement.Record(Id, StockMovementType.Deduction, quantity, StockQuantity, reason, serviceOrderId, userId, serviceOrderNumber));
         return Result.Success();
+    }
+
+    public Result EnsureQuantityUnit(Quantity quantity) =>
+        Type == PartType.Part && quantity.Value != decimal.Truncate(quantity.Value) ? InventoryErrors.FractionalPart : Result.Success();
+
+    public Result ReceiveStock(Quantity quantity, Money? unitCost, string reason, Guid? userId)
+    {
+        if (EnsureQuantityUnit(quantity).Error is { } unitError)
+        {
+            return unitError;
+        }
+
+        if (unitCost is { Amount: > 0 } cost)
+        {
+            Cost = cost;
+        }
+
+        return RegisterEntry(quantity, reason, userId);
+    }
+
+    public Result RegisterExit(Quantity quantity, string reason, long? serviceOrderNumber, Guid? userId)
+    {
+        if (EnsureQuantityUnit(quantity).Error is { } unitError)
+        {
+            return unitError;
+        }
+
+        if (string.IsNullOrWhiteSpace(reason))
+        {
+            return InventoryErrors.InvalidReason;
+        }
+
+        if (!HasAvailable(quantity))
+        {
+            return InventoryErrors.InsufficientStock;
+        }
+
+        StockQuantity -= quantity.Value;
+        _stockMovements.Add(StockMovement.Record(Id, StockMovementType.Exit, quantity, StockQuantity, reason.Trim(), null, userId, serviceOrderNumber));
+        return Result.Success();
+    }
+
+    public void Adjust(decimal countedQuantity, string reason, Guid? userId)
+    {
+        var delta = countedQuantity - StockQuantity;
+        if (delta == 0)
+        {
+            return;
+        }
+
+        StockQuantity = countedQuantity;
+        _stockMovements.Add(StockMovement.RecordAdjustment(Id, delta, StockQuantity, reason, userId));
     }
 
     public Result Deactivate()

@@ -15,6 +15,138 @@ public sealed class MigrationTests(SqlServerFixture database)
 
     private static readonly Dictionary<string, string[]> ExpectedColumns = new(StringComparer.Ordinal)
     {
+        ["backgroundJobs"] = new[]
+        {
+            "id|uniqueidentifier|NO",
+            "kind|varchar(30)|NO",
+            "requestedBy|uniqueidentifier|NO",
+            "customerId|uniqueidentifier|YES",
+            "status|varchar(12)|NO",
+            "createdAt|datetimeoffset|NO",
+            "completedAt|datetimeoffset|YES",
+            "fileName|nvarchar(120)|YES",
+            "resultJson|nvarchar(max)|YES",
+        },
+        ["auditEntries"] = new[]
+        {
+            "id|uniqueidentifier|NO",
+            "occurredAt|datetimeoffset|NO",
+            "actorId|uniqueidentifier|YES",
+            "actorName|nvarchar(200)|NO",
+            "area|varchar(20)|NO",
+            "action|nvarchar(200)|NO",
+            "target|nvarchar(200)|NO",
+            "detail|nvarchar(200)|NO",
+        },
+        ["dashboardActions"] = new[]
+        {
+            "id|uniqueidentifier|NO",
+            "itemId|varchar(60)|NO",
+            "action|varchar(30)|NO",
+            "userId|uniqueidentifier|YES",
+            "occurredAt|datetimeoffset|NO",
+        },
+        ["savedReports"] = new[]
+        {
+            "id|uniqueidentifier|NO",
+            "name|nvarchar(80)|NO",
+            "definitionJson|nvarchar(1000)|NO",
+            "scheduleJson|nvarchar(2000)|YES",
+            "updatedAt|datetimeoffset|NO",
+            "lastSentAt|datetimeoffset|YES",
+        },
+        ["automationRules"] = new[]
+        {
+            "id|uniqueidentifier|NO",
+            "enabled|bit|NO",
+            "trigger|varchar(30)|NO",
+            "definitionJson|nvarchar(4000)|NO",
+            "createdAt|datetimeoffset|NO",
+        },
+        ["notifications"] = new[]
+        {
+            "id|uniqueidentifier|NO",
+            "type|varchar(30)|NO",
+            "title|nvarchar(160)|NO",
+            "body|nvarchar(500)|NO",
+            "link|varchar(120)|YES",
+            "aiSuggested|bit|NO",
+            "dedupeKey|varchar(80)|YES",
+            "createdAt|datetimeoffset|NO",
+        },
+        ["automationExecutions"] = new[]
+        {
+            "id|uniqueidentifier|NO",
+            "ruleId|uniqueidentifier|NO",
+            "trigger|varchar(30)|NO",
+            "subjectId|uniqueidentifier|YES",
+            "dedupeKey|varchar(120)|NO",
+            "dueAt|datetimeoffset|NO",
+            "createdAt|datetimeoffset|NO",
+            "status|varchar(10)|NO",
+            "attempts|int|NO",
+            "summary|nvarchar(300)|NO",
+            "error|nvarchar(300)|YES",
+            "finishedAt|datetimeoffset|YES",
+        },
+        ["notificationReads"] = new[]
+        {
+            "notificationId|uniqueidentifier|NO",
+            "userId|uniqueidentifier|NO",
+            "readAt|datetimeoffset|NO",
+        },
+        ["estimates"] = WithAudit(
+            "id|uniqueidentifier|NO",
+            "number|bigint|NO",
+            "version|int|NO",
+            "serviceOrderId|uniqueidentifier|NO",
+            "status|varchar(10)|NO",
+            "lines|nvarchar(max)|NO",
+            "discountMode|varchar(10)|NO",
+            "manualDiscount|nvarchar(max)|YES",
+            "paymentMethods|nvarchar(max)|NO",
+            "maxInstallments|int|NO",
+            "approval|nvarchar(max)|YES",
+            "delivery|nvarchar(max)|YES",
+            "deliveryTokenHash|char(64)|YES",
+            "portalFailures|int|NO",
+            "rejectionReason|nvarchar(500)|YES",
+            "acceptedLineIds|nvarchar(max)|NO"),
+        ["settingsDocuments"] = new[]
+        {
+            "key|varchar(40)|NO",
+            "json|nvarchar(max)|NO",
+            "updatedAt|datetimeoffset|NO",
+            "updatedBy|uniqueidentifier|YES",
+        },
+        ["issuedDocuments"] = new[]
+        {
+            "id|uniqueidentifier|NO",
+            "code|varchar(30)|NO",
+            "kind|varchar(15)|NO",
+            "serviceOrderId|uniqueidentifier|NO",
+            "issuedAt|datetimeoffset|NO",
+            "snapshot|nvarchar(max)|NO",
+        },
+        ["portalCharges"] = new[]
+        {
+            "id|uniqueidentifier|NO",
+            "estimateId|uniqueidentifier|NO",
+            "serviceOrderId|uniqueidentifier|NO",
+            "method|varchar(10)|NO",
+            "amount|decimal(18,2)|NO",
+            "txId|varchar(25)|NO",
+            "expiresAt|datetimeoffset|NO",
+            "status|varchar(10)|NO",
+            "paidAt|datetimeoffset|YES",
+        },
+        ["portalSessions"] = new[]
+        {
+            "id|uniqueidentifier|NO",
+            "tokenHash|char(64)|NO",
+            "estimateId|uniqueidentifier|NO",
+            "expiresAt|datetimeoffset|NO",
+        },
         ["users"] = WithAudit(
             "id|uniqueidentifier|NO",
             "name|nvarchar(120)|NO",
@@ -23,7 +155,9 @@ public sealed class MigrationTests(SqlServerFixture database)
             "role|varchar(20)|NO",
             "isActive|bit|NO",
             "failedLoginAttempts|int|NO",
-            "lockoutEndAt|datetimeoffset|YES"),
+            "lockoutEndAt|datetimeoffset|YES",
+            "twoFactorSecret|varchar(64)|YES",
+            "twoFactorEnabled|bit|NO"),
         ["customers"] = WithAudit(
             "id|uniqueidentifier|NO",
             "name|nvarchar(160)|NO",
@@ -105,6 +239,7 @@ public sealed class MigrationTests(SqlServerFixture database)
             "stockQuantity|decimal(12,3)|NO",
             "minimumStock|decimal(12,3)|NO",
             "isActive|bit|NO",
+            "location|varchar(10)|NO",
             "rowVersion|timestamp|NO"),
         ["stockMovements"] = WithAudit(
             "id|uniqueidentifier|NO",
@@ -114,7 +249,35 @@ public sealed class MigrationTests(SqlServerFixture database)
             "type|varchar(10)|NO",
             "quantity|decimal(12,3)|NO",
             "balanceAfter|decimal(12,3)|NO",
-            "reason|nvarchar(max)|NO"),
+            "reason|nvarchar(max)|NO",
+            "serviceOrderNumber|bigint|YES",
+            "negative|bit|NO"),
+        ["suppliers"] = WithAudit(
+            "id|uniqueidentifier|NO",
+            "name|nvarchar(120)|NO",
+            "document|varchar(14)|YES",
+            "email|nvarchar(160)|YES",
+            "phone|varchar(20)|YES",
+            "leadTimeDays|int|NO",
+            "isActive|bit|NO"),
+        ["stockCounts"] = WithAudit(
+            "id|uniqueidentifier|NO",
+            "location|varchar(10)|NO",
+            "status|varchar(20)|NO",
+            "openedBy|uniqueidentifier|YES",
+            "openedAt|datetimeoffset|NO",
+            "submittedAt|datetimeoffset|YES",
+            "decidedBy|uniqueidentifier|YES",
+            "decidedAt|datetimeoffset|YES",
+            "rejectionReason|nvarchar(500)|YES",
+            "lines|nvarchar(max)|NO"),
+        ["purchaseOrders"] = WithAudit(
+            "id|uniqueidentifier|NO",
+            "number|bigint|NO",
+            "supplierId|uniqueidentifier|NO",
+            "status|varchar(10)|NO",
+            "sentAt|datetimeoffset|YES",
+            "lines|nvarchar(max)|NO"),
         ["serviceOrders"] = WithAudit(
             "id|uniqueidentifier|NO",
             "number|bigint|NO",
@@ -126,7 +289,39 @@ public sealed class MigrationTests(SqlServerFixture database)
             "executionStartedAt|datetimeoffset|YES",
             "completedAt|datetimeoffset|YES",
             "deliveredAt|datetimeoffset|YES",
+            "version|int|NO",
+            "mechanicId|uniqueidentifier|YES",
+            "promisedAt|datetimeoffset|YES",
+            "mileage|int|YES",
+            "diagnosis|nvarchar(max)|NO",
+            "sentToQuote|bit|NO",
+            "reopened|bit|NO",
+            "checklist|nvarchar(max)|NO",
             "rowVersion|timestamp|NO"),
+        ["timeEntries"] = WithAudit(
+            "id|uniqueidentifier|NO",
+            "serviceOrderId|uniqueidentifier|NO",
+            "mechanicId|uniqueidentifier|NO",
+            "startedAt|datetimeoffset|NO",
+            "endedAt|datetimeoffset|YES",
+            "minutes|int|NO"),
+        ["serviceOrderPhotos"] = WithAudit(
+            "id|uniqueidentifier|NO",
+            "serviceOrderId|uniqueidentifier|NO",
+            "clientId|varchar(64)|YES",
+            "contentType|varchar(20)|NO",
+            "dataUrl|varchar(max)|NO",
+            "caption|nvarchar(160)|NO",
+            "takenAt|datetimeoffset|NO"),
+        ["teamProfiles"] = new[]
+        {
+            "userId|uniqueidentifier|NO",
+            "specialties|nvarchar(max)|NO",
+            "commissionPercent|decimal(5,2)|NO",
+            "discountLimitPercent|decimal(5,2)|NO",
+            "schedule|nvarchar(max)|NO",
+            "updatedAt|datetimeoffset|YES",
+        },
         ["serviceItems"] = WithAudit(
             "id|uniqueidentifier|NO",
             "serviceOrderId|uniqueidentifier|NO",
@@ -182,6 +377,33 @@ public sealed class MigrationTests(SqlServerFixture database)
             "acceptedAt|datetimeoffset|YES",
             "revokedAt|datetimeoffset|YES",
         },
+        ["userSessions"] = new[]
+        {
+            "id|uniqueidentifier|NO",
+            "userId|uniqueidentifier|NO",
+            "tokenHash|char(64)|NO",
+            "device|nvarchar(120)|NO",
+            "createdAt|datetimeoffset|NO",
+            "lastSeenAt|datetimeoffset|NO",
+            "expiresAt|datetimeoffset|NO",
+            "revokedAt|datetimeoffset|YES",
+        },
+        ["twoFactorChallenges"] = new[]
+        {
+            "id|uniqueidentifier|NO",
+            "userId|uniqueidentifier|NO",
+            "expiresAt|datetimeoffset|NO",
+            "attempts|int|NO",
+            "completedAt|datetimeoffset|YES",
+        },
+        ["reauthentications"] = new[]
+        {
+            "id|uniqueidentifier|NO",
+            "userId|uniqueidentifier|NO",
+            "tokenHash|char(64)|NO",
+            "expiresAt|datetimeoffset|NO",
+            "usedAt|datetimeoffset|YES",
+        },
         ["outboxMessages"] = new[]
         {
             "id|uniqueidentifier|NO",
@@ -195,7 +417,7 @@ public sealed class MigrationTests(SqlServerFixture database)
     };
 
     [Fact]
-    public async Task Database_HasExactlyTheSeventeenModelTables()
+    public async Task Database_HasExactlyTheModelTables()
     {
         var rows = await database.QueryAsync(
             "SELECT TABLE_NAME AS name FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE = 'BASE TABLE' AND TABLE_NAME <> '__EFMigrationsHistory'");

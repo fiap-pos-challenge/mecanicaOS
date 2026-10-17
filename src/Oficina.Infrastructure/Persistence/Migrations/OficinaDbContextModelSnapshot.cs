@@ -24,6 +24,168 @@ namespace Oficina.Infrastructure.Persistence.Migrations
 
             modelBuilder.HasSequence("serviceOrderNumbers");
 
+            modelBuilder.Entity("Oficina.Domain.Audit.Entities.AuditEntry", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("id");
+
+                    b.Property<string>("Action")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)")
+                        .HasColumnName("action");
+
+                    b.Property<Guid?>("ActorId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("actorId");
+
+                    b.Property<string>("ActorName")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)")
+                        .HasColumnName("actorName");
+
+                    b.Property<string>("Area")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(20)")
+                        .HasColumnName("area");
+
+                    b.Property<string>("Detail")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)")
+                        .HasColumnName("detail");
+
+                    b.Property<DateTimeOffset>("OccurredAt")
+                        .HasColumnType("datetimeoffset")
+                        .HasColumnName("occurredAt");
+
+                    b.Property<string>("Target")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)")
+                        .HasColumnName("target");
+
+                    b.HasKey("Id")
+                        .HasName("pk_auditEntries");
+
+                    b.HasIndex("OccurredAt")
+                        .HasDatabaseName("ix_auditEntries_occurredAt");
+
+                    b.ToTable("auditEntries", (string)null);
+                });
+
+            modelBuilder.Entity("Oficina.Domain.Automations.AutomationExecution", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("id");
+
+                    b.Property<int>("Attempts")
+                        .HasColumnType("int")
+                        .HasColumnName("attempts");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetimeoffset")
+                        .HasColumnName("createdAt");
+
+                    b.Property<string>("DedupeKey")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(120)")
+                        .HasColumnName("dedupeKey");
+
+                    b.Property<DateTimeOffset>("DueAt")
+                        .HasColumnType("datetimeoffset")
+                        .HasColumnName("dueAt");
+
+                    b.Property<string>("Error")
+                        .HasMaxLength(300)
+                        .HasColumnType("nvarchar(300)")
+                        .HasColumnName("error");
+
+                    b.Property<DateTimeOffset?>("FinishedAt")
+                        .HasColumnType("datetimeoffset")
+                        .HasColumnName("finishedAt");
+
+                    b.Property<Guid>("RuleId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("ruleId");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(10)")
+                        .HasColumnName("status");
+
+                    b.Property<Guid?>("SubjectId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("subjectId");
+
+                    b.Property<string>("Summary")
+                        .IsRequired()
+                        .HasMaxLength(300)
+                        .HasColumnType("nvarchar(300)")
+                        .HasColumnName("summary");
+
+                    b.Property<string>("Trigger")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(30)")
+                        .HasColumnName("trigger");
+
+                    b.HasKey("Id")
+                        .HasName("pk_automationExecutions");
+
+                    b.HasIndex("RuleId", "DedupeKey")
+                        .IsUnique()
+                        .HasDatabaseName("ux_automationExecutions_rule_dedupe");
+
+                    b.HasIndex("Status", "DueAt")
+                        .HasDatabaseName("ix_automationExecutions_status_dueAt");
+
+                    b.ToTable("automationExecutions", (string)null);
+                });
+
+            modelBuilder.Entity("Oficina.Domain.Automations.AutomationRule", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("id");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetimeoffset")
+                        .HasColumnName("createdAt");
+
+                    b.Property<string>("DefinitionJson")
+                        .IsRequired()
+                        .HasMaxLength(4000)
+                        .HasColumnType("nvarchar(4000)")
+                        .HasColumnName("definitionJson");
+
+                    b.Property<bool>("Enabled")
+                        .HasColumnType("bit")
+                        .HasColumnName("enabled");
+
+                    b.Property<string>("Trigger")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(30)")
+                        .HasColumnName("trigger");
+
+                    b.HasKey("Id")
+                        .HasName("pk_automationRules");
+
+                    b.ToTable("automationRules", (string)null);
+                });
+
             modelBuilder.Entity("Oficina.Domain.Catalog.Entities.Package", b =>
                 {
                     b.Property<Guid>("Id")
@@ -319,6 +481,159 @@ namespace Oficina.Infrastructure.Persistence.Migrations
                     b.ToTable("vehicles", (string)null);
                 });
 
+            modelBuilder.Entity("Oficina.Domain.Dashboard.DashboardAction", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("id");
+
+                    b.Property<string>("Action")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(30)")
+                        .HasColumnName("action");
+
+                    b.Property<string>("ItemId")
+                        .IsRequired()
+                        .HasMaxLength(60)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(60)")
+                        .HasColumnName("itemId");
+
+                    b.Property<DateTimeOffset>("OccurredAt")
+                        .HasColumnType("datetimeoffset")
+                        .HasColumnName("occurredAt");
+
+                    b.Property<Guid?>("UserId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("userId");
+
+                    b.HasKey("Id")
+                        .HasName("pk_dashboardActions");
+
+                    b.HasIndex("OccurredAt")
+                        .HasDatabaseName("ix_dashboardActions_occurredAt");
+
+                    b.ToTable("dashboardActions", (string)null);
+                });
+
+            modelBuilder.Entity("Oficina.Domain.Documents.Entities.IssuedDocument", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("id");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(30)")
+                        .HasColumnName("code");
+
+                    b.Property<DateTimeOffset>("IssuedAt")
+                        .HasColumnType("datetimeoffset")
+                        .HasColumnName("issuedAt");
+
+                    b.Property<string>("Kind")
+                        .IsRequired()
+                        .HasMaxLength(15)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(15)")
+                        .HasColumnName("kind");
+
+                    b.Property<Guid>("ServiceOrderId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("serviceOrderId");
+
+                    b.Property<string>("Snapshot")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("snapshot");
+
+                    b.HasKey("Id")
+                        .HasName("pk_issuedDocuments");
+
+                    b.HasIndex("Code")
+                        .IsUnique()
+                        .HasDatabaseName("ux_issuedDocuments_code");
+
+                    b.HasIndex("ServiceOrderId")
+                        .HasDatabaseName("ix_issuedDocuments_serviceOrderId");
+
+                    b.ToTable("issuedDocuments", (string)null);
+                });
+
+            modelBuilder.Entity("Oficina.Domain.Identity.Entities.Reauthentication", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("id");
+
+                    b.Property<DateTimeOffset>("ExpiresAt")
+                        .HasColumnType("datetimeoffset")
+                        .HasColumnName("expiresAt");
+
+                    b.Property<string>("TokenHash")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .IsUnicode(false)
+                        .HasColumnType("char(64)")
+                        .HasColumnName("tokenHash")
+                        .IsFixedLength();
+
+                    b.Property<DateTimeOffset?>("UsedAt")
+                        .HasColumnType("datetimeoffset")
+                        .HasColumnName("usedAt");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("userId");
+
+                    b.HasKey("Id")
+                        .HasName("pk_reauthentications");
+
+                    b.HasIndex("TokenHash")
+                        .IsUnique()
+                        .HasDatabaseName("ux_reauthentications_tokenHash");
+
+                    b.HasIndex("UserId")
+                        .HasDatabaseName("ix_reauthentications_userId");
+
+                    b.ToTable("reauthentications", (string)null);
+                });
+
+            modelBuilder.Entity("Oficina.Domain.Identity.Entities.TwoFactorChallenge", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("id");
+
+                    b.Property<int>("Attempts")
+                        .HasColumnType("int")
+                        .HasColumnName("attempts");
+
+                    b.Property<DateTimeOffset?>("CompletedAt")
+                        .HasColumnType("datetimeoffset")
+                        .HasColumnName("completedAt");
+
+                    b.Property<DateTimeOffset>("ExpiresAt")
+                        .HasColumnType("datetimeoffset")
+                        .HasColumnName("expiresAt");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("userId");
+
+                    b.HasKey("Id")
+                        .HasName("pk_twoFactorChallenges");
+
+                    b.HasIndex("UserId")
+                        .HasDatabaseName("ix_twoFactorChallenges_userId");
+
+                    b.ToTable("twoFactorChallenges", (string)null);
+                });
+
             modelBuilder.Entity("Oficina.Domain.Identity.Entities.User", b =>
                 {
                     b.Property<Guid>("Id")
@@ -368,6 +683,16 @@ namespace Oficina.Infrastructure.Persistence.Migrations
                         .IsUnicode(false)
                         .HasColumnType("varchar(20)")
                         .HasColumnName("role");
+
+                    b.Property<bool>("TwoFactorEnabled")
+                        .HasColumnType("bit")
+                        .HasColumnName("twoFactorEnabled");
+
+                    b.Property<string>("TwoFactorSecret")
+                        .HasMaxLength(64)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(64)")
+                        .HasColumnName("twoFactorSecret");
 
                     b.Property<DateTimeOffset?>("UpdatedAt")
                         .HasColumnType("datetimeoffset")
@@ -435,6 +760,59 @@ namespace Oficina.Infrastructure.Persistence.Migrations
                     b.ToTable("userInvitations", (string)null);
                 });
 
+            modelBuilder.Entity("Oficina.Domain.Identity.Entities.UserSession", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("id");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetimeoffset")
+                        .HasColumnName("createdAt");
+
+                    b.Property<string>("Device")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("nvarchar(120)")
+                        .HasColumnName("device");
+
+                    b.Property<DateTimeOffset>("ExpiresAt")
+                        .HasColumnType("datetimeoffset")
+                        .HasColumnName("expiresAt");
+
+                    b.Property<DateTimeOffset>("LastSeenAt")
+                        .HasColumnType("datetimeoffset")
+                        .HasColumnName("lastSeenAt");
+
+                    b.Property<DateTimeOffset?>("RevokedAt")
+                        .HasColumnType("datetimeoffset")
+                        .HasColumnName("revokedAt");
+
+                    b.Property<string>("TokenHash")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .IsUnicode(false)
+                        .HasColumnType("char(64)")
+                        .HasColumnName("tokenHash")
+                        .IsFixedLength();
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("userId");
+
+                    b.HasKey("Id")
+                        .HasName("pk_userSessions");
+
+                    b.HasIndex("TokenHash")
+                        .IsUnique()
+                        .HasDatabaseName("ux_userSessions_tokenHash");
+
+                    b.HasIndex("UserId")
+                        .HasDatabaseName("ix_userSessions_userId");
+
+                    b.ToTable("userSessions", (string)null);
+                });
+
             modelBuilder.Entity("Oficina.Domain.Inventory.Entities.Part", b =>
                 {
                     b.Property<Guid>("Id")
@@ -470,6 +848,15 @@ namespace Oficina.Infrastructure.Persistence.Migrations
                     b.Property<bool>("IsActive")
                         .HasColumnType("bit")
                         .HasColumnName("isActive");
+
+                    b.Property<string>("Location")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(10)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(10)")
+                        .HasDefaultValue("GERAL")
+                        .HasColumnName("location");
 
                     b.Property<decimal>("MinimumStock")
                         .HasPrecision(12, 3)
@@ -533,6 +920,135 @@ namespace Oficina.Infrastructure.Persistence.Migrations
                     b.ToTable("parts", (string)null);
                 });
 
+            modelBuilder.Entity("Oficina.Domain.Inventory.Entities.PurchaseOrder", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("id");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetimeoffset")
+                        .HasColumnName("createdAt");
+
+                    b.Property<DateTimeOffset?>("DeletedAt")
+                        .HasColumnType("datetimeoffset")
+                        .HasColumnName("deletedAt");
+
+                    b.Property<string>("Lines")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("lines");
+
+                    b.Property<long>("Number")
+                        .HasColumnType("bigint")
+                        .HasColumnName("number");
+
+                    b.Property<DateTimeOffset?>("SentAt")
+                        .HasColumnType("datetimeoffset")
+                        .HasColumnName("sentAt");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(10)")
+                        .HasColumnName("status");
+
+                    b.Property<Guid>("SupplierId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("supplierId");
+
+                    b.Property<DateTimeOffset?>("UpdatedAt")
+                        .HasColumnType("datetimeoffset")
+                        .HasColumnName("updatedAt");
+
+                    b.HasKey("Id")
+                        .HasName("pk_purchaseOrders");
+
+                    b.HasIndex("Number")
+                        .IsUnique()
+                        .HasDatabaseName("ux_purchaseOrders_number");
+
+                    b.HasIndex("SupplierId")
+                        .HasDatabaseName("ix_purchaseOrders_supplierId");
+
+                    b.ToTable("purchaseOrders", (string)null);
+                });
+
+            modelBuilder.Entity("Oficina.Domain.Inventory.Entities.StockCount", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("id");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetimeoffset")
+                        .HasColumnName("createdAt");
+
+                    b.Property<DateTimeOffset?>("DecidedAt")
+                        .HasColumnType("datetimeoffset")
+                        .HasColumnName("decidedAt");
+
+                    b.Property<Guid?>("DecidedBy")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("decidedBy");
+
+                    b.Property<DateTimeOffset?>("DeletedAt")
+                        .HasColumnType("datetimeoffset")
+                        .HasColumnName("deletedAt");
+
+                    b.Property<string>("Lines")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("lines");
+
+                    b.Property<string>("Location")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(10)")
+                        .HasColumnName("location");
+
+                    b.Property<DateTimeOffset>("OpenedAt")
+                        .HasColumnType("datetimeoffset")
+                        .HasColumnName("openedAt");
+
+                    b.Property<Guid?>("OpenedBy")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("openedBy");
+
+                    b.Property<string>("RejectionReason")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)")
+                        .HasColumnName("rejectionReason");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(20)")
+                        .HasColumnName("status");
+
+                    b.Property<DateTimeOffset?>("SubmittedAt")
+                        .HasColumnType("datetimeoffset")
+                        .HasColumnName("submittedAt");
+
+                    b.Property<DateTimeOffset?>("UpdatedAt")
+                        .HasColumnType("datetimeoffset")
+                        .HasColumnName("updatedAt");
+
+                    b.HasKey("Id")
+                        .HasName("pk_stockCounts");
+
+                    b.HasIndex("DecidedBy")
+                        .HasDatabaseName("ix_stockCounts_decidedBy");
+
+                    b.HasIndex("OpenedBy")
+                        .HasDatabaseName("ix_stockCounts_openedBy");
+
+                    b.ToTable("stockCounts", (string)null);
+                });
+
             modelBuilder.Entity("Oficina.Domain.Inventory.Entities.StockMovement", b =>
                 {
                     b.Property<Guid>("Id")
@@ -552,6 +1068,10 @@ namespace Oficina.Infrastructure.Persistence.Migrations
                         .HasColumnType("datetimeoffset")
                         .HasColumnName("deletedAt");
 
+                    b.Property<bool>("Negative")
+                        .HasColumnType("bit")
+                        .HasColumnName("negative");
+
                     b.Property<Guid>("PartId")
                         .HasColumnType("uniqueidentifier")
                         .HasColumnName("partId");
@@ -569,6 +1089,10 @@ namespace Oficina.Infrastructure.Persistence.Migrations
                     b.Property<Guid?>("ServiceOrderId")
                         .HasColumnType("uniqueidentifier")
                         .HasColumnName("serviceOrderId");
+
+                    b.Property<long?>("ServiceOrderNumber")
+                        .HasColumnType("bigint")
+                        .HasColumnName("serviceOrderNumber");
 
                     b.Property<string>("Type")
                         .IsRequired()
@@ -598,6 +1122,293 @@ namespace Oficina.Infrastructure.Persistence.Migrations
                         .HasDatabaseName("ix_stockMovements_userId");
 
                     b.ToTable("stockMovements", (string)null);
+                });
+
+            modelBuilder.Entity("Oficina.Domain.Inventory.Entities.Supplier", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("id");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetimeoffset")
+                        .HasColumnName("createdAt");
+
+                    b.Property<DateTimeOffset?>("DeletedAt")
+                        .HasColumnType("datetimeoffset")
+                        .HasColumnName("deletedAt");
+
+                    b.Property<string>("Document")
+                        .HasMaxLength(14)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(14)")
+                        .HasColumnName("document");
+
+                    b.Property<string>("Email")
+                        .HasMaxLength(160)
+                        .HasColumnType("nvarchar(160)")
+                        .HasColumnName("email");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit")
+                        .HasColumnName("isActive");
+
+                    b.Property<int>("LeadTimeDays")
+                        .HasColumnType("int")
+                        .HasColumnName("leadTimeDays");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("nvarchar(120)")
+                        .HasColumnName("name");
+
+                    b.Property<string>("Phone")
+                        .HasMaxLength(20)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(20)")
+                        .HasColumnName("phone");
+
+                    b.Property<DateTimeOffset?>("UpdatedAt")
+                        .HasColumnType("datetimeoffset")
+                        .HasColumnName("updatedAt");
+
+                    b.HasKey("Id")
+                        .HasName("pk_suppliers");
+
+                    b.HasIndex("Document")
+                        .IsUnique()
+                        .HasDatabaseName("ux_suppliers_document")
+                        .HasFilter("[document] IS NOT NULL AND [deletedAt] IS NULL");
+
+                    b.ToTable("suppliers", (string)null);
+                });
+
+            modelBuilder.Entity("Oficina.Domain.Jobs.Entities.BackgroundJob", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("id");
+
+                    b.Property<DateTimeOffset?>("CompletedAt")
+                        .HasColumnType("datetimeoffset")
+                        .HasColumnName("completedAt");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetimeoffset")
+                        .HasColumnName("createdAt");
+
+                    b.Property<Guid?>("CustomerId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("customerId");
+
+                    b.Property<string>("FileName")
+                        .HasMaxLength(120)
+                        .HasColumnType("nvarchar(120)")
+                        .HasColumnName("fileName");
+
+                    b.Property<string>("Kind")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(30)")
+                        .HasColumnName("kind");
+
+                    b.Property<Guid>("RequestedBy")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("requestedBy");
+
+                    b.Property<string>("ResultJson")
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("resultJson");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(12)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(12)")
+                        .HasColumnName("status");
+
+                    b.HasKey("Id")
+                        .HasName("pk_backgroundJobs");
+
+                    b.ToTable("backgroundJobs", (string)null);
+                });
+
+            modelBuilder.Entity("Oficina.Domain.Notifications.Notification", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("id");
+
+                    b.Property<bool>("AiSuggested")
+                        .HasColumnType("bit")
+                        .HasColumnName("aiSuggested");
+
+                    b.Property<string>("Body")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)")
+                        .HasColumnName("body");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetimeoffset")
+                        .HasColumnName("createdAt");
+
+                    b.Property<string>("DedupeKey")
+                        .HasMaxLength(80)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(80)")
+                        .HasColumnName("dedupeKey");
+
+                    b.Property<string>("Link")
+                        .HasMaxLength(120)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(120)")
+                        .HasColumnName("link");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(160)
+                        .HasColumnType("nvarchar(160)")
+                        .HasColumnName("title");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(30)")
+                        .HasColumnName("type");
+
+                    b.HasKey("Id")
+                        .HasName("pk_notifications");
+
+                    b.HasIndex("CreatedAt")
+                        .HasDatabaseName("ix_notifications_createdAt");
+
+                    b.HasIndex("DedupeKey")
+                        .HasDatabaseName("ix_notifications_dedupeKey");
+
+                    b.ToTable("notifications", (string)null);
+                });
+
+            modelBuilder.Entity("Oficina.Domain.Notifications.NotificationRead", b =>
+                {
+                    b.Property<Guid>("NotificationId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("notificationId");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("userId");
+
+                    b.Property<DateTimeOffset>("ReadAt")
+                        .HasColumnType("datetimeoffset")
+                        .HasColumnName("readAt");
+
+                    b.HasKey("NotificationId", "UserId")
+                        .HasName("pk_notificationReads");
+
+                    b.ToTable("notificationReads", (string)null);
+                });
+
+            modelBuilder.Entity("Oficina.Domain.Portal.Entities.PortalCharge", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("id");
+
+                    b.Property<decimal>("Amount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)")
+                        .HasColumnName("amount");
+
+                    b.Property<Guid>("EstimateId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("estimateId");
+
+                    b.Property<DateTimeOffset>("ExpiresAt")
+                        .HasColumnType("datetimeoffset")
+                        .HasColumnName("expiresAt");
+
+                    b.Property<string>("Method")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(10)")
+                        .HasColumnName("method");
+
+                    b.Property<DateTimeOffset?>("PaidAt")
+                        .HasColumnType("datetimeoffset")
+                        .HasColumnName("paidAt");
+
+                    b.Property<Guid>("ServiceOrderId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("serviceOrderId");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(10)")
+                        .HasColumnName("status");
+
+                    b.Property<string>("TxId")
+                        .IsRequired()
+                        .HasMaxLength(25)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(25)")
+                        .HasColumnName("txId");
+
+                    b.HasKey("Id")
+                        .HasName("pk_portalCharges");
+
+                    b.HasIndex("EstimateId")
+                        .HasDatabaseName("ix_portalCharges_estimateId");
+
+                    b.HasIndex("ServiceOrderId")
+                        .HasDatabaseName("ix_portalCharges_serviceOrderId");
+
+                    b.HasIndex("TxId")
+                        .IsUnique()
+                        .HasDatabaseName("ux_portalCharges_txId");
+
+                    b.ToTable("portalCharges", (string)null);
+                });
+
+            modelBuilder.Entity("Oficina.Domain.Portal.Entities.PortalSession", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("EstimateId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("estimateId");
+
+                    b.Property<DateTimeOffset>("ExpiresAt")
+                        .HasColumnType("datetimeoffset")
+                        .HasColumnName("expiresAt");
+
+                    b.Property<string>("TokenHash")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .IsUnicode(false)
+                        .HasColumnType("char(64)")
+                        .HasColumnName("tokenHash")
+                        .IsFixedLength();
+
+                    b.HasKey("Id")
+                        .HasName("pk_portalSessions");
+
+                    b.HasIndex("EstimateId")
+                        .HasDatabaseName("ix_portalSessions_estimateId");
+
+                    b.HasIndex("TokenHash")
+                        .IsUnique()
+                        .HasDatabaseName("ux_portalSessions_tokenHash");
+
+                    b.ToTable("portalSessions", (string)null);
                 });
 
             modelBuilder.Entity("Oficina.Domain.Privacy.Entities.SensitiveDataAccess", b =>
@@ -645,6 +1456,154 @@ namespace Oficina.Infrastructure.Persistence.Migrations
                         .HasDatabaseName("ix_sensitiveDataAccess_customer");
 
                     b.ToTable("sensitiveDataAccess", (string)null);
+                });
+
+            modelBuilder.Entity("Oficina.Domain.Quotes.Entities.Estimate", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("id");
+
+                    b.Property<string>("AcceptedLineIds")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("acceptedLineIds");
+
+                    b.Property<string>("Approval")
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("approval");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetimeoffset")
+                        .HasColumnName("createdAt");
+
+                    b.Property<DateTimeOffset?>("DeletedAt")
+                        .HasColumnType("datetimeoffset")
+                        .HasColumnName("deletedAt");
+
+                    b.Property<string>("Delivery")
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("delivery");
+
+                    b.Property<string>("DeliveryTokenHash")
+                        .HasMaxLength(64)
+                        .IsUnicode(false)
+                        .HasColumnType("char(64)")
+                        .HasColumnName("deliveryTokenHash")
+                        .IsFixedLength();
+
+                    b.Property<string>("DiscountMode")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(10)")
+                        .HasColumnName("discountMode");
+
+                    b.Property<string>("Lines")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("lines");
+
+                    b.Property<string>("ManualDiscount")
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("manualDiscount");
+
+                    b.Property<int>("MaxInstallments")
+                        .HasColumnType("int")
+                        .HasColumnName("maxInstallments");
+
+                    b.Property<long>("Number")
+                        .HasColumnType("bigint")
+                        .HasColumnName("number");
+
+                    b.Property<string>("PaymentMethods")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("paymentMethods");
+
+                    b.Property<int>("PortalFailures")
+                        .HasColumnType("int")
+                        .HasColumnName("portalFailures");
+
+                    b.Property<string>("RejectionReason")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)")
+                        .HasColumnName("rejectionReason");
+
+                    b.Property<Guid>("ServiceOrderId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("serviceOrderId");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(10)")
+                        .HasColumnName("status");
+
+                    b.Property<DateTimeOffset?>("UpdatedAt")
+                        .HasColumnType("datetimeoffset")
+                        .HasColumnName("updatedAt");
+
+                    b.Property<int>("Version")
+                        .HasColumnType("int")
+                        .HasColumnName("version");
+
+                    b.HasKey("Id")
+                        .HasName("pk_estimates");
+
+                    b.HasIndex("DeliveryTokenHash")
+                        .HasDatabaseName("ix_estimates_deliveryTokenHash");
+
+                    b.HasIndex("ServiceOrderId")
+                        .HasDatabaseName("ix_estimates_serviceOrderId");
+
+                    b.HasIndex("Number", "Version")
+                        .IsUnique()
+                        .HasDatabaseName("ux_estimates_number_version");
+
+                    b.ToTable("estimates", (string)null);
+                });
+
+            modelBuilder.Entity("Oficina.Domain.Reports.SavedReport", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("id");
+
+                    b.Property<string>("DefinitionJson")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)")
+                        .HasColumnName("definitionJson");
+
+                    b.Property<DateTimeOffset?>("LastSentAt")
+                        .HasColumnType("datetimeoffset")
+                        .HasColumnName("lastSentAt");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(80)
+                        .HasColumnType("nvarchar(80)")
+                        .HasColumnName("name");
+
+                    b.Property<string>("ScheduleJson")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)")
+                        .HasColumnName("scheduleJson");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("datetimeoffset")
+                        .HasColumnName("updatedAt");
+
+                    b.HasKey("Id")
+                        .HasName("pk_savedReports");
+
+                    b.HasIndex("Name")
+                        .IsUnique()
+                        .HasDatabaseName("ux_savedReports_name");
+
+                    b.ToTable("savedReports", (string)null);
                 });
 
             modelBuilder.Entity("Oficina.Domain.ServiceOrders.Entities.PartItem", b =>
@@ -841,6 +1800,11 @@ namespace Oficina.Infrastructure.Persistence.Migrations
                         .HasColumnType("uniqueidentifier")
                         .HasColumnName("id");
 
+                    b.Property<string>("Checklist")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("checklist");
+
                     b.Property<DateTimeOffset?>("CompletedAt")
                         .HasColumnType("datetimeoffset")
                         .HasColumnName("completedAt");
@@ -861,9 +1825,22 @@ namespace Oficina.Infrastructure.Persistence.Migrations
                         .HasColumnType("datetimeoffset")
                         .HasColumnName("deliveredAt");
 
+                    b.Property<string>("Diagnosis")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("diagnosis");
+
                     b.Property<DateTimeOffset?>("ExecutionStartedAt")
                         .HasColumnType("datetimeoffset")
                         .HasColumnName("executionStartedAt");
+
+                    b.Property<Guid?>("MechanicId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("mechanicId");
+
+                    b.Property<int?>("Mileage")
+                        .HasColumnType("int")
+                        .HasColumnName("mileage");
 
                     b.Property<long>("Number")
                         .HasColumnType("bigint")
@@ -873,6 +1850,18 @@ namespace Oficina.Infrastructure.Persistence.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)")
                         .HasColumnName("problemDescription");
+
+                    b.Property<DateTimeOffset?>("PromisedAt")
+                        .HasColumnType("datetimeoffset")
+                        .HasColumnName("promisedAt");
+
+                    b.Property<bool>("Reopened")
+                        .HasColumnType("bit")
+                        .HasColumnName("reopened");
+
+                    b.Property<bool>("SentToQuote")
+                        .HasColumnType("bit")
+                        .HasColumnName("sentToQuote");
 
                     b.Property<string>("Status")
                         .IsRequired()
@@ -894,6 +1883,10 @@ namespace Oficina.Infrastructure.Persistence.Migrations
                         .HasColumnType("uniqueidentifier")
                         .HasColumnName("vehicleId");
 
+                    b.Property<int>("Version")
+                        .HasColumnType("int")
+                        .HasColumnName("version");
+
                     b.Property<byte[]>("rowVersion")
                         .IsConcurrencyToken()
                         .IsRequired()
@@ -906,6 +1899,9 @@ namespace Oficina.Infrastructure.Persistence.Migrations
 
                     b.HasIndex("CustomerId")
                         .HasDatabaseName("ix_serviceOrders_customerId");
+
+                    b.HasIndex("MechanicId")
+                        .HasDatabaseName("ix_serviceOrders_mechanicId");
 
                     b.HasIndex("Number")
                         .IsUnique()
@@ -920,6 +1916,66 @@ namespace Oficina.Infrastructure.Persistence.Migrations
                         .HasDatabaseName("ix_serviceOrders_vehicleId");
 
                     b.ToTable("serviceOrders", (string)null);
+                });
+
+            modelBuilder.Entity("Oficina.Domain.ServiceOrders.Entities.ServiceOrderPhoto", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("id");
+
+                    b.Property<string>("Caption")
+                        .IsRequired()
+                        .HasMaxLength(160)
+                        .HasColumnType("nvarchar(160)")
+                        .HasColumnName("caption");
+
+                    b.Property<string>("ClientId")
+                        .HasMaxLength(64)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(64)")
+                        .HasColumnName("clientId");
+
+                    b.Property<string>("ContentType")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(20)")
+                        .HasColumnName("contentType");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetimeoffset")
+                        .HasColumnName("createdAt");
+
+                    b.Property<string>("DataUrl")
+                        .IsRequired()
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(max)")
+                        .HasColumnName("dataUrl");
+
+                    b.Property<DateTimeOffset?>("DeletedAt")
+                        .HasColumnType("datetimeoffset")
+                        .HasColumnName("deletedAt");
+
+                    b.Property<Guid>("ServiceOrderId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("serviceOrderId");
+
+                    b.Property<DateTimeOffset>("TakenAt")
+                        .HasColumnType("datetimeoffset")
+                        .HasColumnName("takenAt");
+
+                    b.Property<DateTimeOffset?>("UpdatedAt")
+                        .HasColumnType("datetimeoffset")
+                        .HasColumnName("updatedAt");
+
+                    b.HasKey("Id")
+                        .HasName("pk_serviceOrderPhotos");
+
+                    b.HasIndex("ServiceOrderId")
+                        .HasDatabaseName("ix_serviceOrderPhotos_serviceOrderId");
+
+                    b.ToTable("serviceOrderPhotos", (string)null);
                 });
 
             modelBuilder.Entity("Oficina.Domain.ServiceOrders.Entities.StatusHistory", b =>
@@ -981,6 +2037,119 @@ namespace Oficina.Infrastructure.Persistence.Migrations
                     b.ToTable("serviceOrderStatusHistory", (string)null);
                 });
 
+            modelBuilder.Entity("Oficina.Domain.ServiceOrders.Entities.TimeEntry", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("id");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetimeoffset")
+                        .HasColumnName("createdAt");
+
+                    b.Property<DateTimeOffset?>("DeletedAt")
+                        .HasColumnType("datetimeoffset")
+                        .HasColumnName("deletedAt");
+
+                    b.Property<DateTimeOffset?>("EndedAt")
+                        .HasColumnType("datetimeoffset")
+                        .HasColumnName("endedAt");
+
+                    b.Property<Guid>("MechanicId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("mechanicId");
+
+                    b.Property<int>("Minutes")
+                        .HasColumnType("int")
+                        .HasColumnName("minutes");
+
+                    b.Property<Guid>("ServiceOrderId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("serviceOrderId");
+
+                    b.Property<DateTimeOffset>("StartedAt")
+                        .HasColumnType("datetimeoffset")
+                        .HasColumnName("startedAt");
+
+                    b.Property<DateTimeOffset?>("UpdatedAt")
+                        .HasColumnType("datetimeoffset")
+                        .HasColumnName("updatedAt");
+
+                    b.HasKey("Id")
+                        .HasName("pk_timeEntries");
+
+                    b.HasIndex("ServiceOrderId")
+                        .HasDatabaseName("ix_timeEntries_serviceOrderId");
+
+                    b.HasIndex("MechanicId", "StartedAt")
+                        .HasDatabaseName("ix_timeEntries_mechanic");
+
+                    b.ToTable("timeEntries", (string)null);
+                });
+
+            modelBuilder.Entity("Oficina.Domain.Settings.Entities.SettingsDocument", b =>
+                {
+                    b.Property<string>("Key")
+                        .HasMaxLength(40)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(40)")
+                        .HasColumnName("key");
+
+                    b.Property<string>("Json")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("json");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("datetimeoffset")
+                        .HasColumnName("updatedAt");
+
+                    b.Property<Guid?>("UpdatedBy")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("updatedBy");
+
+                    b.HasKey("Key")
+                        .HasName("pk_settingsDocuments");
+
+                    b.ToTable("settingsDocuments", (string)null);
+                });
+
+            modelBuilder.Entity("Oficina.Domain.Team.Entities.TeamProfile", b =>
+                {
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("userId");
+
+                    b.Property<decimal>("CommissionPercent")
+                        .HasPrecision(5, 2)
+                        .HasColumnType("decimal(5,2)")
+                        .HasColumnName("commissionPercent");
+
+                    b.Property<decimal>("DiscountLimitPercent")
+                        .HasPrecision(5, 2)
+                        .HasColumnType("decimal(5,2)")
+                        .HasColumnName("discountLimitPercent");
+
+                    b.Property<string>("Schedule")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("schedule");
+
+                    b.PrimitiveCollection<string>("Specialties")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("specialties");
+
+                    b.Property<DateTimeOffset?>("UpdatedAt")
+                        .HasColumnType("datetimeoffset")
+                        .HasColumnName("updatedAt");
+
+                    b.HasKey("UserId")
+                        .HasName("pk_teamProfiles");
+
+                    b.ToTable("teamProfiles", (string)null);
+                });
+
             modelBuilder.Entity("Oficina.Infrastructure.Messaging.Outbox.OutboxMessage", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1023,6 +2192,16 @@ namespace Oficina.Infrastructure.Persistence.Migrations
                         .HasDatabaseName("ix_outboxMessages_processedAt");
 
                     b.ToTable("outboxMessages", (string)null);
+                });
+
+            modelBuilder.Entity("Oficina.Domain.Automations.AutomationExecution", b =>
+                {
+                    b.HasOne("Oficina.Domain.Automations.AutomationRule", null)
+                        .WithMany()
+                        .HasForeignKey("RuleId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_automationExecutions_automationRules_ruleId");
                 });
 
             modelBuilder.Entity("Oficina.Domain.Catalog.Entities.Package", b =>
@@ -1186,6 +2365,36 @@ namespace Oficina.Infrastructure.Persistence.Migrations
                         .HasConstraintName("fk_vehicles_customers_customerId");
                 });
 
+            modelBuilder.Entity("Oficina.Domain.Documents.Entities.IssuedDocument", b =>
+                {
+                    b.HasOne("Oficina.Domain.ServiceOrders.Entities.ServiceOrder", null)
+                        .WithMany()
+                        .HasForeignKey("ServiceOrderId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_issuedDocuments_serviceOrders_serviceOrderId");
+                });
+
+            modelBuilder.Entity("Oficina.Domain.Identity.Entities.Reauthentication", b =>
+                {
+                    b.HasOne("Oficina.Domain.Identity.Entities.User", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_reauthentications_users_userId");
+                });
+
+            modelBuilder.Entity("Oficina.Domain.Identity.Entities.TwoFactorChallenge", b =>
+                {
+                    b.HasOne("Oficina.Domain.Identity.Entities.User", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_twoFactorChallenges_users_userId");
+                });
+
             modelBuilder.Entity("Oficina.Domain.Identity.Entities.UserInvitation", b =>
                 {
                     b.HasOne("Oficina.Domain.Identity.Entities.User", null)
@@ -1194,6 +2403,41 @@ namespace Oficina.Infrastructure.Persistence.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired()
                         .HasConstraintName("fk_userInvitations_users_userId");
+                });
+
+            modelBuilder.Entity("Oficina.Domain.Identity.Entities.UserSession", b =>
+                {
+                    b.HasOne("Oficina.Domain.Identity.Entities.User", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_userSessions_users_userId");
+                });
+
+            modelBuilder.Entity("Oficina.Domain.Inventory.Entities.PurchaseOrder", b =>
+                {
+                    b.HasOne("Oficina.Domain.Inventory.Entities.Supplier", null)
+                        .WithMany()
+                        .HasForeignKey("SupplierId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_purchaseOrders_suppliers_supplierId");
+                });
+
+            modelBuilder.Entity("Oficina.Domain.Inventory.Entities.StockCount", b =>
+                {
+                    b.HasOne("Oficina.Domain.Identity.Entities.User", null)
+                        .WithMany()
+                        .HasForeignKey("DecidedBy")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_stockCounts_users_decidedBy");
+
+                    b.HasOne("Oficina.Domain.Identity.Entities.User", null)
+                        .WithMany()
+                        .HasForeignKey("OpenedBy")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_stockCounts_users_openedBy");
                 });
 
             modelBuilder.Entity("Oficina.Domain.Inventory.Entities.StockMovement", b =>
@@ -1216,6 +2460,53 @@ namespace Oficina.Infrastructure.Persistence.Migrations
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .HasConstraintName("fk_stockMovements_users_userId");
+                });
+
+            modelBuilder.Entity("Oficina.Domain.Notifications.NotificationRead", b =>
+                {
+                    b.HasOne("Oficina.Domain.Notifications.Notification", null)
+                        .WithMany()
+                        .HasForeignKey("NotificationId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_notificationReads_notifications_notificationId");
+                });
+
+            modelBuilder.Entity("Oficina.Domain.Portal.Entities.PortalCharge", b =>
+                {
+                    b.HasOne("Oficina.Domain.Quotes.Entities.Estimate", null)
+                        .WithMany()
+                        .HasForeignKey("EstimateId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_portalCharges_estimates_estimateId");
+
+                    b.HasOne("Oficina.Domain.ServiceOrders.Entities.ServiceOrder", null)
+                        .WithMany()
+                        .HasForeignKey("ServiceOrderId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_portalCharges_serviceOrders_serviceOrderId");
+                });
+
+            modelBuilder.Entity("Oficina.Domain.Portal.Entities.PortalSession", b =>
+                {
+                    b.HasOne("Oficina.Domain.Quotes.Entities.Estimate", null)
+                        .WithMany()
+                        .HasForeignKey("EstimateId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_portalSessions_estimates_estimateId");
+                });
+
+            modelBuilder.Entity("Oficina.Domain.Quotes.Entities.Estimate", b =>
+                {
+                    b.HasOne("Oficina.Domain.ServiceOrders.Entities.ServiceOrder", null)
+                        .WithMany()
+                        .HasForeignKey("ServiceOrderId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_estimates_serviceOrders_serviceOrderId");
                 });
 
             modelBuilder.Entity("Oficina.Domain.ServiceOrders.Entities.PartItem", b =>
@@ -1271,12 +2562,28 @@ namespace Oficina.Infrastructure.Persistence.Migrations
                         .IsRequired()
                         .HasConstraintName("fk_serviceOrders_customers_customerId");
 
+                    b.HasOne("Oficina.Domain.Identity.Entities.User", null)
+                        .WithMany()
+                        .HasForeignKey("MechanicId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_serviceOrders_users_mechanicId");
+
                     b.HasOne("Oficina.Domain.Customers.Entities.Vehicle", null)
                         .WithMany()
                         .HasForeignKey("VehicleId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired()
                         .HasConstraintName("fk_serviceOrders_vehicles_vehicleId");
+                });
+
+            modelBuilder.Entity("Oficina.Domain.ServiceOrders.Entities.ServiceOrderPhoto", b =>
+                {
+                    b.HasOne("Oficina.Domain.ServiceOrders.Entities.ServiceOrder", null)
+                        .WithMany("Photos")
+                        .HasForeignKey("ServiceOrderId")
+                        .OnDelete(DeleteBehavior.ClientCascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_serviceOrderPhotos_serviceOrders_serviceOrderId");
                 });
 
             modelBuilder.Entity("Oficina.Domain.ServiceOrders.Entities.StatusHistory", b =>
@@ -1295,6 +2602,33 @@ namespace Oficina.Infrastructure.Persistence.Migrations
                         .HasConstraintName("fk_serviceOrderStatusHistory_serviceOrders_serviceOrderId");
                 });
 
+            modelBuilder.Entity("Oficina.Domain.ServiceOrders.Entities.TimeEntry", b =>
+                {
+                    b.HasOne("Oficina.Domain.Identity.Entities.User", null)
+                        .WithMany()
+                        .HasForeignKey("MechanicId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_timeEntries_users_mechanicId");
+
+                    b.HasOne("Oficina.Domain.ServiceOrders.Entities.ServiceOrder", null)
+                        .WithMany("TimeEntries")
+                        .HasForeignKey("ServiceOrderId")
+                        .OnDelete(DeleteBehavior.ClientCascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_timeEntries_serviceOrders_serviceOrderId");
+                });
+
+            modelBuilder.Entity("Oficina.Domain.Team.Entities.TeamProfile", b =>
+                {
+                    b.HasOne("Oficina.Domain.Identity.Entities.User", null)
+                        .WithOne()
+                        .HasForeignKey("Oficina.Domain.Team.Entities.TeamProfile", "UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_teamProfiles_users_userId");
+                });
+
             modelBuilder.Entity("Oficina.Domain.Inventory.Entities.Part", b =>
                 {
                     b.Navigation("StockMovements");
@@ -1304,11 +2638,15 @@ namespace Oficina.Infrastructure.Persistence.Migrations
                 {
                     b.Navigation("PartItems");
 
+                    b.Navigation("Photos");
+
                     b.Navigation("Quotes");
 
                     b.Navigation("ServiceItems");
 
                     b.Navigation("StatusHistory");
+
+                    b.Navigation("TimeEntries");
                 });
 #pragma warning restore 612, 618
         }

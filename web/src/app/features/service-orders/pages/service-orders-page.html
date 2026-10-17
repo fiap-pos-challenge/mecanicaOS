@@ -3,12 +3,25 @@
     <h1 class="page-title">{{ screen }}</h1>
     <p class="sub">{{ text.subtitle }}</p>
   </div>
-  <ui-segmented
-    [label]="text.view"
-    [options]="views"
-    [value]="view()"
-    (valueChange)="view.set($event)"
-  />
+  <div class="tools">
+    <ui-segmented
+      [label]="text.view"
+      [options]="views"
+      [value]="view()"
+      (valueChange)="view.set($event)"
+    />
+    @if (canMove()) {
+      <button
+        uiButton
+        variant="primary"
+        type="button"
+        (click)="openOrder()"
+        data-testid="open-order"
+      >
+        {{ text.openOrder }}
+      </button>
+    }
+  </div>
 </header>
 
 @switch (store.loadState()) {

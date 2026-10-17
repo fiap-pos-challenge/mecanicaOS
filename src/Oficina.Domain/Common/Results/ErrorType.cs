@@ -10,4 +10,6 @@ public enum ErrorType
     Forbidden,
     TooManyRequests,
     Unexpected,
+    Locked,
+    TooLarge,
 }

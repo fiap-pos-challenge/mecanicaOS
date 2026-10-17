@@ -38,4 +38,20 @@ public sealed class ServiceOrderValueObjectTests
     {
         Assert.Equal(ServiceOrderErrors.InvalidApprovalToken, ApprovalToken.Create(hash).Error);
     }
+
+    [Fact]
+    public void ApprovalTokenFromRawToken_ReturnsTheSha256HexOfTheToken()
+    {
+        var result = ApprovalToken.FromRawToken("abc");
+
+        Assert.Equal("ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad", result.Value.Hash);
+    }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData("   ")]
+    public void ApprovalTokenFromRawToken_Blank_ReturnsInvalidApprovalToken(string rawToken)
+    {
+        Assert.Equal(ServiceOrderErrors.InvalidApprovalToken, ApprovalToken.FromRawToken(rawToken).Error);
+    }
 }

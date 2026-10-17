@@ -24,6 +24,8 @@ public sealed class UserConfiguration : IEntityTypeConfiguration<User>
         builder.Property(user => user.FailedLoginAttempts).IsRequired();
         builder.Property(user => user.LockoutEndAt);
 
+        builder.Property(user => user.TwoFactorSecret).HasMaxLength(64).IsUnicode(false);
+        builder.Property(user => user.TwoFactorEnabled).IsRequired();
         builder.HasIndex(user => user.Email).IsUnique().HasFilter("[deletedAt] IS NULL").HasDatabaseName("ux_users_email");
     }
 }

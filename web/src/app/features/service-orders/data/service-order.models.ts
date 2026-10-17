@@ -96,6 +96,17 @@ export interface ServiceOrderDetail extends ServiceOrderCard {
   readonly documents: readonly OrderDocument[];
 }
 
+export interface OpenOrderInput {
+  readonly customerId: string;
+  readonly vehicleId: string;
+  readonly problemDescription: string;
+  readonly promisedAt: string | null;
+  readonly mileage: number | null;
+}
+
+export const PROBLEM_MIN_LENGTH = 3;
+export const PROBLEM_MAX_LENGTH = 1000;
+
 export interface TransitionInput {
   readonly to: ServiceOrderStatus;
   readonly version: number;

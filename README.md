@@ -1,146 +1,348 @@
-# Oficina — Sistema Integrado de Atendimento e Execução de Serviços
+# mecanicaOS — Sistema Integrado de Atendimento e Execução de Serviços
 
 [![CI](https://github.com/fiap-pos-challenge/mecanicaOS/actions/workflows/ci.yml/badge.svg)](https://github.com/fiap-pos-challenge/mecanicaOS/actions/workflows/ci.yml)
 [![CD](https://github.com/fiap-pos-challenge/mecanicaOS/actions/workflows/cd.yml/badge.svg)](https://github.com/fiap-pos-challenge/mecanicaOS/actions/workflows/cd.yml)
 
-Sistema para oficinas mecânicas (back-end .NET e front-end Angular), feito no Tech Challenge da Pós Tech SOAT (Software Architecture).
+Sistema de gestão para oficinas mecânicas, feito no Tech Challenge da Pós Tech SOAT (Software Architecture) da FIAP. Back-end em .NET 10 e front-end em Angular 22, integrados de ponta a ponta.
 
-Hoje o projeto tem:
-- o domínio completo (clientes, veículos, serviços, peças, estoque e ordem de serviço);
-- as 17 tabelas criadas por migrations;
-- a API de login e de cadastro de clientes, veículos (com quilometragem, busca por placa e transferência de dono) e usuários, com JWT e perfis;
-- a API do catálogo: serviços (comissão, garantia e peças usadas normalmente), peças e insumos (custo visível só para Admin e Manager, fornecedor e código de barras EAN-13) e pacotes (soma dos itens e economia), com filtros, histórico de preço, desativação e reativação.
-
-Ele está pronto para o grupo criar as demais APIs.
-
-O front-end Angular está na pasta `web/`. Por enquanto ele tem só a fundação: workspace, qualidade, testes, Docker e uma página inicial que mostra se a API está no ar.
-
-**Front-end:** Angular 22.2 (standalone, signals, zoneless, `OnPush`), TypeScript 6 em modo estrito, Vitest + Angular Testing Library, Playwright + axe, ESLint + Prettier e nginx.
-
-**Back-end:** .NET 10, ASP.NET Core (Controllers), SQL Server 2022, EF Core 10 (migrations), MediatR 12.5.0, FluentValidation, Mapperly, JWT + BCrypt, Swagger, xUnit, NSubstitute e Testcontainers.
+- **Glossário do negócio (para todos, inclusive leigos):** [docs/ddd/linguagem-ubiqua.md](docs/ddd/linguagem-ubiqua.md)
+- **Roteiro para testar tudo pelo navegador:** [docs/roteiro-de-testes.md](docs/roteiro-de-testes.md)
+- **Convenções do grupo:** [instructions/arquitetura.md](instructions/arquitetura.md) e [instructions/padrao-desenvolvimento.md](instructions/padrao-desenvolvimento.md)
 
 ---
 
-## Passo a passo
+## Sumário
 
-### 1. Pré-requisitos
+1. [O que o sistema entrega](#1-o-que-o-sistema-entrega)
+2. [Perfis de acesso](#2-perfis-de-acesso)
+3. [Tecnologias](#3-tecnologias)
+4. [Arquitetura](#4-arquitetura)
+5. [Como baixar e rodar](#5-como-baixar-e-rodar)
+6. [Dados de demonstração](#6-dados-de-demonstração)
+7. [Como testar cada funcionalidade](#7-como-testar-cada-funcionalidade)
+8. [Comandos de qualidade (sem erros e sem warnings)](#8-comandos-de-qualidade-sem-erros-e-sem-warnings)
+9. [Testes automatizados](#9-testes-automatizados)
+10. [Rodar pela IDE, migrations, Swagger e banco](#10-rodar-pela-ide-migrations-swagger-e-banco)
+11. [Configuração](#11-configuração)
+12. [Segurança e LGPD](#12-segurança-e-lgpd)
 
-- [Docker Desktop](https://www.docker.com/products/docker-desktop/)
-- [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0)
-- [Node.js 24.15 ou mais novo](https://nodejs.org/) (só para desenvolver o front-end; o Angular 22 não roda em versões anteriores)
-- Ferramentas do repositório (`dotnet-ef` e ReportGenerator). Rode uma vez, na pasta do projeto:
+---
 
-  ```bash
-  dotnet tool restore
-  ```
+## 1. O que o sistema entrega
 
-### 2. Rodar tudo no Docker
+Todas as telas abaixo usam a API real; nenhuma tela está "em construção".
+
+| Módulo | O que faz | Tela |
+|---|---|---|
+| **Acesso** | Login com e-mail e senha, sessão que sobrevive à recarga (cookie `HttpOnly`), verificação em duas etapas (TOTP), bloqueio após 5 erros, inatividade com aviso e saída automática, convite de funcionário por e-mail | `/login` |
+| **Painel** | Faturamento, OS abertas, taxa de aprovação, valores a receber, faturamento diário (serviços e peças), serviços mais vendidos, pátio por situação e avisos de atenção com ação direta. Cada usuário personaliza seus cartões | `/dashboard` |
+| **Clientes e veículos** | Cadastro de pessoa física e jurídica com CPF/CNPJ validado e mascarado, endereço pelo CEP (ViaCEP), consentimento de mensagens, revelar dado com motivo (auditado), veículos com placa e quilometragem, transferência de dono, situação (ativo, OS aberta, sem retorno), frota, histórico e gasto, importação CSV e exportação LGPD | `/customers` |
+| **Catálogo** | Serviços (preço, tempo, comissão, garantia, peças usuais), peças e insumos (custo, venda, margem, estoque mínimo, fornecedor, EAN-13) e pacotes (preço fechado e economia), com histórico de preço | `/catalog` |
+| **Estoque** | Visão geral com alertas de mínimo, entradas (manual, código de barras e XML da NF-e), baixas, movimentações, inventário com aprovação, fornecedores e pedidos de compra com sugestão automática | `/inventory` |
+| **Ordens de serviço** | Abrir OS (Nova OS), quadro com arrastar e soltar, lista, agenda, detalhe com histórico, fotos, tempos e documentos, controle de versão contra edição simultânea e atualização em tempo real | `/service-orders` |
+| **Modo mecânico** | Celular/PWA: minhas OS, checklist, fotos, diagnóstico com sugestões de itens, enviar para orçamento, cronômetro e finalizar; funciona sem internet e sincroniza na volta | `/mechanic` |
+| **Orçamentos** | Montador com pacotes, serviços e peças, desconto automático e manual, aprovação de desconto acima do limite, plano de pagamento, envio por WhatsApp, e-mail ou link com validade, reenvio, aprovação no balcão, recusa com motivo e versões | `/quotes` |
+| **Portal do cliente** | Link sem login: confirmação pelos 3 últimos dígitos do telefone (bloqueia após 3 erros), andamento, fotos, aprovação parcial ou recusa do orçamento, pagamento Pix (copia-e-cola e QR code) e documentos | `/o/{link}` |
+| **Consulta pública** | Situação da OS pelo número e CPF/CNPJ | `/portal` |
+| **Documentos** | OS, orçamento e recibo congelados com código de verificação, PDF, envio por e-mail e página pública de autenticidade | `/documents` e `/v/{código}` |
+| **Financeiro** | Recebido, a receber, comissões por mecânico, totais por forma de pagamento e últimos recebimentos | `/finance` |
+| **Relatórios** | Construtor (indicador × agrupamento × período × gráfico), relatórios salvos, envio semanal por e-mail, exportação Excel/PDF e "Pergunte aos seus dados" (pergunta em português vira relatório) | `/reports` |
+| **Automações** | Regras com gatilho, condições, espera e ações (WhatsApp, e-mail, avisar a equipe, pedido de compra), saúde das filas e reprocessamento de falhas | `/automations` |
+| **Notificações** | Sino com avisos da equipe em tempo real, marcar como lidas e preferências por canal | sino no topo |
+| **Equipe** | Usuários, convites, ativar/desativar, perfil profissional (especialidades, comissão, horário), produtividade e permissões por perfil | `/team` |
+| **Configurações** | Dados da oficina e logo, regras de desconto, pagamentos e chave Pix, modelos de mensagem, segurança, sessões ativas, auditoria e situação fiscal. Mudanças pedem a senha de novo | `/settings` |
+| **Plataforma** | Plano, usuários em uso contra o limite, uso do mês e módulos | `/platform` |
+
+Fora do escopo desta entrega (aparecem como "Em breve" ou ficam na fila): emissão de nota fiscal, envio real por WhatsApp (precisa de um provedor) e pagamento com cartão no portal (precisa de um provedor).
+
+## 2. Perfis de acesso
+
+| Perfil | Principais permissões |
+|---|---|
+| **Administrador** | Tudo, inclusive equipe, configurações, plataforma, exclusões e reprocessar falhas |
+| **Gerente** | Operação completa, custos, financeiro, relatórios, automações, aprovação de desconto |
+| **Atendente** | Clientes, veículos, OS, orçamentos, documentos e painel (desconto até o seu limite) |
+| **Mecânico** | Modo mecânico, suas OS, catálogo sem custos e contagem de estoque |
+| **Cliente** | Sem login: portal pelo link e consulta pública |
+
+A API recusa (403) qualquer rota fora do perfil, mesmo que alguém tente chamá-la direto.
+
+## 3. Tecnologias
+
+**Back-end:** .NET 10 (SDK 10.0.100), ASP.NET Core com Controllers, SQL Server 2022, EF Core 10 (migrations), MediatR 12.5, FluentValidation 12, Mapperly, JWT + BCrypt, SignalR (tempo real), Swagger (Swashbuckle), QRCoder (QR do Pix), serviços em segundo plano (outbox, automações e relatórios agendados).
+
+**Testes do back-end:** xUnit v3 com Microsoft Testing Platform, NSubstitute, Testcontainers (SQL Server real em contêiner), Respawn, coverlet e ReportGenerator.
+
+**Front-end:** Angular 22.2 (standalone, signals, zoneless, `OnPush`), TypeScript 6 estrito, Angular CDK, NgRx Signals, ECharts 6, Lucide (ícones), cliente SignalR, PWA (service worker e IndexedDB), nginx.
+
+**Testes do front-end:** Vitest + Angular Testing Library, MSW (API simulada só nos testes), axe (acessibilidade), Playwright (E2E em desktop e celular) e Lighthouse.
+
+**Infraestrutura:** Docker e Docker Compose, GitHub Actions (CI e CD).
+
+## 4. Arquitetura
+
+Back-end em Clean Architecture com DDD:
+
+```text
+src/
+  Oficina.Domain/          entidades, value objects, regras, eventos e interfaces de repositório
+  Oficina.Application/     casos de uso (MediatR e serviços de aplicação), validações, DTOs
+  Oficina.Infrastructure/  EF Core, migrations, repositórios, consultas, JWT, e-mail, Pix, outbox e serviços em segundo plano
+  Oficina.Api/             controllers, autenticação, autorização, ProblemDetails, Swagger e hub SignalR
+tests/
+  Oficina.UnitTests/        domínio e aplicação
+  Oficina.ContractTests/    contrato da API (OpenAPI, autorização, erros, dados pessoais fora da URL)
+  Oficina.FunctionalTests/  API e banco de ponta a ponta com SQL Server em contêiner
+web/                        front-end Angular (features por pasta, gateways HTTP, design system próprio)
+scripts/seed/               carga de demonstração (oficina em uso)
+docs/                       linguagem ubíqua, roteiro de testes, arquitetura e enunciado
+```
+
+- A API conversa só com a Application; a Application usa o domínio e interfaces; a Infrastructure implementa as interfaces; o domínio não depende de ninguém.
+- Erros esperados voltam como `Result` com código estável (ex.: `quotes.notPending`) e viram ProblemDetails em português.
+- Eventos de domínio são gravados na mesma transação (outbox) e processados em segundo plano: notificações, tempo real e automações.
+- No navegador, o nginx serve o front e repassa `/api` (inclusive o WebSocket do SignalR) para a API: o navegador fala só com a própria origem.
+
+## 5. Como baixar e rodar
+
+### Pré-requisitos
+
+- [Git](https://git-scm.com/)
+- [Docker Desktop](https://www.docker.com/products/docker-desktop/) (obrigatório para rodar tudo e para os testes funcionais e E2E)
+- [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0) (para desenvolver e testar o back-end)
+- [Node.js 24.15 ou mais novo](https://nodejs.org/) (para desenvolver e testar o front-end)
+
+### Passo a passo
 
 ```bash
+git clone https://github.com/fiap-pos-challenge/mecanicaOS.git
+cd mecanicaOS
 docker compose up -d --build
 ```
 
-Abra `http://localhost:4200` (front-end) e `http://localhost:8080/swagger` (API).
+Aguarde os contêineres ficarem saudáveis (`docker compose ps`) e abra:
 
-O compose sobe três serviços:
+| Endereço | O que é |
+|---|---|
+| http://localhost:4200 | Sistema (front-end) |
+| http://localhost:8080/swagger | Documentação e teste da API |
+| http://localhost:8080/health | Saúde da API |
+
+O compose sobe quatro serviços:
 
 | Serviço | O que faz |
 |---|---|
-| `sqlserver` | SQL Server 2022 na porta 1433, com os dados no volume `oficina-sqlserver-data` |
-| `api` | A API em `http://localhost:8080`, no ambiente Development |
-| `web` | O front-end em `http://localhost:4200`, servido pelo nginx sem root. O nginx repassa `/api` para a API, então o navegador fala só com a própria origem |
-
-Na subida, a API cria o banco `oficina`, aplica as migrations e cria o Admin de teste.
-
-E-mails em desenvolvimento: em vez de um servidor SMTP, a API grava cada mensagem (convites) como um arquivo `.eml` na pasta configurada em `Email:PickupDirectory`. No Docker, é a pasta `.mail/` na raiz do repositório (montada em `/mail` no container); rodando pelo Visual Studio ou `dotnet run`, é `src/Oficina.Api/.mail/`. Abra o `.eml` num cliente de e-mail ou num editor de texto. A pasta está no `.gitignore`. Fora de Development, configure `Email:SmtpHost` e `Email:SmtpPort` (sem `PickupDirectory`) para usar um SMTP real; sem nenhum dos dois, o envio fica desligado. O conteúdo, o destinatário e o token do e-mail nunca vão para o log.
+| `sqlserver` | SQL Server 2022 na porta 1433 (dados no volume `oficina-sqlserver-data`) |
+| `api` | API em Development na porta 8080. Na subida cria o banco, aplica as migrations e cria o Admin de teste |
+| `web` | Front-end de produção servido pelo nginx na porta 4200 |
+| `seed` | Roda uma única vez e preenche o banco vazio como uma oficina em uso (seção 6) |
 
 Comandos úteis:
 
 ```bash
-docker compose logs -f api   # logs da API
-docker compose down          # para tudo (mantém os dados)
-docker compose down -v       # para tudo e apaga o banco (na próxima subida ele é recriado)
+docker compose ps              # situação dos serviços
+docker compose logs seed       # usuários criados e link do portal do cliente
+docker compose logs -f api     # logs da API
+docker compose down            # para tudo e mantém os dados
+docker compose down -v         # para tudo e APAGA o banco (a próxima subida recria e recarrega)
 ```
 
-### 3. Rodar a API pelo Visual Studio ou `dotnet run`
+E-mails em desenvolvimento não saem da máquina: cada mensagem (convite, orçamento, recibo, relatório agendado, notificação) vira um arquivo `.eml` na pasta `.mail/` da raiz. Abra num cliente de e-mail ou num editor de texto.
 
-Com o banco do Docker:
+## 6. Dados de demonstração
+
+Na primeira subida, o serviço `seed` executa `scripts/seed/seed-oficina.mjs`, que usa **somente a API pública** do sistema (como um usuário faria) para montar a oficina **Auto Center Paulista**:
+
+- **Equipe de todos os perfis** (senha `Oficina@2026`): gerente, 2 atendentes e 3 mecânicos, com especialidades, comissão e horário.
+- **Configurações:** dados da oficina, chave Pix, formas de pagamento, taxas e regras de desconto (cliente fiel e frota).
+- **Catálogo:** 11 serviços, 14 peças e insumos com estoque inicial (dois abaixo do mínimo) e 3 pacotes.
+- **Estoque:** 3 fornecedores, entradas com nota, uma contagem aberta e um pedido de compra.
+- **Clientes:** 10 clientes (pessoas e empresas, uma frota com 3 veículos) e 12 veículos.
+- **Ordens de serviço em todas as etapas:** recebidas, em diagnóstico (com checklist, foto e diagnóstico), aguardando aprovação (orçamento enviado por link e por WhatsApp), em execução, finalizada (a receber) e entregues (com recibo; uma paga por Pix pelo portal).
+- **Documentos, notificações, 4 automações e 3 relatórios salvos** (um agendado).
+
+O banco só é preenchido se não tiver clientes. Para recarregar do zero: `docker compose down -v` e `docker compose up -d --build`. Para rodar a carga contra uma API fora do Docker: `node scripts/seed/seed-oficina.mjs` (variáveis `API_URL`, `ADMIN_EMAIL`, `ADMIN_PASSWORD` e `PIX_WEBHOOK_SECRET`).
+
+| Perfil | E-mail | Senha |
+|---|---|---|
+| Administrador | `admin@oficina.local` | `Admin@123` |
+| Gerente | `gerente@oficina.local` | `Oficina@2026` |
+| Atendentes | `ana.atendente@oficina.local`, `bruno.atendente@oficina.local` | `Oficina@2026` |
+| Mecânicos | `marcos.mecanico@oficina.local`, `paula.mecanica@oficina.local`, `rafael.mecanico@oficina.local` | `Oficina@2026` |
+
+Credenciais e segredos acima valem **só para desenvolvimento** e não servem para produção.
+
+## 7. Como testar cada funcionalidade
+
+O passo a passo completo, com caixas para marcar, está em [docs/roteiro-de-testes.md](docs/roteiro-de-testes.md). Resumo por módulo:
+
+| Módulo | Como testar | Com quem entrar |
+|---|---|---|
+| Acesso | Entrar, recarregar (continua logado), sair, errar a senha 5 vezes (bloqueio), abrir `/settings` como mecânico (acesso negado) | Todos |
+| Painel | Trocar o período, clicar **Gerar pedido** num aviso de estoque, personalizar os cartões | Gerente |
+| Clientes | Buscar, abrir a ficha, revelar o telefone, criar cliente com CEP `01310-100`, cadastrar e transferir veículo, importar CSV, exportar dados LGPD | Atendente / Gerente |
+| Catálogo | Alterar preço e ver o histórico, criar pacote, desativar peça usada em pacote (bloqueado) | Gerente |
+| Estoque | Registrar entrada, baixa e contagem; ver sugestões e enviar pedido de compra | Gerente |
+| Ordens de serviço | **Nova OS**, arrastar no quadro, abrir o detalhe, ver fotos e tempos | Atendente |
+| Modo mecânico | Iniciar atendimento, checklist, foto, diagnóstico, enviar para orçamento, cronômetro, finalizar | Mecânico |
+| Orçamentos | Montar, aplicar desconto, pedir aprovação acima do limite, enviar por link, aprovar no balcão, recusar e criar nova versão | Atendente / Gerente |
+| Portal | Abrir o link de `docker compose logs seed`, confirmar com `321`, aprovar parte dos itens, gerar Pix, ver documentos, recusar | Sem login |
+| Consulta pública | `/portal` com o número da OS e o CPF do cliente | Sem login |
+| Documentos | Filtrar, abrir, baixar PDF, enviar por e-mail e verificar a autenticidade | Atendente |
+| Financeiro | Conferir recebido, a receber, comissões e formas de pagamento | Gerente |
+| Relatórios | Montar, salvar, agendar, exportar Excel/PDF e perguntar em português | Gerente |
+| Automações | Pausar regra, criar a partir de modelo, ver filas e falhas | Gerente / Admin |
+| Notificações | Abrir o sino, marcar como lidas, mudar preferências | Todos |
+| Equipe | Convidar (link no `.eml`), editar perfil profissional, ver produtividade, desativar | Admin |
+| Configurações | Alterar dados da oficina (pede senha), encerrar sessão, filtrar auditoria | Admin |
+| Plataforma | Ver plano, usuários em uso e módulos | Admin |
+
+## 8. Comandos de qualidade (sem erros e sem warnings)
+
+Rode na raiz do repositório. O build trata qualquer warning como erro.
+
+### Back-end
+
+```bash
+dotnet clean                                   # limpa bin/obj
+dotnet restore                                 # restaura pacotes NuGet
+dotnet tool restore                            # dotnet-ef e ReportGenerator
+dotnet build -warnaserror                      # compila tudo; 0 warnings e 0 erros
+dotnet build --configuration Release -warnaserror
+dotnet test                                    # unidade, contrato e funcionais (Docker aberto)
+dotnet test --project tests/Oficina.UnitTests          # só unidade
+dotnet test --project tests/Oficina.ContractTests      # só contrato
+dotnet test --project tests/Oficina.FunctionalTests    # só funcionais (sobe SQL Server em contêiner)
+```
+
+Cobertura (mínimo de 85% de linhas, igual ao CI):
+
+```bash
+dotnet build --configuration Release -warnaserror
+dotnet test --project tests/Oficina.UnitTests --configuration Release --no-build --results-directory TestResults/Unit --coverlet --coverlet-output-format cobertura
+dotnet test --project tests/Oficina.ContractTests --configuration Release --no-build --results-directory TestResults/Contract --coverlet --coverlet-output-format cobertura
+dotnet test --project tests/Oficina.FunctionalTests --configuration Release --no-build --results-directory TestResults/Functional --coverlet --coverlet-output-format cobertura
+dotnet reportgenerator "-reports:TestResults/**/*.cobertura.*.xml" "-targetdir:coveragereport" "-reporttypes:Html;TextSummary" "-assemblyfilters:+Oficina.Api;+Oficina.Application;+Oficina.Domain;+Oficina.Infrastructure" "-filefilters:-**/Program.cs;-**/Migrations/**"
+```
+
+O resumo fica em `coveragereport/Summary.txt` e o relatório navegável em `coveragereport/index.html`.
+
+Depois de mudar uma rota ou um DTO, atualize o snapshot do contrato (no PowerShell use `$env:UPDATE_OPENAPI_SNAPSHOT=1`):
+
+```bash
+UPDATE_OPENAPI_SNAPSHOT=1 dotnet test --project tests/Oficina.ContractTests
+cd web && npm run api:generate
+```
+
+### Front-end
+
+```bash
+cd web
+npm ci                # instala exatamente o package-lock.json
+npm run lint          # ESLint, sem comentários, cores só por tokens e Prettier
+npm test              # Vitest com cobertura (mínimo 85%) e testes dos scripts
+npm run build         # build de produção
+npm run check:bundle  # garante que nada de teste entrou no pacote de produção
+npm run check:secrets # varredura de segredos
+npm audit --audit-level=high
+npm run e2e           # Playwright desktop e celular numa stack Docker própria (porta 4300)
+```
+
+### Docker do zero
+
+```bash
+docker compose down --rmi local --remove-orphans
+docker image prune -f
+docker builder prune -f
+docker compose up -d --build
+docker compose ps
+```
+
+## 9. Testes automatizados
+
+| Camada | Projeto | O que cobre |
+|---|---|---|
+| Unidade | `tests/Oficina.UnitTests` | Entidades, value objects e regras do domínio; casos de uso; motor de relatórios, PDF e planilha; regras de arquitetura |
+| Contrato | `tests/Oficina.ContractTests` | Snapshot OpenAPI, toda operação com resumo e respostas de erro, autorização por rota, rotas anônimas permitidas, nenhum dado pessoal na URL |
+| Funcional | `tests/Oficina.FunctionalTests` | Cada API de ponta a ponta com SQL Server real: fluxos completos (OS, orçamento, portal com Pix, documentos, painel, relatórios, automações, configurações, financeiro), matriz de permissões, migrations, persistência, outbox, e-mail e Pix |
+| Front-end | `web/src/**/*.spec.ts` | Componentes, páginas, gateways, stores, regras e acessibilidade (axe) com a API simulada |
+| Scripts | `web/scripts/*.test.mjs` | Geração de tipos, checagens de bundle, comentários, cores e segredos |
+| E2E | `web/e2e/*.spec.ts` | Navegador real (desktop e celular) contra a imagem de produção e a API real |
+
+Números da última execução: back-end **1.116 testes** (cobertura de linhas acima de 94%), front-end **862 testes** (96% de linhas) e E2E **128 cenários**, todos verdes.
+
+## 10. Rodar pela IDE, migrations, Swagger e banco
+
+### API pelo Visual Studio ou `dotnet run`
 
 ```bash
 docker compose up -d sqlserver
 dotnet run --project src/Oficina.Api
 ```
 
-A API sobe em `http://localhost:5080` (Swagger em `http://localhost:5080/swagger`).
+A API sobe em `http://localhost:5080` (Swagger em `/swagger`). No Visual Studio (2026 ou 2022 17.14+), abra `Oficina.slnx`, defina `Oficina.Api` como projeto de inicialização e aperte **F5**. Se o Visual Studio mostrar erros que o `dotnet build` não mostra, feche a solution e apague `.vs`, `bin` e `obj`.
 
-No Visual Studio (2026 ou 2022 17.14+, com o SDK do .NET 10), abra `Oficina.slnx`, defina `Oficina.Api` como projeto de inicialização e aperte **F5**. O perfil padrão `http` abre o navegador direto no Swagger. Também existe o perfil `https`, em `https://localhost:7080`, que usa o certificado de desenvolvimento do .NET (`dotnet dev-certs https --trust`). Na subida, a API aplica as migrations e cria o Admin de teste.
+Para SQL Server local com autenticação do Windows, troque a `ConnectionStrings:Oficina` de `src/Oficina.Api/appsettings.Development.json` por `Server=.\SQLEXPRESS;Database=oficina;Trusted_Connection=True;TrustServerCertificate=True`.
 
-Se o Visual Studio mostrar erros que o `dotnet build` não mostra, feche a solution, apague as pastas `.vs`, `bin` e `obj` e abra de novo.
+### Front-end em desenvolvimento
 
-A conexão fica em `src/Oficina.Api/appsettings.Development.json`. Para usar um **SQL Server local com autenticação do Windows** em vez do Docker, troque a `ConnectionStrings:Oficina` por:
-
-```text
-Server=.\SQLEXPRESS;Database=oficina;Trusted_Connection=True;TrustServerCertificate=True
+```bash
+cd web
+npm ci
+npm start             # http://localhost:4200, com proxy de /api para http://localhost:8080
 ```
 
-### 4. Migrations
+### Migrations
 
-Em Development, as migrations são aplicadas automaticamente na subida da API (`Database:ApplyMigrationsOnStartup = true`).
-
-Para aplicar manualmente:
+Em Development, as migrations rodam sozinhas na subida da API. Manualmente:
 
 ```bash
 dotnet ef database update --project src/Oficina.Infrastructure --startup-project src/Oficina.Api
-```
-
-Para criar uma nova migration depois de mudar uma entidade ou uma configuração do EF:
-
-```bash
 dotnet ef migrations add NomeDaMigration --project src/Oficina.Infrastructure --startup-project src/Oficina.Api --output-dir Persistence/Migrations
 ```
 
-### 5. Login no Swagger
+### Swagger
 
-1. Em `POST /api/auth/login`, clique em "Try it out" e envie:
+1. Em `POST /api/auth/login`, envie `{ "email": "admin@oficina.local", "password": "Admin@123" }`.
+2. Copie o `accessToken`, clique em **Authorize** e cole.
+3. Chame qualquer rota.
 
-   ```json
-   { "email": "admin@oficina.local", "password": "Admin@123" }
-   ```
+### SSMS
 
-2. Copie o `accessToken` da resposta.
-3. Clique em **Authorize** (topo da página), cole o token e confirme.
-4. Chame `GET /api/auth/me` e as rotas de clientes e usuários.
+Servidor `localhost,1433`, autenticação SQL Server, usuário `sa`, senha `Oficina@Dev123`, marque "Confiar no certificado do servidor", banco `oficina`.
 
-### 6. Rodar os testes
+## 11. Configuração
 
-O Docker precisa estar aberto: os testes funcionais sobem um SQL Server temporário com Testcontainers. Com o Docker fechado, eles falham com a mensagem "Os testes funcionais precisam do Docker em execução…". Os testes unitários e de contrato não precisam do Docker. Todos aparecem e rodam também no Test Explorer do Visual Studio.
+| Chave | Para que serve | Valor em desenvolvimento |
+|---|---|---|
+| `ConnectionStrings__Oficina` | Conexão com o SQL Server | definida no `docker-compose.yml` |
+| `Jwt__Secret` | Chave do token de acesso (mínimo de 32 caracteres) | fixa em `appsettings.Development.json`, só para desenvolvimento |
+| `Email__PickupDirectory` | Grava e-mails como `.eml` em vez de enviar | `/mail` (pasta `.mail/`) |
+| `Email__SmtpHost`, `Email__SmtpPort` | SMTP real fora do desenvolvimento | — |
+| `PublicLinks__BaseUrl` | Endereço usado nos links do portal e da verificação | `http://localhost:4200` |
+| `Payments__PixWebhookSecret` | Segredo da assinatura do webhook Pix | `segredo-pix-desenvolvimento` |
+| `Cors__AllowedOrigins__0` | Origem do front fora do mesmo domínio | — |
+| `Security__LoginRateLimit__PermitLimit` | Tentativas de login por minuto por IP | 5 |
 
-```bash
-dotnet test --project tests/Oficina.UnitTests
-dotnet test --project tests/Oficina.ContractTests
-dotnet test --project tests/Oficina.FunctionalTests
-```
+A chave Pix da oficina é configurada pela tela **Configurações > Pagamentos**.
 
-O CI também tem o job `web`: `npm ci`, lint, testes com cobertura mínima de 85%, build de produção, `npm audit --audit-level=high` e E2E. Ele roda os três projetos do back-end, gera o relatório de cobertura com o ReportGenerator e falha se a cobertura de linhas ficar abaixo de 85%. O resumo da cobertura aparece no resumo do job e como comentário no PR. O relatório em HTML fica como artefato do job.
+## 12. Segurança e LGPD
 
-Depois de mudar uma rota ou um DTO, atualize o snapshot do OpenAPI (`tests/Oficina.ContractTests/OpenApi/Snapshots/openapi.json`). No PowerShell, use `$env:UPDATE_OPENAPI_SNAPSHOT=1` antes do comando.
-
-```bash
-UPDATE_OPENAPI_SNAPSHOT=1 dotnet test --project tests/Oficina.ContractTests
-```
-
-### 7. Conectar no SSMS
-
-- Servidor: `localhost,1433`
-- Autenticação: SQL Server, usuário `sa`, senha `Oficina@Dev123`
-- Marque "Confiar no certificado do servidor"
-- Banco: `oficina`
-
----
+- CPF, CNPJ, e-mail, telefone e placa nunca vão na URL (um teste de contrato garante) e saem mascarados; abrir o dado exige motivo e fica auditado.
+- Nada sigiloso vai para o log (senha, token, documento, e-mail, telefone, placa, corpo de requisição).
+- Senhas com BCrypt; token de acesso só em memória no navegador; renovação por cookie `HttpOnly`, `SameSite=Strict`.
+- Mudanças sensíveis pedem a senha de novo; 2FA opcional ou obrigatório; sessões podem ser encerradas.
+- nginx com CSP estrita, Trusted Types e cabeçalhos de segurança; links do portal e do hub fora do log de acesso.
+- Webhook Pix aceito só com assinatura HMAC-SHA256.
+- Exportação dos dados do titular (LGPD) pela ficha do cliente.
 
 ### Pacote fixado por segurança
 
-O `Directory.Packages.props` fixa `System.Security.Cryptography.Pkcs` na versão 10.0.13. A versão que o `Microsoft.Data.SqlClient` traz por dependência transitiva tem uma vulnerabilidade conhecida (aviso `NU1903` do NuGet), e o build trata avisos como erro. A fixação foi autorizada pelo responsável e pode sair quando o SqlClient trouxer uma versão corrigida.
+O `Directory.Packages.props` fixa `System.Security.Cryptography.Pkcs` na versão 10.0.13. A versão trazida pelo `Microsoft.Data.SqlClient` tem uma vulnerabilidade conhecida (aviso `NU1903`), e o build trata avisos como erro.
+
+---
+
+# Referência técnica
 
 ## Front-end (`web/`)
 
@@ -184,7 +386,7 @@ O modo demo e o E2E usam as mesmas portas 4300/4301: não suba os dois ao mesmo 
 
 ### Modo demonstração (validação manual)
 
-No site normal, as telas sem API ficam em "Em construção". Para navegar por todas antes do merge, existe o build `demo`, que liga no próprio navegador a mesma API simulada do E2E. Uma faixa fixa "Modo demonstração — dados fictícios" aparece em todas as telas.
+No site normal todas as telas usam a API real. Para navegar com dados fictícios, existe o build `demo`, que liga no próprio navegador a mesma API simulada do E2E. Uma faixa fixa "Modo demonstração — dados fictícios" aparece em todas as telas.
 
 ```bash
 docker compose --profile demo up -d --build
@@ -225,7 +427,7 @@ Os dados fictícios ficam só na memória do navegador e voltam ao início ao re
 - **Componentes** em `src/app/shared/ui/` (prefixo `ui-`), construídos sobre o Angular CDK: botão, botão de ícone, campo, chip, segmentado, status, placa, toggle, KPI, skeleton, estado vazio, abas, card, avatar, tabela (ordenação e paginação), diálogo e toast. Cada um tem teste de comportamento e de acessibilidade (axe).
 - **Ícones:** pacote `lucide` (só os dados dos ícones) desenhado pelo componente `ui-icon`. Só os ícones importados entram no bundle.
 - **Shell:** menu lateral recolhível (preferência lembrada), gaveta no celular (fecha pelo botão, Esc ou toque fora), barra inferior no celular, busca com Ctrl K, notificações e troca de tema (claro, escuro, sistema). Funciona a partir de 360 px sem rolagem horizontal.
-- **Rotas:** todas as telas do plano carregam sob demanda e mostram "Em construção" até a fase delas. Todas exigem login e a permissão da tela (veja "Autenticação e perfis").
+- **Rotas:** todas as telas do plano carregam sob demanda e estão implementadas (inclusive Financeiro, Documentos, Plataforma e a consulta pública `/portal`). As telas internas exigem login e a permissão da tela (veja "Autenticação e perfis").
 - **Tela de desenvolvimento** (só no build de desenvolvimento): `/dev/ui` (catálogo de componentes).
 
 ### Camada de dados (gateways)
@@ -250,23 +452,35 @@ features: {
   auth: { api: 'http' },
   customers: { api: 'http' },
   users: { api: 'http' },
-  realtime: { api: 'pending' },
-  session: { api: 'pending' },
-  twoFactor: { api: 'pending' },
+  realtime: { api: 'http' },
+  session: { api: 'http' },
+  twoFactor: { api: 'http' },
   vehicles: { api: 'http' },
-  customerInsights: { api: 'pending' },
-  addresses: { api: 'pending' },
-  jobs: { api: 'pending' },
-  teamProfiles: { api: 'pending' },
-  roles: { api: 'pending' },
+  customerInsights: { api: 'http' },
+  addresses: { api: 'http' },
+  jobs: { api: 'http' },
+  teamProfiles: { api: 'http' },
+  roles: { api: 'http' },
   catalog: { api: 'http' },
-  inventory: { api: 'pending' },
-  quotes: { api: 'pending' },
+  inventory: { api: 'http' },
+  quotes: { api: 'http' },
+  serviceOrders: { api: 'http' },
+  portal: { api: 'http' },
+  documents: { api: 'http' },
+  dashboard: { api: 'http' },
+  reports: { api: 'http' },
+  automations: { api: 'http' },
+  notifications: { api: 'http' },
+  assistant: { api: 'http' },
+  settings: { api: 'http' },
+  finance: { api: 'http' },
+  platform: { api: 'http' },
 },
 ```
 
+Hoje **todas** as funcionalidades usam a API real no build de produção. O modo `pending` continua existindo para a próxima funcionalidade que nascer antes do back-end (e no modo demonstração, que não tem tempo real, sessão por cookie nem 2FA).
+
 - **Modo `pending`:** a porta responde na hora com o erro `feature.pending` (501). As telas continuam inteiras; o que depende da API mostra o bloco "Em construção" e cada ação mostra "Esta funcionalidade ainda está em construção no back-end." Nada é gravado e nenhum dado é inventado.
-- **Telas mistas:** a parte com API funciona normalmente. Ex.: clientes, ficha e veículos usam a API real; histórico, gasto e situação aparecem "Em construção".
 
 **Quando o back-end publicar uma rota:**
 
@@ -321,14 +535,14 @@ Para formulários, `applyApiErrors(form, error)` coloca a mensagem de cada campo
 
 **Renovação da sessão (porta pronta para o B1).** A porta é o `SessionGateway` (`core/auth/session.gateway.ts`), com `refresh()` e `logout()`:
 
-- Hoje `features.session.api = 'pending'`: `refresh()` devolve "sem sessão" e o fluxo acima continua igual (recarregar leva ao login).
+- `features.session.api = 'http'`: o refresh usa o cookie `oficina_refresh` (`HttpOnly`, `SameSite=Strict`, caminho `/api/auth`); recarregar a página mantém a sessão.
 - Contrato que o B1 deve implementar: `POST /api/auth/refresh` (lê o cookie e devolve `{ accessToken, expiresAt }`, ou 401 sem cookie válido) e `POST /api/auth/logout` (revoga o cookie, 204).
 - Para trocar para a API real depois do B1: publique os dois endpoints, rode `npm run api:generate`, mude `features.session.api` para `'http'` no `environment.ts` e rode `npm test`. O `HttpSessionGateway` já chama os dois endpoints.
 
 **Verificação em duas etapas** (`/login/verify`, pronta para o B1):
 
 - Contrato: o login pode responder `{ requiresTwoFactor: true, challengeId }`. A tela pede o código de 6 dígitos (colar, preencher automático, setas e apagar) e chama `POST /api/auth/2fa/verify` com `{ challengeId, code }`, que devolve `{ accessToken, expiresAt }` ou 401 `identity.invalidTwoFactorCode`.
-- Hoje `features.twoFactor.api = 'pending'`: o login real nunca pede o código, então a tela só aparece quando o B1 publicar o desafio.
+- `features.twoFactor.api = 'http'`: quando o usuário tem 2FA ligado, o login devolve `requiresTwoFactor` e `challengeId`, e a tela pede o código TOTP.
 
 **Perfis e permissões** (`core/auth/permissions.ts`). Um mapa central diz o que cada perfil pode fazer, por ação e não só por tela, com o menor privilégio possível:
 
@@ -362,7 +576,7 @@ Tela `/customers` (Admin e Attendant; o mecânico não vê o cadastro). No deskt
 - Busca por nome ou CPF/CNPJ completo, com atraso de digitação. O termo vai no corpo, nunca na URL.
 - Filtros: tipo (PF/PJ), situação (ativa, OS aberta), frota e "sem retorno há 90 dias". Ordenação por nome ou data de cadastro, com paginação.
 - Documento, e-mail e telefone chegam mascarados do servidor.
-- **Regra temporária:** situação, frota e retorno dependem de OS e veículos, ainda sem API: a lista mostra o aviso "Em construção" e esses filtros não encontram ninguém. Quando a API do resumo existir, o front lê a lista real em lotes de 100 (até 500 clientes), cruza com o resumo e pagina localmente, avisando quando passa de 500. Quando o B2/B3 publicarem esses campos no `/query`, o filtro passa para o servidor e o `CustomersListStore` volta a paginar só pela API.
+- **Resumo do cliente:** situação, frota e retorno vêm de `POST /api/admin/customers/summaries`; o front lê a lista real em lotes de 100 (até 500 clientes), cruza com o resumo e pagina localmente, avisando quando passa de 500. Quando o B2/B3 publicarem esses campos no `/query`, o filtro passa para o servidor e o `CustomersListStore` volta a paginar só pela API.
 
 **Ficha** (`/customers/:id`):
 
@@ -383,7 +597,7 @@ Tela `/customers` (Admin e Attendant; o mecânico não vê o cadastro). No deskt
 - O rascunho fica em memória e volta depois de um novo login do mesmo usuário.
 - Na edição, e-mail e telefone são revelados com motivo `Edit` (também auditado).
 
-**Contratos prontos para o B2/B3** (hoje em `pending`; as telas mostram "Em construção"):
+**Contratos publicados pelo back-end:**
 
 | Contrato | Rotas | Erros tratados |
 |---|---|---|
@@ -399,7 +613,7 @@ Tela `/customers` (Admin e Attendant; o mecânico não vê o cadastro). No deskt
 
 ### Equipe e permissões
 
-Tela `/team` (Admin altera; Manager só lê). Usuários vêm da API real (`/api/admin/users`); perfil profissional, produtividade e permissões têm contrato pronto e mostram "Em construção" até a API sair.
+Tela `/team` (Admin altera; Manager só lê). Usuários vêm da API real (`/api/admin/users`); perfil profissional, produtividade e permissões vêm da API real (`/api/admin/team`, `/api/admin/roles`).
 
 - **Cartões e lista:** avatar, perfil, situação, especialidades e, para mecânicos, OS, ocupação, receita e uma sparkline de OS por semana (30 ou 90 dias). Filtros por perfil e situação vão na query da API (`role`, `status`), porque não são dados pessoais.
 - **Convite:** o Admin informa nome, e-mail e perfil. A API cria o usuário sem senha e manda um link de uso único, válido por 72 horas. Ninguém, nem o Admin, vê a senha. Reenviar invalida o link anterior.
@@ -408,7 +622,7 @@ Tela `/team` (Admin altera; Manager só lê). Usuários vêm da API real (`/api/
 - **Membro (`/team/:id`):** acesso (nome e perfil, API real), perfil profissional (especialidades, comissão, jornada por dia, limite de desconto; mecânico não aplica desconto) e produtividade (OS, horas, ocupação, receita, retrabalho e tendência).
 - **Permissões (`/team/permissions`):** matriz perfil × permissão agrupada por módulo, só leitura. No celular, uma lista por perfil.
 
-**Contratos prontos para o B2/B3** (hoje em `pending`):
+**Contratos publicados pelo back-end:**
 
 | Contrato | Rotas | Erros tratados |
 |---|---|---|
@@ -442,7 +656,7 @@ O histórico de preço fica na tabela `priceChanges` (serviço: preço base; pe�
 
 ### Estoque e inventário
 
-Tela `/inventory` com seções em rotas: Visão geral, Inventário (`/inventory/counts`), Pedidos de compra e Fornecedores. Contrato pronto para o B3 em `features/inventory/data/inventory.contracts.ts`, sobre a entidade `Part` real (`stockQuantity`, `minimumStock`, movimentos). Hoje `inventory` está em `pending`: as telas aparecem completas, sem dados, com o aviso "Em construção".
+Tela `/inventory` com seções em rotas: Visão geral, Inventário (`/inventory/counts`), Pedidos de compra e Fornecedores. Contrato pronto para o B3 em `features/inventory/data/inventory.contracts.ts`, sobre a entidade `Part` real (`stockQuantity`, `minimumStock`, movimentos). `inventory` usa a API real (`/api/admin/inventory`).
 
 - **Visão geral:** KPIs (abaixo do mínimo e pedido sugerido, saídas no mês, giro médio, sem saída há 90 dias), tabela com nível visual, situação (OK, Repor, Sem estoque, Parado), filtros por situação e local e busca.
 - **Movimentações por peça** (`/inventory/parts/:partId`): entrada, saída e ajuste, com motivo, usuário, OS vinculada e saldo depois do movimento.
@@ -468,7 +682,7 @@ Tela `/inventory` com seções em rotas: Visão geral, Inventário (`/inventory/
 
 ### Orçamentos
 
-Telas `/quotes` (lista) e `/quotes/:id` (montador), para Admin, Manager e Attendant. Contrato pronto para o B4 em `features/quotes/data/quote.contracts.ts`, sobre a entidade `Quote` real (versão, status `Pending`, `Approved` e `Rejected`, totais de serviços e peças e `RejectionReason`). O `ApprovalToken` nunca chega ao front: o envio devolve só o link público. Hoje `quotes` está em `pending`: as telas mostram o aviso "Em construção".
+Telas `/quotes` (lista) e `/quotes/:id` (montador), para Admin, Manager e Attendant. Contrato pronto para o B4 em `features/quotes/data/quote.contracts.ts`, sobre a entidade `Quote` real (versão, status `Pending`, `Approved` e `Rejected`, totais de serviços e peças e `RejectionReason`). O `ApprovalToken` nunca chega ao front: o envio devolve só o link público. `quotes` usa a API real.
 
 - **Lista:** número, cliente, placa, versão, situação (rascunho, aguardando cliente, aprovado, recusado), total e aviso de desconto aguardando gestor, com filtro por situação. "Novo orçamento" escolhe uma OS ainda sem orçamento.
 - **Montador:** abas Pacotes, Serviços, Peças e Sugestões da IA (vindas do diagnóstico da OS), busca, adicionar, quantidade (fracionada só em insumo) e remover. Peça sem estoque mostra o que falta e o prazo do fornecedor. Preço que mudou no catálogo depois do rascunho mostra a diferença e o botão "Usar preços atuais".
@@ -496,12 +710,12 @@ Telas `/quotes` (lista) e `/quotes/:id` (montador), para Admin, Manager e Attend
 
 ### Ordens de serviço e modo mecânico
 
-Telas `/service-orders` (quadro, lista e agenda), `/service-orders/:id` (detalhe) e `/mechanic` (modo mecânico, pensado para o celular). Contrato pronto para o B4/B5 em `features/service-orders/data/service-order.contracts.ts` e `features/mechanic/data/mechanic.gateway.ts`, com os status reais `Received`, `InDiagnosis`, `WaitingApproval`, `InProgress`, `Completed` e `Delivered`. Hoje `serviceOrders` está em `pending`: as telas mostram o aviso "Em construção".
+Telas `/service-orders` (quadro, lista e agenda, com o botão **Nova OS** que busca o cliente, escolhe o veículo e abre a OS), `/service-orders/:id` (detalhe) e `/mechanic` (modo mecânico, pensado para o celular). Contrato pronto para o B4/B5 em `features/service-orders/data/service-order.contracts.ts` e `features/mechanic/data/mechanic.gateway.ts`, com os status reais `Received`, `InDiagnosis`, `WaitingApproval`, `InProgress`, `Completed` e `Delivered`. `serviceOrders` usa a API real.
 
 - **Quadro:** seis colunas, arrastar e soltar (mouse e toque) e, como alternativa acessível, o menu "Mover para" em cada cartão, usável só com teclado. As transições espelham o domínio; durante o arraste, as colunas proibidas ficam marcadas, e soltar nelas explica o motivo (OS entregue, falta orçamento, transição inválida). Etiquetas: atrasada, sem peça e lembrete enviado.
 - **Lista e agenda:** filtros por status, mecânico, só atrasadas e busca sem acento; agenda pela entrega prometida, com as atrasadas primeiro.
 - **Detalhe:** linha do tempo (`StatusHistory`), orçamento vigente, peças reservadas, fotos, mecânico responsável, apontamento de tempo (iniciar e parar) e documentos.
-- **Tempo real e conflito:** as mudanças chegam pelo `RealtimeGateway` (SignalR em `/api/hubs/realtime`; hoje `realtime` está em `pending`). Um 409 de versão recarrega a OS e mostra o que outro usuário mudou.
+- **Tempo real e conflito:** as mudanças chegam pelo `RealtimeGateway` (SignalR em `/api/hubs/realtime`, token em `access_token`; o nginx repassa o WebSocket e não grava essa rota no log). Um 409 de versão recarrega a OS e mostra o que outro usuário mudou.
 - **Modo mecânico:** minhas OS, checklist (OK, Atenção, Trocar), fotos pela câmera, descrição do problema, "Sugerir com IA", enviar para orçamento, iniciar e finalizar o serviço.
 
 | Rota | Uso |
@@ -524,7 +738,7 @@ Telas `/service-orders` (quadro, lista e agenda), `/service-orders/:id` (detalhe
 
 ### Portal do cliente e documentos
 
-Rotas públicas `/o/:token` (portal da OS) e `/v/:code` (verificação de documento), fora do shell autenticado, com layout próprio de celular. Contrato pronto para o B4/B6 em `features/portal/data/portal.gateway.ts` e `features/documents/data/documents.gateway.ts`. Hoje `portal` e `documents` estão em `pending`.
+Rotas públicas `/o/:token` (portal da OS) e `/v/:code` (verificação de documento), fora do shell autenticado, com layout próprio de celular. Contrato pronto para o B4/B6 em `features/portal/data/portal.gateway.ts` e `features/documents/data/documents.gateway.ts`. `portal` e `documents` usam a API real; o Pix gera o código copia-e-cola e o QR (QRCoder), e o recibo é emitido quando o webhook `POST /api/public/payments/pix/webhook` chega assinado (HMAC-SHA256 do `txId` com `Payments__PixWebhookSecret` no cabeçalho `X-Pix-Signature`). A rota `/portal` é a consulta pública da OS por número e CPF/CNPJ (no corpo, nunca na URL).
 
 - **Posse:** o cliente confirma os 3 últimos dígitos do telefone; 3 erros bloqueiam o link. Link inválido, expirado ou encerrado mostra a mesma tela neutra, sem dizer se existiu.
 - **OS:** linha do tempo, fotos, itens do orçamento com marcação do que aprovar e total recalculado, aprovar ou recusar (motivo obrigatório) e pagar: Pix (copia-e-cola e QR, com consulta do pagamento) ou cartão, que redireciona para a página do provedor (só endereço `https`) e mostra o resultado na volta.
@@ -544,7 +758,7 @@ Rotas públicas `/o/:token` (portal da OS) e `/v/:code` (verificação de docume
 
 ### Painel
 
-Tela `/dashboard` (Admin, Manager e Attendant). Contrato pronto para o B7 em `features/dashboard/data/dashboard.contracts.ts`. Hoje `dashboard` está em `pending`: a tela mostra o aviso "Em construção".
+Tela `/dashboard` (Admin, Manager e Attendant). Contrato pronto para o B7 em `features/dashboard/data/dashboard.contracts.ts`. `dashboard` usa a API real.
 
 - **Cartões:** indicadores (faturamento, OS abertas, orçamentos aprovados, a receber, com a variação contra o período anterior), faturamento diário (serviços e peças empilhados), "precisa de atenção", serviços mais vendidos e pátio agora (OS por situação). Período: hoje, 7 dias ou 30 dias.
 - **Precisa de atenção:** cada aviso traz a ação direta (gerar pedido de compra, enviar novo prazo, enviar lembrete) e o atalho para a OS, o orçamento, o estoque ou os clientes. O que veio da IA leva o selo "Sugestão da IA" e só acontece quando a pessoa clica.
@@ -558,7 +772,7 @@ Tela `/dashboard` (Admin, Manager e Attendant). Contrato pronto para o B7 em `fe
 
 ### Relatórios
 
-Tela `/reports` (Admin e Manager). Contrato pronto para o B7 em `features/reports/data/report.contracts.ts`. Hoje `reports` está em `pending`.
+Tela `/reports` (Admin e Manager). Contrato pronto para o B7 em `features/reports/data/report.contracts.ts`. `reports` usa a API real.
 
 - **Construtor:** medir (faturamento, quantidade de OS, saída de peças, ticket médio, margem, comissão) × agrupar (mês, semana, mecânico, serviço, categoria, forma de pagamento, cliente) × período (este mês, mês passado, último trimestre, este ano ou datas próprias, até 366 dias) × gráfico (colunas, linha, rosca, tabela). O relatório se atualiza a cada mudança.
 - **Definição tipada, nunca SQL:** o front manda só `{ measure, groupBy, period, chart }`, com valores de listas fechadas. `validateDefinition` recusa combinações sem sentido antes de chamar a API (comissão por cliente, linha sem agrupar por tempo, rosca por mês, rosca de ticket médio ou margem, período incompleto, invertido ou longo demais). O agrupamento que não combina com a medida aparece desabilitado com o motivo. O B7 deve repetir a mesma validação (422 `reports.incompatible`).
@@ -583,7 +797,7 @@ Tela `/reports` (Admin e Manager). Contrato pronto para o B7 em `features/report
 
 ### Automações e filas
 
-Tela `/automations` (Admin e Manager). Contrato pronto para o B5/B8 em `features/automations/data/automation.gateway.ts`. Hoje `automations` está em `pending`.
+Tela `/automations` (Admin e Manager). Contrato pronto para o B5/B8 em `features/automations/data/automation.gateway.ts`. `automations` usa a API real.
 
 - **Regras "quando → faça":** lista com ativar e pausar (interruptor), editar e excluir. O editor visual monta a regra com gatilho (orçamento enviado, OS mudou de situação, peça abaixo do mínimo, OS entregue, revisão vencendo, pagamento vencido, pagamento recebido), até 5 condições (campo, comparação e valor, só os que valem para o gatilho), espera opcional (1 minuto a 60 dias) e até 5 ações (WhatsApp ou e-mail ao cliente, aviso à equipe, rascunho de pedido de compra, baixa de pagamento).
 - **Modelos prontos:** lembrete de orçamento, aviso de status, reposição, pós-venda, revisão preventiva, cobrança e baixa de pagamento. O modelo só preenche o editor; nada é salvo sem a pessoa revisar.
@@ -600,7 +814,7 @@ Tela `/automations` (Admin e Manager). Contrato pronto para o B5/B8 em `features
 
 ### Central de notificações
 
-O sino da barra superior mostra quantas notificações não foram lidas e abre a central: lista com tipo e data, abrir (leva à tela ligada, só caminhos internos do próprio site), marcar uma ou todas como lidas e "Preferências" (por tipo e canal: no sistema, e-mail e WhatsApp). As novas chegam em tempo real pelo `RealtimeGateway` (evento `notification`); como reserva, a lista é consultada a cada 60 s e ao abrir o sino. A notificação nova é anunciada para leitores de tela. Contrato em `features/notifications/data/notification.models.ts`. Hoje `notifications` está em `pending`.
+O sino da barra superior mostra quantas notificações não foram lidas e abre a central: lista com tipo e data, abrir (leva à tela ligada, só caminhos internos do próprio site), marcar uma ou todas como lidas e "Preferências" (por tipo e canal: no sistema, e-mail e WhatsApp). As novas chegam em tempo real pelo `RealtimeGateway` (evento `notification`); como reserva, a lista é consultada a cada 60 s e ao abrir o sino. A notificação nova é anunciada para leitores de tela. Contrato em `features/notifications/data/notification.models.ts`. `notifications` usa a API real.
 
 | Rota | Uso |
 |---|---|
@@ -610,11 +824,11 @@ O sino da barra superior mostra quantas notificações não foram lidas e abre a
 
 ### Pergunte aos seus dados
 
-No construtor de relatórios, o cartão "Pergunte aos seus dados" manda a pergunta em português (8 a 300 caracteres) para o back-end, que devolve uma definição de relatório tipada (nunca SQL) e uma explicação. O front confere a definição com `readDefinition` e `validateDefinition` antes de mostrar. A sugestão aparece com o selo da IA e só vai para o construtor com "Abrir no construtor"; o construtor mostra que o relatório veio da pergunta até a pessoa mudar algum filtro. O front nunca chama o provedor de IA. Contrato em `features/reports/data/assistant.gateway.ts` (`POST /api/admin/assistant/report-definitions`, 422 `assistant.notUnderstood`). Hoje `assistant` está em `pending`.
+No construtor de relatórios, o cartão "Pergunte aos seus dados" manda a pergunta em português (8 a 300 caracteres) para o back-end, que devolve uma definição de relatório tipada (nunca SQL) e uma explicação. O front confere a definição com `readDefinition` e `validateDefinition` antes de mostrar. A sugestão aparece com o selo da IA e só vai para o construtor com "Abrir no construtor"; o construtor mostra que o relatório veio da pergunta até a pessoa mudar algum filtro. O front nunca chama o provedor de IA. Contrato em `features/reports/data/assistant.gateway.ts` (`POST /api/admin/assistant/report-definitions`, 422 `assistant.notUnderstood`). `assistant` usa a API real.
 
 ### Configurações e auditoria
 
-Tela `/settings`, só para o Admin (o mapa de permissões deixa os demais perfis de fora; se um perfil tiver `settings.view` sem `settings.manage`, a tela abre somente leitura e sem a aba Segurança). Contrato pronto para o B1 e os demais em `features/settings/data/settings.contracts.ts`. Hoje `settings` está em `pending`.
+Tela `/settings`, só para o Admin (o mapa de permissões deixa os demais perfis de fora; se um perfil tiver `settings.view` sem `settings.manage`, a tela abre somente leitura e sem a aba Segurança). Contrato pronto para o B1 e os demais em `features/settings/data/settings.contracts.ts`. `settings` usa a API real.
 
 - **Oficina:** nome, CNPJ (validado), endereço, logo (PNG ou JPEG até 512 KB; SVG recusado), horário comercial por dia e o plano atual (somente leitura).
 - **Descontos:** regras (tipo % ou R$, valor, condição, ativa) e limite de desconto manual por perfil. É o mesmo contrato que o montador de orçamentos já consome (`DiscountRuleDto` e o limite por perfil): a API simulada guarda tudo no mesmo lugar, e o teste confere que uma regra criada aqui aparece nas opções do orçamento.
@@ -650,9 +864,9 @@ Quando o back-end publicar a API de uma funcionalidade:
 4. Em `web/src/testing/demo/demo.interceptor.ts`, inclua a funcionalidade em `REAL_API_FEATURES` (o modo demo passa a usar a API real nela).
 5. Atualize o teste `app-environment.spec.ts` (ele confere o que é real em cada build) e rode `npm test`, `npm run e2e` e `npm run build`.
 
-### Contratos pendentes para o back-end
+### Contratos do front publicados pelo back-end
 
-Cada linha é o contrato que o front já usa, com a API simulada de referência em `web/src/testing/fake-api/<funcionalidade>/`. Todo erro segue o ProblemDetails do projeto (`code`, `traceId`, `errors`); os códigos listados são os que o front trata de forma específica, além de 400 `common.validationFailed`, 401, 403 `common.forbidden` e 404.
+Todos os contratos abaixo já estão implementados na API (controllers em `src/Oficina.Api/Controllers`). Cada linha é o contrato que o front usa, com a API simulada de referência em `web/src/testing/fake-api/<funcionalidade>/`. Todo erro segue o ProblemDetails do projeto (`code`, `traceId`, `errors`); os códigos listados são os que o front trata de forma específica, além de 400 `common.validationFailed`, 401, 403 `common.forbidden` e 404.
 
 | Funcionalidade (chave) | Rotas | Contrato (corpo e resposta) | Erros tratados | Prompt |
 |---|---|---|---|---|
@@ -674,7 +888,7 @@ Cada linha é o contrato que o front já usa, com a API simulada de referência 
 | Pergunte aos seus dados (`assistant`) | `POST /api/admin/assistant/report-definitions` | `features/reports/data/assistant.gateway.ts` | 422 `assistant.notUnderstood` | B8 |
 | Tempo real (`realtime`) | hub SignalR `/api/hubs/realtime`, evento `event` (`serviceOrderStatusChanged`, `paymentConfirmed`, `exportReady`, `notification`) | `core/realtime/realtime.gateway.ts` | | B7 |
 
-Veículos (`vehicles`) e o catálogo inteiro (`catalog`: serviços, peças e pacotes) já estão ligados à API real.
+Também estão ligados à API real: veículos, catálogo (serviços, peças e pacotes), financeiro (`finance`: `GET /api/admin/finance`), lista de documentos (`GET /api/admin/documents`), plataforma (`platform`: `GET /api/admin/platform`) e a consulta pública da OS em `/portal` (`POST /api/public/service-orders/lookup`).
 
 ### Mudanças de infraestrutura e decisões registradas
 
@@ -690,13 +904,14 @@ O `npm run e2e` sobe uma stack descartável (`web/e2e/docker-compose.e2e.yml`, p
 
 - Na preparação, o teste entra como `admin@oficina.local` e cria pela API um atendente, um mecânico e um usuário desativado (senha `Oficina@2026`, somente teste).
 - Cobre: login, senha errada, conta desativada, bloqueio após 5 erros, menu por perfil, rota proibida por URL, volta ao endereço pedido, logout, recarga da página e inatividade (relógio simulado).
-- Clientes, contra a API real: criar, revelar, editar, buscar, excluir, documento inválido e duplicado (409), envio desabilitado sem consentimento. Veículos contra a API real: cadastrar e editar, com a quilometragem menor recusada no campo. Resumo e histórico mostram "Em construção". Tudo em desktop e celular.
-- Equipe, contra a API real: convidar, ler o link no arquivo `.eml` que a API grava em `web/e2e/.mail/` (pasta montada no container e apagada no fim), criar a senha, entrar com o convidado, link já usado, e-mail repetido, desativar e reativar e o Admin sem poder se desativar. Perfil profissional e permissões mostram "Em construção".
-- Catálogo contra a API real: cadastrar serviço e alterar o preço com histórico, cadastrar peça com margem e histórico de custo e venda, código repetido recusado, montar pacote com economia e desativar peça usada em pacote bloqueado com o nome do pacote. Estoque sem API: telas vazias com "Em construção", formulários e diálogos completos (entrada em três modos, inventário no celular, fornecedores) respondendo com a mensagem de construção, e mecânico sem custos nem movimentação.
+- Clientes, contra a API real: criar, revelar, editar, buscar, excluir, documento inválido e duplicado (409), envio desabilitado sem consentimento. Veículos contra a API real: cadastrar e editar, com a quilometragem menor recusada no campo. Resumo e histórico vêm da API real. Tudo em desktop e celular.
+- Equipe, contra a API real: convidar, ler o link no arquivo `.eml` que a API grava em `web/e2e/.mail/` (pasta montada no container e apagada no fim), criar a senha, entrar com o convidado, link já usado, e-mail repetido, desativar e reativar e o Admin sem poder se desativar. Perfil profissional salvo na API real e permissões fixas exibidas como somente leitura.
+- Catálogo contra a API real: cadastrar serviço e alterar o preço com histórico, cadastrar peça com margem e histórico de custo e venda, código repetido recusado, montar pacote com economia e desativar peça usada em pacote bloqueado com o nome do pacote. Estoque contra a API real: visão geral, entrada por código de barras e por nota com a validação do servidor, contagem, sugestões de compra e cadastro de fornecedor, e mecânico sem custos nem movimentação.
 - Orçamentos sem API: o build do E2E usa `--configuration production,e2e` (mesma imagem nginx; o `environment.e2e.ts` só troca `quotes` para `http`) e o teste responde `/api/admin/quotes/**` com `page.route`, usando a mesma API simulada dos testes unitários (o contrato do B4). Cobre, em desktop e celular: novo orçamento a partir da OS, montador com aviso de estoque, regra automática, desconto acima do limite com pedido de aprovação, pagamento com parcelas, rascunho salvo, pré-visualização, envio que falha e é reenviado até "aberto pelo cliente", aprovação no balcão, recusa com motivo, nova versão, comparação de versões, preço alterado no catálogo e link expirado.
 - Ordens de serviço, modo mecânico, portal e documentos sem API: o `environment.e2e.ts` também liga `serviceOrders`, `portal` e `documents`, e o `page.route` responde com a mesma API simulada. Cobre, em desktop e celular: arrastar no quadro (mouse no desktop, toque no celular), transição bloqueada, mover pelo teclado, lista, agenda, detalhe, conflito de versão, modo mecânico offline com a fila no IndexedDB e a sincronização na volta da rede, PWA (manifesto, service worker, abrir sem rede e cache e fila apagados no logout), portal (tela neutra para link inválido e expirado, bloqueio após 3 erros, aprovação parcial com Pix, cartão recusado na volta do provedor, recusa com motivo) e o recibo baixado e verificado.
 - Painel e relatórios sem API: o `environment.e2e.ts` liga `dashboard` e `reports`, e o `page.route` responde com a mesma API simulada (contrato do B7). Cobre, em desktop e celular: indicadores e gráficos desenhados de verdade (canvas, sem erro de CSP ou Trusted Types), ação direta de um aviso, troca de período, painel personalizado e mantido ao voltar à tela, construtor com agrupamento desabilitado, combinação incompatível, período sem dados, salvar, agendar, exportar até o link de download, exportação grande na fila e excluir.
 - Automações, notificações e IA sem API: o `environment.e2e.ts` liga `automations`, `notifications` e `assistant`. Cobre, em desktop e celular: pausar regra, criar a partir de um modelo com erro de validação e espera, reprocessar item da fila de erros, sino com contagem, notificação nova ao reabrir, marcar todas como lidas, preferências por canal e a pergunta em português que vira relatório no construtor (sem erro de CSP).
+- As telas de orçamentos, OS, portal, painel, relatórios, automações, notificações, assistente e configurações continuam respondidas pelo `page.route` no E2E, porque os cenários dependem de dados semeados (links do portal, OS em todas as etapas, avisos). O mesmo fluxo contra a API real está coberto pelos testes funcionais do back-end (`QuotePortalApiTests`, `ServiceOrderWorkflowApiTests`, `DashboardApiTests`, `ReportsApiTests`, `OperationsApiTests`, `SettingsApiTests`, `FinanceApiTests`, `JobsApiTests`).
 - O 429 do limite por IP, a falta de rede e o 500 são simulados com `page.route`, no formato exato do back-end. Na stack de teste o limite por IP sobe para 1000 (`Security__LoginRateLimit__PermitLimit`), para os testes não se bloquearem entre si.
 
 ### Tipos do contrato (OpenAPI)
@@ -779,6 +994,8 @@ Estes valores estão no `docker-compose.yml` e no `appsettings.Development.json`
 | SQL Server (`sa`) | `Oficina@Dev123` |
 | Admin de teste (criado na subida em Development, se ainda não existir) | `admin@oficina.local` / `Admin@123` |
 | Chave do JWT | `Jwt:Secret` no `appsettings.Development.json` |
+| Usuários da carga de demonstração | ver a seção 6 (senha `Oficina@2026`) |
+| Segredo do webhook Pix | `segredo-pix-desenvolvimento` (`Payments__PixWebhookSecret`) |
 | API simulada dos testes do front (só `npm test`) | `admin@oficina.local`, `ana@oficina.local`, `marcos@oficina.local` e `gestor@oficina.local`, todos com `Admin@123` |
 
 Fora de Development, a API não cria o Admin de teste e não publica o Swagger. A chave do JWT deve vir da variável de ambiente `Jwt__Secret`, com no mínimo 32 caracteres.
@@ -838,6 +1055,22 @@ Fora de Development, a API não cria o Admin de teste e não publica o Swagger. 
 | `POST /api/admin/users/{id}/deactivate` | Admin | 204 |
 | `POST /api/admin/users/{id}/reactivate` | Admin | 204 |
 | `POST /api/admin/users/search` | Admin | 200 (e-mail no corpo) |
+| `POST /api/auth/refresh`, `/logout`, `/2fa/verify`, `/reauthenticate`, `/2fa/setup`, `/2fa/enable`, `/2fa/disable` | Anônimo (refresh/logout pelo cookie `oficina_refresh`) e usuário logado | sessão renovada pelo cookie `HttpOnly`; reautenticação devolve token de uso único para o cabeçalho `X-Reauthentication` |
+| `POST /api/addresses/lookup` | Admin, Manager, Attendant | 200 com o endereço do CEP (ViaCEP); 404 `address.zipCodeNotFound` |
+| `/api/admin/team/*` e `/api/admin/roles` | Admin, Manager | perfil profissional, produtividade e permissões fixas |
+| `/api/admin/inventory/*` | Admin, Manager (Mechanic: contagem) | estoque, entradas (NF-e), saídas, contagens, fornecedores e pedidos de compra |
+| `/api/admin/service-orders/*` | Admin, Manager, Attendant (Mechanic: ficha, timer, checklist, fotos, diagnóstico) | abrir OS, quadro, transições com versão, modo mecânico |
+| `/api/admin/quotes/*` | Admin, Manager, Attendant | orçamento, descontos com aprovação, envio, versões |
+| `/api/public/portal/*`, `GET /api/public/documents/{code}/verification`, `POST /api/public/payments/pix/webhook` | Anônimo (sessão do portal no cabeçalho `X-Portal-Session`) | portal do cliente, Pix com QR e verificação de documento |
+| `GET /api/admin/documents`, `/{code}`, `/{code}/pdf`, `POST /{code}/send` | Admin, Manager, Attendant | documentos emitidos (OS, orçamento, recibo) |
+| `/api/admin/customers/summaries`, `/{id}/service-history`, `/{id}/data-export`, `/api/admin/imports/customers`, `/api/admin/jobs/{id}` | Admin, Manager, Attendant (exportação LGPD: Admin, Manager) | resumo, histórico, exportação LGPD e importação CSV |
+| `/api/admin/dashboard`, `/layout`, `/attention/{id}/actions` | Admin, Manager, Attendant | painel com indicadores reais |
+| `/api/admin/reports/*`, `/api/admin/assistant/report-definitions` | Admin, Manager | relatórios, agendamento por e-mail, exportação XLSX/PDF e assistente local |
+| `/api/admin/automations/*` | Admin, Manager (reprocessar: Admin) | regras, filas e falhas |
+| `/api/admin/notifications/*` | Qualquer usuário logado | notificações e preferências |
+| `/api/admin/settings/*` | Admin, Manager (alterar: Admin com `X-Reauthentication`) | oficina, descontos, pagamentos, mensagens, segurança, sessões, auditoria e fiscal |
+| `GET /api/admin/finance`, `GET /api/admin/platform` | Admin, Manager / Admin | financeiro e plataforma |
+| Hub SignalR `/api/hubs/realtime` | Qualquer usuário logado (token em `access_token`) | evento `event` com mudanças de OS, pagamento, exportação e notificação |
 | `GET /health` | Anônimo | 200 `Healthy` |
 
 Documento, e-mail e telefone de cliente sempre saem mascarados nas respostas; o valor aberto só sai pelo `/reveal`, com auditoria.
@@ -845,21 +1078,6 @@ Documento, e-mail e telefone de cliente sempre saem mascarados nas respostas; o 
 Os erros seguem o ProblemDetails (`application/problem+json`), com `title`, `status`, `detail` (em português), `code`, `traceId` e, na validação, `errors` com cada campo. Status usados: 400 (dados inválidos), 401 (sem login), 403 (perfil sem permissão), 404, 409 (conflito), 422 (regra de negócio), 429 e 500.
 
 ---
-
-## Estrutura
-
-```text
-src/
-  Oficina.Domain/          entidades, value objects, regras, eventos e interfaces dos repositórios
-  Oficina.Application/     casos de uso (commands e queries do MediatR), validators, DTOs e mappers
-  Oficina.Infrastructure/  EF Core (DbContext, configurações, migrations), repositórios, consultas, JWT, BCrypt e Outbox
-  Oficina.Api/             controllers, autenticação e autorização, ProblemDetails e Swagger
-tests/
-  Oficina.UnitTests/        domínio e casos de uso
-  Oficina.ContractTests/    contrato da API (OpenAPI, JSON, erros, autorização)
-  Oficina.FunctionalTests/  API e banco de ponta a ponta (SQL Server com Testcontainers)
-instructions/               convenções do grupo (arquitetura e padrão de desenvolvimento)
-```
 
 ## Padrões
 
@@ -874,12 +1092,3 @@ instructions/               convenções do grupo (arquitetura e padrão de dese
 
 Detalhes das convenções: [instructions/arquitetura.md](instructions/arquitetura.md) e [instructions/padrao-desenvolvimento.md](instructions/padrao-desenvolvimento.md).
 
-## Próximos passos (para o grupo)
-
-O domínio e as tabelas já existem. Faltam as APIs de:
-- estoque (entradas, saídas, contagens, fornecedores e pedidos de compra; o front já tem o contrato em `inventory.contracts.ts`);
-- ordens de serviço (abertura, diagnóstico, orçamento, aprovação, execução, finalização e entrega);
-- consulta pública da OS pelo cliente;
-- métricas.
-
-Siga o padrão de Customers, Users, Services e Vehicles: command ou query, validator e handler na Application; controller fino na API; testes nos três projetos.

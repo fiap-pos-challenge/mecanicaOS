@@ -14,6 +14,8 @@ public static class PresentationExtensions
 
     public static IServiceCollection AddPresentation(this IServiceCollection services)
     {
+        services.AddSignalR();
+        services.AddSingleton<Oficina.Application.Abstractions.Realtime.IRealtimePublisher, Oficina.Api.Realtime.SignalRRealtimePublisher>();
         services.AddControllers()
             .AddJsonOptions(options => options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter()))
             .ConfigureApiBehaviorOptions(options => options.InvalidModelStateResponseFactory = InvalidModelStateResponse.Create);

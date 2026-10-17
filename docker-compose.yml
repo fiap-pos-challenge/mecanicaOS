@@ -38,6 +38,8 @@ services:
       ConnectionStrings__Oficina: Server=sqlserver,1433;Database=oficina;User Id=sa;Password=Oficina@Dev123;Encrypt=True;TrustServerCertificate=True
       # Somente desenvolvimento: cada e-mail (convites) vira um arquivo .eml em ./.mail, no host.
       Email__PickupDirectory: /mail
+      # Somente desenvolvimento: segredo do webhook Pix usado pela carga de demonstração.
+      Payments__PixWebhookSecret: segredo-pix-desenvolvimento
     ports:
       - "8080:8080"
     volumes:
@@ -45,6 +47,24 @@ services:
     networks:
       - oficina
     restart: unless-stopped
+
+  # Carga de demonstração: na primeira subida, preenche o banco vazio como uma oficina grande em uso
+  # (equipe de todos os perfis, clientes, veículos, catálogo, estoque e OS em todas as etapas). Roda uma vez e sai.
+  seed:
+    image: node:22-alpine
+    container_name: oficina-seed
+    depends_on:
+      api:
+        condition: service_healthy
+    environment:
+      API_URL: http://api:8080
+      PIX_WEBHOOK_SECRET: segredo-pix-desenvolvimento
+    volumes:
+      - ./scripts/seed:/seed:ro
+    command: ["node", "/seed/seed-oficina.mjs"]
+    networks:
+      - oficina
+    restart: "no"
 
   # Frontend Angular servido pelo nginx (sem root), com CSP estrita e proxy de /api para a API.
   web:

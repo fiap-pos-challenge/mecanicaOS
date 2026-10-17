@@ -378,6 +378,70 @@ export function createPortalFakeApi(state: FakeBackendState): FakeFeatureApi {
           })
         : ok({ valid: false });
     })
+    .on('GET', '/api/admin/documents', (request) => {
+      const principal = authorize(request, state.database.users, staff);
+      if (!isPrincipal(principal)) {
+        return principal;
+      }
+
+      const kind = request.query.get('kind') ?? '';
+      const code = (request.query.get('code') ?? '').toUpperCase();
+      if (kind !== '' && !['ServiceOrder', 'Quote', 'Receipt'].includes(kind)) {
+        return validation([fieldError('kind', 'documents.kind', text.invalidField)]);
+      }
+
+      const items = orders()
+        .flatMap((order) =>
+          order.documents.map((document) => {
+            const view = documentView(order, document);
+            return {
+              code: document.code,
+              kind: document.kind,
+              number: view.number,
+              customerName: view.customerName,
+              total: view.total,
+              issuedAt: document.issuedAt,
+            };
+          }),
+        )
+        .filter((item) => (kind === '' || item.kind === kind) && item.code.includes(code))
+        .sort((a, b) => b.issuedAt.localeCompare(a.issuedAt));
+      const page = Math.max(1, Number(request.query.get('page') ?? 1));
+      const pageSize = Math.max(1, Number(request.query.get('pageSize') ?? 20));
+      return ok({
+        items: items.slice((page - 1) * pageSize, page * pageSize),
+        page,
+        pageSize,
+        totalItems: items.length,
+      });
+    })
+    .on('POST', '/api/public/service-orders/lookup', (request) => {
+      const body = readBody(request);
+      const number = Number(body['number']);
+      const document = readText(body, 'document').replace(/\D/g, '');
+      const order = orders().find((candidate) => candidate.number === number);
+      const owner = order ? customerOf(order) : null;
+      if (!order || !owner || owner.document !== document) {
+        return problem(404, 'serviceOrder.notFound', text.serviceOrderNotFound);
+      }
+
+      const [brand = '', ...rest] = order.vehicle.split(' ');
+      return ok({
+        number: order.number,
+        status: order.status,
+        problemDescription: order.complaint,
+        totalAmount: total(order),
+        vehicle: { licensePlate: order.plate, brand, model: rest.join(' '), year: 0 },
+        services: [],
+        parts: [],
+        quote:
+          order.quoteStatus === null ? null : { status: order.quoteStatus, total: total(order) },
+        openedAt: order.history[0]?.changedAt ?? order.updatedAt,
+        executionStartedAt: null,
+        completedAt: null,
+        deliveredAt: order.status === 'Delivered' ? order.updatedAt : null,
+      });
+    })
     .on('GET', '/api/admin/documents/:code', (request, params) => {
       const principal = authorize(request, state.database.users, staff);
       if (!isPrincipal(principal)) {

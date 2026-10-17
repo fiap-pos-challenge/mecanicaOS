@@ -15,7 +15,7 @@ export function toServiceOrderCard(dto: ServiceOrderCardDto): ServiceOrderCard {
     summary: dto.summary ?? '',
     mechanicName: dto.mechanicName ?? null,
     promisedAt: dto.promisedAt ?? null,
-    total: centsFromDecimal(dto.total ?? 0),
+    total: centsFromDecimal(dto.total ?? dto.totalAmount ?? 0),
     hasQuoteItems: dto.hasQuoteItems ?? false,
     tags: dto.tags ?? [],
     updatedAt: required(dto.updatedAt, 'updatedAt'),

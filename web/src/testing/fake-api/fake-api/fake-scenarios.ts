@@ -35,7 +35,8 @@ export type FakeFeature =
   | 'automations'
   | 'notifications'
   | 'assistant'
-  | 'settings';
+  | 'settings'
+  | 'finance';
 
 export const FAKE_FEATURES: readonly FakeFeature[] = [
   'auth',
@@ -58,6 +59,7 @@ export const FAKE_FEATURES: readonly FakeFeature[] = [
   'notifications',
   'assistant',
   'settings',
+  'finance',
 ];
 
 const text = messages.fake;

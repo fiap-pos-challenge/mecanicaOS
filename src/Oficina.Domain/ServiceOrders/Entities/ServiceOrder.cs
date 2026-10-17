@@ -21,6 +21,8 @@ public sealed class ServiceOrder : AggregateRoot
     private readonly List<PartItem> _partItems;
     private readonly List<Quote> _quotes;
     private readonly List<StatusHistoryEntry> _statusHistory;
+    private readonly List<TimeEntry> _timeEntries;
+    private readonly List<ServiceOrderPhoto> _photos;
 
     private ServiceOrder(
         Guid id,
@@ -42,6 +44,10 @@ public sealed class ServiceOrder : AggregateRoot
         _partItems = new List<PartItem>();
         _quotes = new List<Quote>();
         _statusHistory = new List<StatusHistoryEntry>();
+        _timeEntries = new List<TimeEntry>();
+        _photos = new List<ServiceOrderPhoto>();
+        Checklist = ChecklistItem.DefaultLabels.Select((label, index) => new ChecklistItem($"item-{index + 1}", label, null)).ToList();
+        Diagnosis = string.Empty;
     }
 
     public ServiceOrderNumber Number { get; private set; }
@@ -61,6 +67,28 @@ public sealed class ServiceOrder : AggregateRoot
     public DateTimeOffset? CompletedAt { get; private set; }
 
     public DateTimeOffset? DeliveredAt { get; private set; }
+
+    public int Version { get; private set; }
+
+    public Guid? MechanicId { get; private set; }
+
+    public DateTimeOffset? PromisedAt { get; private set; }
+
+    public int? Mileage { get; private set; }
+
+    public string Diagnosis { get; private set; }
+
+    public bool SentToQuote { get; private set; }
+
+    public bool Reopened { get; private set; }
+
+    public List<ChecklistItem> Checklist { get; private set; }
+
+    public IReadOnlyCollection<TimeEntry> TimeEntries => _timeEntries.AsReadOnly();
+
+    public IReadOnlyCollection<ServiceOrderPhoto> Photos => _photos.AsReadOnly();
+
+    public bool TimerRunning => _timeEntries.Exists(entry => entry.IsRunning);
 
     public bool IsOpen => Status != ServiceOrderStatus.Delivered;
 
@@ -141,6 +169,7 @@ public sealed class ServiceOrder : AggregateRoot
         }
 
         _serviceItems.Add(ServiceItem.Create(Id, service.Id, service.Name, service.BasePrice, quantity));
+        Touch();
         return Result.Success();
     }
 
@@ -162,6 +191,7 @@ public sealed class ServiceOrder : AggregateRoot
         }
 
         _partItems.Add(PartItem.Create(Id, part.Id, part.Name, part.UnitPrice, quantity));
+        Touch();
         return Result.Success();
     }
 
@@ -254,6 +284,7 @@ public sealed class ServiceOrder : AggregateRoot
         }
 
         CompletedAt = now;
+        StopTimer(now);
         MoveTo(ServiceOrderStatus.Completed, changedByUserId, null, now);
         Raise(new ServiceOrderCompleted(Id, Number.Value, CustomerId, now));
         return Result.Success();
@@ -271,9 +302,145 @@ public sealed class ServiceOrder : AggregateRoot
         return Result.Success();
     }
 
+    public void Plan(DateTimeOffset? promisedAt, int? mileage)
+    {
+        PromisedAt = promisedAt;
+        Mileage = mileage;
+        Touch();
+    }
+
+    public void AssignMechanic(Guid mechanicId)
+    {
+        if (MechanicId != mechanicId)
+        {
+            MechanicId = mechanicId;
+            Touch();
+        }
+    }
+
+    public Result StartTimer(Guid mechanicId, DateTimeOffset now)
+    {
+        if (Status is not (ServiceOrderStatus.InDiagnosis or ServiceOrderStatus.InProgress))
+        {
+            return ServiceOrderErrors.InvalidTransition;
+        }
+
+        MechanicId ??= mechanicId;
+        if (!TimerRunning)
+        {
+            _timeEntries.Add(TimeEntry.Start(Id, mechanicId, now));
+            Touch();
+        }
+
+        return Result.Success();
+    }
+
+    public void StopTimer(DateTimeOffset now)
+    {
+        foreach (var entry in _timeEntries.Where(entry => entry.IsRunning))
+        {
+            entry.Stop(now);
+            Touch();
+        }
+    }
+
+    public Result UpdateChecklist(IReadOnlyCollection<(string Id, string? State)> changes)
+    {
+        if (changes.Any(change => change.State is not null && !ChecklistItem.States.Contains(change.State)))
+        {
+            return ServiceOrderErrors.InvalidChecklist;
+        }
+
+        Checklist = Checklist
+            .Select(item => changes.FirstOrDefault(change => change.Id == item.Id) is { Id: not null } change ? item with { State = change.State } : item)
+            .ToList();
+        Touch();
+        return Result.Success();
+    }
+
+    public Result AddPhoto(string? clientId, string contentType, string dataUrl, string caption, DateTimeOffset now)
+    {
+        if (!ServiceOrderPhoto.AllowedContentTypes.Contains(contentType) || !dataUrl.StartsWith($"data:{contentType}", StringComparison.Ordinal))
+        {
+            return ServiceOrderErrors.InvalidPhotoType;
+        }
+
+        if (dataUrl.Length > ServiceOrderPhoto.MaxDataUrlLength)
+        {
+            return ServiceOrderErrors.PhotoTooLarge;
+        }
+
+        if (clientId is null || !_photos.Exists(photo => photo.ClientId == clientId))
+        {
+            _photos.Add(ServiceOrderPhoto.Create(Id, clientId, contentType, dataUrl, caption.Trim(), now));
+            Touch();
+        }
+
+        return Result.Success();
+    }
+
+    public void WriteDiagnosis(string description)
+    {
+        Diagnosis = description.Trim();
+        Touch();
+    }
+
+    public Result MarkSentToQuote(string? description)
+    {
+        if (Status != ServiceOrderStatus.InDiagnosis)
+        {
+            return ServiceOrderErrors.ItemsOnlyInDiagnosis;
+        }
+
+        if (!string.IsNullOrWhiteSpace(description))
+        {
+            Diagnosis = description.Trim();
+        }
+
+        SentToQuote = true;
+        Touch();
+        return Result.Success();
+    }
+
+    public bool HasItem(Guid catalogItemId) =>
+        _serviceItems.Exists(item => item.ServiceId == catalogItemId) || _partItems.Exists(item => item.PartId == catalogItemId);
+
+    public Result ReplaceItems(IReadOnlyCollection<(Service Service, int Quantity)> services, IReadOnlyCollection<(Part Part, Quantity Quantity)> parts)
+    {
+        if (Status != ServiceOrderStatus.InDiagnosis)
+        {
+            return ServiceOrderErrors.ItemsOnlyInDiagnosis;
+        }
+
+        _serviceItems.Clear();
+        _partItems.Clear();
+        foreach (var (service, quantity) in services)
+        {
+            _serviceItems.Add(ServiceItem.Create(Id, service.Id, service.Name, service.BasePrice, quantity));
+        }
+
+        foreach (var (part, quantity) in parts)
+        {
+            _partItems.Add(PartItem.Create(Id, part.Id, part.Name, part.UnitPrice, quantity));
+        }
+
+        Touch();
+        return Result.Success();
+    }
+
+    public void SetQuotedTotal(Money total)
+    {
+        TotalAmount = total;
+        Touch();
+    }
+
+    private void Touch() => Version++;
+
     private void MoveTo(ServiceOrderStatus newStatus, Guid? changedByUserId, string? note, DateTimeOffset now)
     {
         _statusHistory.Add(StatusHistoryEntry.Record(Id, Status, newStatus, changedByUserId, note, now));
         Status = newStatus;
+        Touch();
+        Raise(new ServiceOrderStatusChanged(Id, Number.Value, newStatus.ToString(), now));
     }
 }

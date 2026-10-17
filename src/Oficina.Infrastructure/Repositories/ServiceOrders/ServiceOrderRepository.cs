@@ -12,13 +12,10 @@ public sealed class ServiceOrderRepository(OficinaDbContext context) : IServiceO
     private const string NextNumberSql = "SELECT NEXT VALUE FOR [" + OficinaDbContext.ServiceOrderNumberSequence + "] AS [Value]";
 
     public Task<ServiceOrder?> GetByIdAsync(Guid id, CancellationToken cancellationToken) =>
-        context.ServiceOrders
-            .Include(order => order.ServiceItems)
-            .Include(order => order.PartItems)
-            .Include(order => order.Quotes)
-            .Include(order => order.StatusHistory)
-            .AsSplitQuery()
-            .SingleOrDefaultAsync(order => order.Id == id, cancellationToken);
+        WithItems().SingleOrDefaultAsync(order => order.Id == id, cancellationToken);
+
+    public Task<ServiceOrder?> GetByApprovalTokenAsync(ApprovalToken approvalToken, CancellationToken cancellationToken) =>
+        WithItems().SingleOrDefaultAsync(order => order.Quotes.Any(quote => quote.ApprovalToken == approvalToken), cancellationToken);
 
     public async Task<ServiceOrderNumber> NextNumberAsync(CancellationToken cancellationToken)
     {
@@ -33,4 +30,14 @@ public sealed class ServiceOrderRepository(OficinaDbContext context) : IServiceO
         context.ServiceOrders.AnyAsync(order => order.CustomerId == customerId && order.Status != ServiceOrderStatus.Delivered, cancellationToken);
 
     public void Add(ServiceOrder serviceOrder) => context.ServiceOrders.Add(serviceOrder);
+
+    private IQueryable<ServiceOrder> WithItems() =>
+        context.ServiceOrders
+            .Include(order => order.ServiceItems)
+            .Include(order => order.PartItems)
+            .Include(order => order.Quotes)
+            .Include(order => order.StatusHistory)
+            .Include(order => order.TimeEntries)
+            .Include(order => order.Photos)
+            .AsSplitQuery();
 }

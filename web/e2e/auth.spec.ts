@@ -165,13 +165,16 @@ test.describe('authentication against the real API', () => {
     await expect(page).toHaveURL('/login');
   });
 
-  test('requires a new login after reloading the page until the refresh cookie exists', async ({
-    page,
-  }) => {
+  test('keeps the session after reloading the page with the refresh cookie', async ({ page }) => {
     await loginAs(page, ACCOUNTS.attendant);
+    const url = page.url();
 
     await page.reload();
 
+    await expect(page).toHaveURL(url);
+    await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+    await page.context().clearCookies();
+    await page.reload();
     await expect(page).toHaveURL('/login');
   });
 

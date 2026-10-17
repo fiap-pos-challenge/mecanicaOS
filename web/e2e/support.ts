@@ -46,6 +46,7 @@ export async function signIn(page: Page, account: Account): Promise<void> {
 }
 
 export async function loginAs(page: Page, account: Account, path = '/login'): Promise<void> {
+  await page.context().clearCookies();
   await page.goto(path);
   await expect(page.getByRole('heading', { level: 1 })).toHaveText(messages.auth.login.title);
   await signIn(page, account);

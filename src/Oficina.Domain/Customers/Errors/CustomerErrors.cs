@@ -29,6 +29,11 @@ public static class CustomerErrors
         "O endereço é opcional, mas, se informado, precisa ter CEP, logradouro, número, bairro, cidade e UF.",
         ErrorType.Validation);
 
+    public static readonly Error ZipCodeNotFound = new(
+        "address.zipCodeNotFound",
+        "CEP não encontrado. Preencha o endereço manualmente.",
+        ErrorType.NotFound);
+
     public static readonly Error InvalidZipCode = new(
         "customer.invalidZipCode",
         "Informe um CEP válido com 8 dígitos.",

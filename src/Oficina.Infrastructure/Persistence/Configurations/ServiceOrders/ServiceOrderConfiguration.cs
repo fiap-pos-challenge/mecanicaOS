@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Oficina.Domain.Customers.Entities;
+using Oficina.Domain.Identity.Entities;
 using Oficina.Domain.ServiceOrders.Entities;
 using Oficina.Domain.ServiceOrders.ValueObjects;
 using Oficina.Infrastructure.Persistence.Converters;
@@ -24,6 +25,17 @@ public sealed class ServiceOrderConfiguration : IEntityTypeConfiguration<Service
         builder.Property(order => order.ProblemDescription).IsRequired();
         builder.Property(order => order.TotalAmount).HasConversion<MoneyConverter>().HasPrecision(12, 2).IsRequired();
         builder.Property<byte[]>(ConcurrencyToken.RowVersion).IsRowVersion().IsRequired();
+        builder.Property(order => order.Version).IsRequired();
+        builder.Property(order => order.Diagnosis).IsRequired();
+        builder.Property(order => order.SentToQuote).IsRequired();
+        builder.Property(order => order.Reopened).IsRequired();
+        builder.Ignore(order => order.TimerRunning);
+        builder.Property(order => order.Checklist).HasJsonConversion().IsRequired();
+        builder.HasOne<User>().WithMany().HasForeignKey(order => order.MechanicId).OnDelete(DeleteBehavior.Restrict);
+        builder.HasMany(order => order.TimeEntries).WithOne().HasForeignKey(entry => entry.ServiceOrderId).OnDelete(DeleteBehavior.ClientCascade);
+        builder.HasMany(order => order.Photos).WithOne().HasForeignKey(photo => photo.ServiceOrderId).OnDelete(DeleteBehavior.ClientCascade);
+        builder.Navigation(order => order.TimeEntries).UsePropertyAccessMode(PropertyAccessMode.Field);
+        builder.Navigation(order => order.Photos).UsePropertyAccessMode(PropertyAccessMode.Field);
 
         builder.HasOne<Customer>().WithMany().HasForeignKey(order => order.CustomerId).OnDelete(DeleteBehavior.Restrict);
         builder.HasOne<Vehicle>().WithMany().HasForeignKey(order => order.VehicleId).OnDelete(DeleteBehavior.Restrict);

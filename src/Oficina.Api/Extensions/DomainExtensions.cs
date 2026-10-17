@@ -1,5 +1,6 @@
 using Oficina.Domain.Customers.Services;
 using Oficina.Domain.Identity.Services;
+using Oficina.Domain.ServiceOrders.Services;
 
 namespace Oficina.Api.Extensions;
 
@@ -9,6 +10,8 @@ public static class DomainExtensions
     {
         services.AddScoped<RegistrationDeletionPolicy>();
         services.AddScoped<UserAdministrationPolicy>();
+        services.AddScoped<QuoteApprovalPolicy>();
+        services.AddScoped<ServiceOrderOpeningPolicy>();
 
         return services;
     }

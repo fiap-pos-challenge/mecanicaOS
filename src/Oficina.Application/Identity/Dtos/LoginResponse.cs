@@ -1,3 +1,3 @@
 namespace Oficina.Application.Identity.Dtos;
 
-public sealed record LoginResponse(string AccessToken, DateTimeOffset ExpiresAt);
+public sealed record LoginResponse(string? AccessToken, DateTimeOffset? ExpiresAt, bool RequiresTwoFactor, Guid? ChallengeId);

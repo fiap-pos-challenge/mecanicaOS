@@ -12,6 +12,7 @@ export interface ServiceOrderCardDto {
   readonly mechanicName?: string | null;
   readonly promisedAt?: string | null;
   readonly total?: number;
+  readonly totalAmount?: number;
   readonly hasQuoteItems?: boolean;
   readonly tags?: readonly ServiceOrderTag[];
   readonly updatedAt?: string;
@@ -69,6 +70,17 @@ export interface ServiceOrderDetailDto extends ServiceOrderCardDto {
 export interface ServiceOrderListData {
   readonly url: '/api/admin/service-orders';
   readonly query: { readonly page: number; readonly pageSize: number };
+}
+
+export interface ServiceOrderOpenData {
+  readonly url: '/api/admin/service-orders';
+  readonly body: {
+    readonly customerId: string;
+    readonly vehicleId: string;
+    readonly problemDescription: string;
+    readonly promisedAt: string | null;
+    readonly mileage: number | null;
+  };
 }
 
 export interface ServiceOrderItemData {

@@ -139,7 +139,7 @@ test.describe('customers against the real API', () => {
     await expect(page.getByText(detail.noEmailAddress)).toBeVisible();
   });
 
-  test('registers and edits a vehicle on the real API, keeping summary and history pending', async ({
+  test('registers and edits a vehicle with summary and history from the real API', async ({
     page,
   }) => {
     await createCustomer(page, `Veículo E2E ${Date.now() % 100000}`, randomCpf());
@@ -147,8 +147,8 @@ test.describe('customers against the real API', () => {
     const plate = randomPlate();
 
     await expect(vehicles.getByText(messages.pending.vehicles)).toHaveCount(0);
-    await expect(page.getByText(messages.pending.history)).toBeVisible();
-    await expect(page.getByText(messages.pending.customerSummary).last()).toBeVisible();
+    await expect(page.getByText(messages.pending.history)).toHaveCount(0);
+    await expect(page.getByText(messages.pending.customerSummary)).toHaveCount(0);
 
     await page.getByRole('button', { name: detail.addVehicle }).click();
     const dialog = page.getByRole('dialog', { name: vehicle.newTitle });
