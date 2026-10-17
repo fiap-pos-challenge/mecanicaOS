@@ -66,11 +66,22 @@ test.describe('authentication against the real API', () => {
     await createUser(request, await adminToken(request), account);
     await page.goto('/login');
 
-    for (let attempt = 1; attempt < 5; attempt++) {
+    const password = page.locator('input[autocomplete="current-password"]');
+    const wrongAttempt = async (): Promise<void> => {
+      const answered = page.waitForResponse(
+        (response) =>
+          response.request().method() === 'POST' && response.url().endsWith('/api/auth/login'),
+      );
       await signIn(page, { ...account, password: 'Errada@2026' });
+      await answered;
+      await expect(password).toHaveValue('');
+    };
+
+    for (let attempt = 1; attempt < 5; attempt++) {
+      await wrongAttempt();
       await expect(page.getByTestId('login-error')).toHaveText(text.errors.invalidCredentials);
     }
-    await signIn(page, { ...account, password: 'Errada@2026' });
+    await wrongAttempt();
 
     await expect(page.getByTestId('login-wait')).toHaveText(/Conta bloqueada .* 1[45]:\d\d\./);
     await expect(page.getByRole('button', { name: text.login.submit })).toBeDisabled();

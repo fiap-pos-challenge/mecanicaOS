@@ -122,7 +122,13 @@ test.describe('quotes with the contract API intercepted', () => {
 
     await page.getByRole('button', { name: text.editor.newVersion }).click();
     await expect(page.getByText(text.editor.version(2), { exact: true })).toBeVisible();
+    const draftSaved = page.waitForResponse(
+      (response) =>
+        response.request().method() === 'PUT' && response.url().endsWith('/draft') && response.ok(),
+    );
     await page.getByRole('button', { name: text.items.remove('Vela de ignição') }).click();
+    await expect(page.getByTestId('save-state')).toHaveText(text.editor.saveStates.dirty);
+    await draftSaved;
     await expect(page.getByTestId('save-state')).toHaveText(text.editor.saveStates.saved);
     await page.getByRole('button', { name: text.editor.versions }).click();
     const versions = page.getByRole('dialog', { name: text.versions.title });

@@ -505,6 +505,10 @@ export const QuoteEditorStore = signalStore(
       },
 
       async loadVersions(): Promise<readonly QuoteVersion[]> {
+        if (store.saveState() === 'dirty') {
+          await save();
+        }
+
         const quote = store.quote();
         const versions = quote ? await run(() => gateway.versions(quote.id)) : null;
         patchState(store, { versions: versions ?? [] });

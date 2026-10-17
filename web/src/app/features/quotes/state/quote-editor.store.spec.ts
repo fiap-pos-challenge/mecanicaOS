@@ -266,6 +266,22 @@ describe('QuoteEditorStore', () => {
     expect(versions.map((version) => version.version)).toEqual([2, 1]);
   });
 
+  it('saves pending changes before comparing versions', async () => {
+    const store = setup();
+    await store.load(idOf(1047));
+    await store.reject('Achou caro');
+    await store.load((await store.createVersion()) ?? '');
+    const removed = store.draft()?.lines[0];
+
+    store.removeLine(removed?.lineId ?? '');
+    expect(store.saveState()).toBe('dirty');
+    const versions = await store.loadVersions();
+
+    expect(store.saveState()).toBe('saved');
+    expect(versions[0]?.lines.some((line) => line.itemId === removed?.itemId)).toBe(false);
+    expect(versions[1]?.lines.some((line) => line.itemId === removed?.itemId)).toBe(true);
+  });
+
   it('reports a short rejection reason and registers counter approvals', async () => {
     const store = setup();
     await store.load(idOf(1047));
