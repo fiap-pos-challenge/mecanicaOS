@@ -11,9 +11,9 @@ replace() {
   sed -i "s|^${name}=.*|${name}=${value}|" .env
 }
 
-replace MSSQL_SA_PASSWORD "Ci#$(random 12)Aa1"
+replace MSSQL_SA_PASSWORD "Ci@$(random 12)Aa1"
 replace JWT_SECRET "$(random 32)"
 replace PIX_WEBHOOK_SECRET "$(random 16)"
-replace DEV_ADMIN_PASSWORD "Ci#$(random 8)Aa1"
-replace SEED_USERS_PASSWORD "Ci#$(random 8)Aa1"
-replace SONAR_ADMIN_PASSWORD "Ci#$(random 8)Aa1"
+replace DEV_ADMIN_PASSWORD "Ci@$(random 8)Aa1"
+replace SEED_USERS_PASSWORD "Ci@$(random 8)Aa1"
+replace SONAR_ADMIN_PASSWORD "Ci@$(random 8)Aa1"
