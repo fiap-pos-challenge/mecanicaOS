@@ -5,7 +5,10 @@ const composeFile = 'e2e/docker-compose.e2e.yml';
 const envFile = '../.env';
 const mailDirectory = 'e2e/.mail';
 const compose = (args, options = {}) =>
-  spawnSync('docker', ['compose', '--env-file', envFile, '-f', composeFile, ...args], { stdio: 'inherit', ...options });
+  spawnSync('docker', ['compose', '--env-file', envFile, '-f', composeFile, ...args], {
+    stdio: 'inherit',
+    ...options,
+  });
 
 const stopStack = () => compose(['down', '-v', '--remove-orphans'], { stdio: 'ignore' });
 
