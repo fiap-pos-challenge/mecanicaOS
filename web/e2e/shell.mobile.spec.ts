@@ -28,10 +28,13 @@ test.describe('mobile menu', () => {
     const bottomNav = page.getByRole('navigation', { name: messages.bottomNav.label });
 
     await bottomNav.getByRole('button', { name: messages.bottomNav.menu }).click();
+    await expect(page.getByRole('dialog')).toBeVisible();
+    await expect(page.getByTestId('drawer-backdrop')).toBeVisible();
     await page.mouse.click(370, 400);
     await expect(page.getByRole('dialog')).toHaveCount(0);
 
     await bottomNav.getByRole('button', { name: messages.bottomNav.menu }).click();
+    await expect(page.getByRole('dialog')).toBeVisible();
     await page.getByRole('dialog').getByRole('link', { name: messages.screens.inventory }).click();
     await expect(page).toHaveURL('/inventory');
     await expect(page.getByRole('dialog')).toHaveCount(0, { timeout: 10_000 });
