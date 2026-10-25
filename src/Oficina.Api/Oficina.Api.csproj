@@ -1,6 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
   <PropertyGroup>
     <RootNamespace>Oficina.Api</RootNamespace>
+    <UserSecretsId>mecanicaos-api-development</UserSecretsId>
   </PropertyGroup>
 
   <ItemGroup>

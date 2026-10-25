@@ -5,4 +5,5 @@ public enum Role
     Admin,
     Attendant,
     Mechanic,
+    Manager,
 }

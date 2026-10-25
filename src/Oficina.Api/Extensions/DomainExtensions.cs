@@ -11,6 +11,7 @@ public static class DomainExtensions
         services.AddScoped<RegistrationDeletionPolicy>();
         services.AddScoped<UserAdministrationPolicy>();
         services.AddScoped<QuoteApprovalPolicy>();
+        services.AddScoped<ServiceOrderOpeningPolicy>();
 
         return services;
     }

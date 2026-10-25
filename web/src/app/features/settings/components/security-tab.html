@@ -1,0 +1,134 @@
+@switch (state()) {
+  @case ('loading') {
+    <ui-skeleton height="160px" />
+  }
+  @case ('error') {
+    <div class="alert" role="alert">
+      <span>{{ common.loadError }}</span>
+      <button uiButton size="sm" type="button" (click)="load()">{{ common.retry }}</button>
+    </div>
+  }
+}
+
+@if (draft(); as settings) {
+  <section class="section" [attr.aria-label]="text.title">
+    <h2 class="title">{{ text.title }}</h2>
+    @if (submitted() && problems().length > 0) {
+      <ul class="alert" role="alert">
+        @for (problem of problems(); track problem) {
+          <li>{{ text.problems[problem] }}</li>
+        }
+      </ul>
+    }
+    <label class="check">
+      <input
+        type="checkbox"
+        [checked]="settings.requireTwoFactorForAll"
+        (change)="toggleTwoFactor()"
+      />
+      <span>{{ text.twoFactor }}</span>
+    </label>
+    <p class="hint">{{ text.twoFactorHint }}</p>
+    <div class="fields">
+      <ui-field [label]="text.idle" [hint]="text.idleHint">
+        <input
+          uiControl
+          type="number"
+          min="5"
+          max="60"
+          [value]="settings.idleMinutes"
+          (input)="setNumber('idleMinutes', $event)"
+        />
+      </ui-field>
+      <ui-field [label]="text.attempts">
+        <input
+          uiControl
+          type="number"
+          min="3"
+          max="10"
+          [value]="settings.lockoutAttempts"
+          (input)="setNumber('lockoutAttempts', $event)"
+        />
+      </ui-field>
+      <ui-field [label]="text.lockout">
+        <input
+          uiControl
+          type="number"
+          min="5"
+          max="120"
+          [value]="settings.lockoutMinutes"
+          (input)="setNumber('lockoutMinutes', $event)"
+        />
+      </ui-field>
+    </div>
+    <div class="actions">
+      <button uiButton variant="primary" type="button" (click)="save()">{{ common.save }}</button>
+    </div>
+  </section>
+}
+
+<section class="section" [attr.aria-label]="text.sessions">
+  <h2 class="title subtitle">{{ text.sessions }}</h2>
+  @if (sessionState() === 'loading') {
+    <ui-skeleton height="80px" />
+  }
+  <ul class="list" [attr.aria-label]="text.sessionsLabel">
+    @for (session of sessions(); track session.id) {
+      <li class="row">
+        <span>
+          <strong>{{ session.userName }}</strong> · {{ session.device }}
+          <br />
+          <small class="hint">{{ text.lastSeen(when(session.lastSeenAt)) }}</small>
+        </span>
+        @if (session.current) {
+          <span class="hint">{{ text.current }}</span>
+        } @else {
+          <button
+            uiButton
+            size="sm"
+            variant="danger"
+            type="button"
+            [attr.aria-label]="text.end(session.device, session.userName)"
+            (click)="end(session)"
+          >
+            {{ text.endLabel }}
+          </button>
+        }
+      </li>
+    }
+  </ul>
+</section>
+
+<section class="section" [attr.aria-label]="text.audit">
+  <h2 class="title subtitle">{{ text.audit }}</h2>
+  <p class="hint">{{ text.auditHint }}</p>
+  <form class="fields" (submit)="applyFilter($event)">
+    <ui-field [label]="text.area">
+      <select uiControl (change)="setFilter('area', $event)">
+        @for (area of areas; track area) {
+          <option [value]="area" [selected]="area === filter().area">{{ areaLabel(area) }}</option>
+        }
+      </select>
+    </ui-field>
+    <ui-field [label]="text.from">
+      <input uiControl type="date" (change)="setFilter('from', $event)" />
+    </ui-field>
+    <ui-field [label]="text.to">
+      <input uiControl type="date" (change)="setFilter('to', $event)" />
+    </ui-field>
+    <ui-field [label]="text.actor">
+      <input uiControl [value]="filter().actor" (input)="setFilter('actor', $event)" />
+    </ui-field>
+    <div class="actions">
+      <button uiButton type="submit">{{ text.filter }}</button>
+    </div>
+  </form>
+  <ui-table
+    [caption]="text.auditCaption"
+    [columns]="columns"
+    [rows]="audit()?.items ?? []"
+    [trackBy]="trackEntry"
+    [loading]="auditState() === 'loading'"
+    [emptyMessage]="text.empty"
+  />
+</section>

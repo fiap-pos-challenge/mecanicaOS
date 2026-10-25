@@ -137,5 +137,49 @@ public sealed class UserTests
         Assert.False(user.CanLogin);
     }
 
+    [Fact]
+    public void RegisterFailedLogin_FifthFailure_LocksForTheLockoutDurationAndResetsTheCounter()
+    {
+        var user = CreateUser(Role.Attendant);
+        var now = new DateTimeOffset(2026, 10, 4, 12, 0, 0, TimeSpan.Zero);
+
+        for (var attempt = 1; attempt < User.MaxFailedLoginAttempts; attempt++)
+        {
+            user.RegisterFailedLogin(now);
+        }
+
+        Assert.Equal(User.MaxFailedLoginAttempts - 1, user.FailedLoginAttempts);
+        Assert.False(user.IsLockedOut(now));
+        Assert.Equal(TimeSpan.Zero, user.LockoutRemaining(now));
+
+        user.RegisterFailedLogin(now);
+
+        Assert.Equal(0, user.FailedLoginAttempts);
+        Assert.True(user.IsLockedOut(now));
+        Assert.Equal(User.LockoutDuration, user.LockoutRemaining(now));
+        Assert.False(user.IsLockedOut(now + User.LockoutDuration));
+        Assert.Equal(TimeSpan.Zero, user.LockoutRemaining(now + User.LockoutDuration));
+    }
+
+    [Fact]
+    public void RegisterSuccessfulLoginAndReactivate_ClearTheLockout()
+    {
+        var user = CreateUser(Role.Attendant);
+        var now = new DateTimeOffset(2026, 10, 4, 12, 0, 0, TimeSpan.Zero);
+        for (var attempt = 0; attempt < User.MaxFailedLoginAttempts; attempt++)
+        {
+            user.RegisterFailedLogin(now);
+        }
+
+        user.Deactivate();
+        user.Reactivate();
+
+        Assert.False(user.IsLockedOut(now));
+        Assert.Null(user.LockoutEndAt);
+        user.RegisterFailedLogin(now);
+        user.RegisterSuccessfulLogin();
+        Assert.Equal(0, user.FailedLoginAttempts);
+    }
+
     private static User CreateUser(Role role) => User.Create("Ana Lima", UserEmail, PasswordHash, role).Value;
 }

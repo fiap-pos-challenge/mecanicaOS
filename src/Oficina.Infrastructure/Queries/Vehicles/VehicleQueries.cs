@@ -38,20 +38,16 @@ public sealed class VehicleQueries(OficinaDbContext context) : IVehicleQueries
             vehicle.Brand,
             vehicle.LicensePlate.Value,
             vehicle.Year.Value,
+            vehicle.Mileage,
             new VehicleOwnerDto(vehicle.CustomerId, ownerName ?? string.Empty),
             history,
             vehicle.CreatedAt,
             vehicle.UpdatedAt);
     }
 
-    public async Task<PagedResult<VehicleDto>> ListAsync(PageRequest page, LicensePlate? plate, CancellationToken cancellationToken)
+    public async Task<PagedResult<VehicleDto>> ListAsync(PageRequest page, CancellationToken cancellationToken)
     {
         var vehicles = context.Vehicles.AsNoTracking();
-        if (plate is not null)
-        {
-            vehicles = vehicles.Where(vehicle => vehicle.LicensePlate == plate);
-        }
-
         var totalItems = await vehicles.CountAsync(cancellationToken);
         var items = await vehicles
             .OrderBy(vehicle => vehicle.Brand)
@@ -61,5 +57,23 @@ public sealed class VehicleQueries(OficinaDbContext context) : IVehicleQueries
             .ToListAsync(cancellationToken);
 
         return new PagedResult<VehicleDto>(items.Select(vehicle => vehicle.ToDto()).ToList(), page.Page, page.PageSize, totalItems);
+    }
+
+    public async Task<IReadOnlyList<VehicleDto>> ListByCustomerAsync(Guid customerId, CancellationToken cancellationToken)
+    {
+        var vehicles = await context.Vehicles.AsNoTracking()
+            .Where(vehicle => vehicle.CustomerId == customerId)
+            .OrderBy(vehicle => vehicle.Brand)
+            .ThenBy(vehicle => vehicle.Model)
+            .ThenBy(vehicle => vehicle.Id)
+            .ToListAsync(cancellationToken);
+        return vehicles.Select(vehicle => vehicle.ToDto()).ToList();
+    }
+
+    public async Task<VehicleDto?> FindByPlateAsync(LicensePlate plate, CancellationToken cancellationToken)
+    {
+        var vehicle = await context.Vehicles.AsNoTracking()
+            .SingleOrDefaultAsync(candidate => candidate.LicensePlate == plate, cancellationToken);
+        return vehicle?.ToDto();
     }
 }

@@ -1,0 +1,84 @@
+<div class="toolbar">
+  <label class="search">
+    <span class="visually-hidden">{{ text.searchLabel }}</span>
+    <ui-icon [icon]="icons.search" [size]="16" />
+    <input type="search" autocomplete="off" [formControl]="search" [placeholder]="text.search" />
+  </label>
+  <ui-field [label]="text.status">
+    <select uiControl (change)="setStatus($event)">
+      <option value="" [selected]="status() === null">{{ text.statusAll }}</option>
+      <option value="Active" [selected]="status() === 'Active'">{{ statuses.Active }}</option>
+      <option value="Inactive" [selected]="status() === 'Inactive'">{{ statuses.Inactive }}</option>
+    </select>
+  </ui-field>
+  <p class="total" aria-live="polite">{{ text.total(totalItems()) }}</p>
+  <a
+    *appCan="'catalog.manage'"
+    uiButton
+    variant="primary"
+    class="new"
+    [routerLink]="['/catalog', kind(), 'new']"
+  >
+    <ui-icon [icon]="icons.plus" [size]="16" />
+    {{ newLabel() }}
+  </a>
+</div>
+
+@if (pending()) {
+  <ui-pending-notice class="pending" [message]="pendingText" />
+}
+
+@if (failed()) {
+  <div class="alert" role="alert">
+    <span>{{ text.loadError }}</span>
+    <button uiButton size="sm" type="button" (click)="load()">{{ text.retry }}</button>
+  </div>
+}
+
+<ui-table
+  [caption]="text.caption(label())"
+  [columns]="columns()"
+  [rows]="rows()"
+  [trackBy]="trackRow"
+  [loading]="loading()"
+  [emptyMessage]="text.empty"
+  [page]="page()"
+  [pageSize]="pageSize"
+  [totalItems]="totalItems()"
+  (pageChange)="goTo($event)"
+>
+  <ng-template uiCell="name" let-row>
+    <a class="name" [routerLink]="link(row)" [attr.aria-label]="text.open(row.name)">{{
+      row.name
+    }}</a>
+  </ng-template>
+  <ng-template uiCell="savings" let-row>
+    <span class="mono" [class.negative]="row.negativeSavings">{{ row.values.savings }}</span>
+  </ng-template>
+  <ng-template uiCell="stock" let-row>
+    <span class="stock">
+      <span class="mono">{{ row.values.stock }}</span>
+      @if (row.belowMinimum) {
+        <ui-status-pill tone="warn">{{ text.belowMinimum }}</ui-status-pill>
+      }
+    </span>
+  </ng-template>
+  <ng-template uiCell="status" let-row>
+    <ui-status-pill [tone]="row.isActive ? 'ok' : 'neutral'">
+      {{ row.isActive ? statuses.Active : statuses.Inactive }}
+    </ui-status-pill>
+  </ng-template>
+  <ng-template uiCell="actions" let-row>
+    <button
+      *appCan="'catalog.manage'"
+      uiButton
+      size="sm"
+      variant="ghost"
+      type="button"
+      [attr.aria-label]="row.isActive ? text.deactivateOf(row.name) : text.reactivateOf(row.name)"
+      (click)="toggle(row)"
+    >
+      {{ row.isActive ? text.deactivate : text.reactivate }}
+    </button>
+  </ng-template>
+</ui-table>

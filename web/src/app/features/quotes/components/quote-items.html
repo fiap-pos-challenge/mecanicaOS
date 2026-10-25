@@ -1,0 +1,70 @@
+<ui-card [headingLevel]="2" [title]="text.title" [subtitle]="text.hint">
+  @if (changes().length > 0) {
+    <div class="banner banner--info" role="status" data-testid="price-changes">
+      <strong>{{ text.priceTitle }}</strong>
+      <ul>
+        @for (change of changes(); track $index) {
+          <li>{{ change }}</li>
+        }
+      </ul>
+      @if (editable()) {
+        <button uiButton size="sm" type="button" (click)="pricesUpdated.emit()">
+          {{ text.updatePrices }}
+        </button>
+      }
+    </div>
+  }
+  @if (warnings().length > 0) {
+    <div class="banner banner--warn" role="status" data-testid="stock-warnings">
+      <strong>{{ text.stockTitle }}</strong>
+      <ul>
+        @for (warning of warnings(); track $index) {
+          <li>{{ warning }}</li>
+        }
+      </ul>
+    </div>
+  }
+  @if (rows().length === 0) {
+    <p class="empty">{{ text.empty }}</p>
+  } @else {
+    <ul class="lines">
+      @for (row of rows(); track row.line.lineId) {
+        <li class="line" [class.line--invalid]="row.invalid">
+          <div class="info">
+            <span class="name">
+              @if (row.line.source === 'Ai') {
+                <ui-ai-badge [label]="text.ai" />
+              }
+              {{ row.line.name }}
+            </span>
+            <span class="unit">{{ row.unit }}</span>
+            @if (row.invalid) {
+              <span class="error">{{ text.invalidQuantity }}</span>
+            }
+          </div>
+          <input
+            class="ui-control quantity"
+            type="text"
+            inputmode="decimal"
+            maxlength="7"
+            [attr.aria-label]="text.quantityOf(row.line.name)"
+            [attr.aria-invalid]="row.invalid || null"
+            [value]="row.quantity"
+            [disabled]="!editable()"
+            (change)="setQuantity(row.line.lineId, $event)"
+          />
+          <span class="total">{{ row.total }}</span>
+          <button
+            uiIconButton
+            type="button"
+            [label]="text.remove(row.line.name)"
+            [disabled]="!editable()"
+            (click)="removed.emit(row.line.lineId)"
+          >
+            <ui-icon [icon]="icons.trash" [size]="16" />
+          </button>
+        </li>
+      }
+    </ul>
+  }
+</ui-card>

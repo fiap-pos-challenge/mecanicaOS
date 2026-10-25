@@ -1,0 +1,46 @@
+:host {
+  position: fixed;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: var(--z-bottom-nav);
+}
+
+.bottom-nav {
+  display: flex;
+  justify-content: space-around;
+  padding: 6px 6px calc(6px + env(safe-area-inset-bottom, 0px));
+  border-top: 1px solid var(--line);
+  background: var(--surface);
+}
+
+.link {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  min-width: 56px;
+  padding: var(--space-1) var(--space-2);
+  border: 0;
+  border-radius: var(--radius-md);
+  background: none;
+  color: var(--muted);
+  font-size: var(--text-2xs);
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.link--active {
+  color: var(--accent-strong);
+}
+
+.link--primary {
+  padding: var(--space-2) 14px;
+  border-radius: var(--radius-lg);
+  background: var(--accent);
+  color: var(--accent-fg);
+
+  &.link--active {
+    color: var(--accent-fg);
+  }
+}

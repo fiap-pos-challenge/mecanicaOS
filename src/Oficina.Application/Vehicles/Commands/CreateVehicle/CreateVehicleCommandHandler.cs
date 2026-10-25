@@ -37,7 +37,7 @@ public sealed class CreateVehicleCommandHandler(
         return VehicleErrors.DuplicatedLicensePlate;
     }
 
-    Result<Vehicle> vehicle = Vehicle.Create(command.CustomerId, licensePlate.Value, command.Brand, command.Model, vehicleYear.Value, timeProvider.GetUtcNow());
+    Result<Vehicle> vehicle = Vehicle.Create(command.CustomerId, licensePlate.Value, command.Brand, command.Model, vehicleYear.Value, command.Mileage, timeProvider.GetUtcNow());
 
     if (vehicle.Error is {} invalidVehicle)
     {

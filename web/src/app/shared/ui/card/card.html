@@ -1,0 +1,11 @@
+@if (title(); as title) {
+  @if (headingLevel() === 2) {
+    <h2 class="title">{{ title }}</h2>
+  } @else {
+    <h3 class="title">{{ title }}</h3>
+  }
+}
+@if (subtitle(); as subtitle) {
+  <p class="subtitle">{{ subtitle }}</p>
+}
+<ng-content />

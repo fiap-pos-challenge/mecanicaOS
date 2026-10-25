@@ -9,8 +9,9 @@ public sealed class Vehicle : AggregateRoot
 {
     public const int BrandMaxLength = 60;
     public const int ModelMaxLength = 60;
+    public const int MaxMileage = 9_999_999;
 
-    private Vehicle(Guid id, Guid customerId, LicensePlate licensePlate, string brand, string model, VehicleYear year)
+    private Vehicle(Guid id, Guid customerId, LicensePlate licensePlate, string brand, string model, VehicleYear year, int mileage)
         : base(id)
     {
         CustomerId = customerId;
@@ -18,6 +19,7 @@ public sealed class Vehicle : AggregateRoot
         Brand = brand;
         Model = model;
         Year = year;
+        Mileage = mileage;
     }
 
     public Guid CustomerId { get; private set; }
@@ -30,12 +32,15 @@ public sealed class Vehicle : AggregateRoot
 
     public VehicleYear Year { get; private set; }
 
+    public int Mileage { get; private set; }
+
     public static Result<Vehicle> Create(
         Guid customerId,
         LicensePlate licensePlate,
         string brand,
         string model,
         VehicleYear year,
+        int mileage,
         DateTimeOffset today)
     {
         if (customerId == Guid.Empty)
@@ -43,28 +48,50 @@ public sealed class Vehicle : AggregateRoot
             return VehicleErrors.CustomerRequired;
         }
 
-        if (FindDetailsError(brand, model, year, today) is { } error)
+        if (FindDetailsError(brand, model, year, mileage, today) is { } error)
         {
             return error;
         }
 
-        return new Vehicle(Guid.CreateVersion7(), customerId, licensePlate, brand.Trim(), model.Trim(), year);
+        return new Vehicle(Guid.CreateVersion7(), customerId, licensePlate, brand.Trim(), model.Trim(), year, mileage);
     }
 
-    public Result ChangeDetails(string brand, string model, VehicleYear year, DateTimeOffset today)
+    public Result ChangeDetails(string brand, string model, VehicleYear year, int mileage, DateTimeOffset today)
     {
-        if (FindDetailsError(brand, model, year, today) is { } error)
+        if (FindDetailsError(brand, model, year, mileage, today) is { } error)
         {
             return error;
+        }
+
+        if (mileage < Mileage)
+        {
+            return VehicleErrors.MileageDecrease;
         }
 
         Brand = brand.Trim();
         Model = model.Trim();
         Year = year;
+        Mileage = mileage;
         return Result.Success();
     }
 
-    private static Error? FindDetailsError(string brand, string model, VehicleYear year, DateTimeOffset today)
+    public Result TransferTo(Guid newCustomerId)
+    {
+        if (newCustomerId == Guid.Empty)
+        {
+            return VehicleErrors.CustomerRequired;
+        }
+
+        if (newCustomerId == CustomerId)
+        {
+            return VehicleErrors.SameOwner;
+        }
+
+        CustomerId = newCustomerId;
+        return Result.Success();
+    }
+
+    private static Error? FindDetailsError(string brand, string model, VehicleYear year, int mileage, DateTimeOffset today)
     {
         if (string.IsNullOrWhiteSpace(brand) || brand.Trim().Length > BrandMaxLength)
         {
@@ -79,6 +106,11 @@ public sealed class Vehicle : AggregateRoot
         if (year.IsAfterNextYear(today))
         {
             return VehicleErrors.InvalidYear;
+        }
+
+        if (mileage is < 0 or > MaxMileage)
+        {
+            return VehicleErrors.InvalidMileage;
         }
 
         return null;

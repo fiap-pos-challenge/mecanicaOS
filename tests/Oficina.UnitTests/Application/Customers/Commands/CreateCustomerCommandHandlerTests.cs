@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Time.Testing;
 using NSubstitute;
 using Oficina.Application.Abstractions.Persistence;
 using Oficina.Application.Customers.Commands.CreateCustomer;
@@ -16,12 +17,13 @@ public sealed class CreateCustomerCommandHandlerTests
 {
     private readonly ICustomerRepository _customers = Substitute.For<ICustomerRepository>();
     private readonly IUnitOfWork _unitOfWork = Substitute.For<IUnitOfWork>();
+    private readonly FakeTimeProvider _clock = new(new DateTimeOffset(2026, 10, 5, 12, 0, 0, TimeSpan.Zero));
     private readonly CreateCustomerCommandHandler _handler;
 
     public CreateCustomerCommandHandlerTests()
     {
         _unitOfWork.CommitAsync(Arg.Any<CancellationToken>()).Returns(Result.Success());
-        _handler = new CreateCustomerCommandHandler(_customers, _unitOfWork);
+        _handler = new CreateCustomerCommandHandler(_customers, _unitOfWork, _clock);
     }
 
     [Fact]
@@ -31,10 +33,11 @@ public sealed class CreateCustomerCommandHandlerTests
 
         Assert.True(result.IsSuccess);
         Assert.Equal("Maria Souza", result.Value.Name);
-        Assert.Equal(CustomerTestData.Cpf, result.Value.Document);
+        Assert.Equal("•••.982.247-••", result.Value.Document);
         Assert.Equal(DocumentType.Cpf, result.Value.DocumentType);
-        Assert.Equal(CustomerTestData.EmailAddress, result.Value.Email);
-        Assert.Equal(CustomerTestData.PhoneNumber, result.Value.Phone);
+        Assert.Equal("m•••@exemplo.com", result.Value.Email);
+        Assert.Equal("•••••••4321", result.Value.Phone);
+        Assert.Equal(new MessagingConsentDto(false, false, null), result.Value.MessagingConsent);
         Assert.Equal(new AddressDto("01310100", "Av. Paulista", "1000", "Sala 1", "Bela Vista", "São Paulo", "SP"), result.Value.Address);
         _customers.Received(1).Add(Arg.Is<Customer>(customer => customer.Id == result.Value.Id));
         await _unitOfWork.Received(1).CommitAsync(Arg.Any<CancellationToken>());
@@ -81,6 +84,23 @@ public sealed class CreateCustomerCommandHandlerTests
         var result = await _handler.Handle(command, CancellationToken.None);
 
         Assert.Equal(expectedCode, result.Error!.Code);
+        await _unitOfWork.DidNotReceive().CommitAsync(Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task Handle_WithConsent_StampsTheServerDate()
+    {
+        var result = await _handler.Handle(Command() with { MessagingConsent = new MessagingConsentInput(true, true) }, CancellationToken.None);
+
+        Assert.Equal(new MessagingConsentDto(true, true, _clock.GetUtcNow()), result.Value.MessagingConsent);
+    }
+
+    [Fact]
+    public async Task Handle_EmailConsentWithoutEmail_ReturnsTheDomainErrorWithoutCommit()
+    {
+        var result = await _handler.Handle(Command() with { Email = null, MessagingConsent = new MessagingConsentInput(false, true) }, CancellationToken.None);
+
+        Assert.Equal(CustomerErrors.EmailConsentWithoutEmail, result.Error);
         await _unitOfWork.DidNotReceive().CommitAsync(Arg.Any<CancellationToken>());
     }
 

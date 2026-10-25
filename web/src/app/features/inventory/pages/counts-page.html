@@ -1,0 +1,46 @@
+<header class="head">
+  <h2 class="title">{{ text.title }}</h2>
+  <p class="hint">{{ text.hint }}</p>
+</header>
+
+@if (pending()) {
+  <ui-pending-notice class="pending" [message]="pendingText" />
+}
+
+<form *appCan="'inventory.count'" class="open" novalidate [formGroup]="form" (ngSubmit)="open()">
+  <ui-field [label]="text.location" [required]="true">
+    <select uiControl formControlName="location">
+      <option value="">{{ text.chooseLocation }}</option>
+      @for (option of locations(); track option) {
+        <option [value]="option">{{ option }}</option>
+      }
+    </select>
+  </ui-field>
+  <button uiButton variant="primary" type="submit" [loading]="opening()">{{ text.start }}</button>
+</form>
+
+@if (error(); as message) {
+  <p class="alert" role="alert" data-testid="counts-error">{{ message }}</p>
+}
+
+@if (failed()) {
+  <p class="alert" role="alert">{{ text.loadError }}</p>
+}
+
+<ui-table
+  [caption]="text.caption"
+  [columns]="columns"
+  [rows]="counts()"
+  [trackBy]="trackRow"
+  [loading]="loading()"
+  [emptyMessage]="text.empty"
+>
+  <ng-template uiCell="status" let-row>
+    <ui-status-pill [tone]="statusTone(row)">{{ statusLabel(row) }}</ui-status-pill>
+  </ng-template>
+  <ng-template uiCell="actions" let-row>
+    <a uiButton size="sm" variant="ghost" [routerLink]="['/inventory/counts', row.id]">{{
+      actionOf(row)
+    }}</a>
+  </ng-template>
+</ui-table>

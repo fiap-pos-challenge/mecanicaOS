@@ -18,6 +18,7 @@ public static class VehicleTestData
         brand,
         model,
         VehicleYear(),
+        42_000,
         TimeProvider.System.GetLocalNow()).Value;
 
     public static VehicleDetailDto VehicleDetail()
@@ -29,6 +30,7 @@ public static class VehicleTestData
             vehicle.Brand,
             vehicle.LicensePlate.Value,
             vehicle.Year.Value,
+            vehicle.Mileage,
             new VehicleOwnerDto(vehicle.CustomerId, CustomerTestData.Customer().Name),
             new List<VehicleServiceOrderSummaryDto>(),
             TimeProvider.System.GetUtcNow(),

@@ -1,0 +1,18 @@
+<section class="region" [attr.aria-label]="text.region">
+  @for (toast of service.toasts(); track toast.id) {
+    <div
+      [class]="'toast toast--' + toast.tone"
+      [attr.role]="toast.tone === 'error' ? 'alert' : 'status'"
+    >
+      <div class="content">
+        <p class="message">{{ toast.message }}</p>
+        @if (toast.detail; as detail) {
+          <p class="detail">{{ detail }}</p>
+        }
+      </div>
+      <button uiIconButton [label]="text.dismiss" (click)="service.dismiss(toast.id)">
+        <ui-icon [icon]="closeIcon" [size]="16" />
+      </button>
+    </div>
+  }
+</section>

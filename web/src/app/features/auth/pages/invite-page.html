@@ -1,0 +1,111 @@
+<aside class="brand-panel">
+  <p class="logo">mecanica<b>OS</b></p>
+  <div class="pitch">
+    <p class="eyebrow">{{ text.brand.eyebrow }}</p>
+    <p class="headline">{{ text.brand.headline }}</p>
+    <ul class="points">
+      @for (point of text.brand.points; track point) {
+        <li>{{ point }}</li>
+      }
+    </ul>
+  </div>
+  <p class="tag" aria-hidden="true"><ui-plate [value]="text.brand.plate" /></p>
+</aside>
+
+<main class="form-panel" id="main-content">
+  <div class="card">
+    @switch (state()) {
+      @case ('loading') {
+        <h1 class="title">{{ invite.title }}</h1>
+        <p class="subtitle" role="status">{{ invite.loading }}</p>
+      }
+      @case ('done') {
+        <h1 class="title">{{ invite.doneTitle }}</h1>
+        <p class="notice" role="status">{{ invite.done }}</p>
+        <a uiButton variant="primary" class="submit" routerLink="/login">{{ invite.goToLogin }}</a>
+      }
+      @case ('ready') {
+        <h1 class="title">{{ invite.title }}</h1>
+        @if (invitation(); as current) {
+          <p class="subtitle">{{ invite.greeting(current.name) }} {{ invite.subtitle }}</p>
+          <p class="invite-meta" data-testid="invite-details">
+            {{ invite.details(roleLabels[current.role], current.maskedEmail) }}
+            <span>{{ validUntil(current) }}</span>
+          </p>
+        }
+        <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+          <div class="fields">
+            <ui-field [label]="invite.password" [required]="true" [error]="passwordError()">
+              <div class="password">
+                <input
+                  uiControl
+                  formControlName="password"
+                  autocomplete="new-password"
+                  aria-describedby="password-rules"
+                  [type]="showPassword() ? 'text' : 'password'"
+                />
+                <button
+                  type="button"
+                  class="reveal"
+                  [attr.aria-label]="showPassword() ? invite.hidePassword : invite.showPassword"
+                  [attr.aria-pressed]="showPassword()"
+                  (click)="toggle()"
+                >
+                  <ui-icon [icon]="showPassword() ? icons.hide : icons.show" [size]="18" />
+                </button>
+              </div>
+            </ui-field>
+            <div class="rules" id="password-rules">
+              <p class="rules-title">{{ invite.rulesTitle }}</p>
+              <ul>
+                @for (rule of rules; track rule) {
+                  <li [class.met]="ruleStatus()[rule]">
+                    <span class="mark" aria-hidden="true"></span>
+                    {{ invite.rules[rule] }}
+                    <span class="visually-hidden">
+                      ({{ ruleStatus()[rule] ? invite.ruleMet : invite.ruleMissing }})
+                    </span>
+                  </li>
+                }
+              </ul>
+            </div>
+            <ui-field [label]="invite.confirm" [required]="true" [error]="confirmError()">
+              <input
+                uiControl
+                formControlName="confirm"
+                autocomplete="new-password"
+                [type]="showPassword() ? 'text' : 'password'"
+              />
+            </ui-field>
+          </div>
+          <button uiButton class="submit" type="submit" variant="primary" [loading]="submitting()">
+            {{ submitting() ? invite.submitting : invite.submit }}
+          </button>
+        </form>
+      }
+      @default {
+        <h1 class="title">{{ invite.title }}</h1>
+        <p class="alert" role="alert" data-testid="invite-error">
+          @switch (state()) {
+            @case ('missing') {
+              {{ invite.missing }}
+            }
+            @case ('notFound') {
+              {{ invite.notFound }}
+            }
+            @case ('expired') {
+              {{ invite.expired }}
+            }
+            @case ('used') {
+              {{ invite.used }}
+            }
+            @default {
+              {{ invite.failed }}
+            }
+          }
+        </p>
+        <a uiButton class="submit" routerLink="/login">{{ invite.goToLogin }}</a>
+      }
+    }
+  </div>
+</main>

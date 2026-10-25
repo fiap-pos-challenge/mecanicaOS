@@ -1,0 +1,177 @@
+<ui-dialog-layout [title]="text.title">
+  <div class="dialog-form">
+    <ui-segmented
+      [label]="text.mode"
+      [options]="modeOptions"
+      [value]="mode()"
+      (valueChange)="setMode($event)"
+    />
+
+    @if (itemsPending()) {
+      <ui-pending-notice [message]="pendingText" />
+    }
+
+    @if (error(); as message) {
+      <p class="alert" role="alert" data-testid="inventory-dialog-error">{{ message }}</p>
+    }
+
+    @switch (mode()) {
+      @case ('invoice') {
+        <p class="notice"><ui-ai-badge /> {{ text.invoiceHint }}</p>
+        <div class="lookup">
+          <ui-field [label]="text.invoiceFile">
+            <input
+              uiControl
+              type="file"
+              accept=".xml,.pdf,application/xml,text/xml,application/pdf"
+              (change)="chooseFile($event)"
+            />
+          </ui-field>
+          <button uiButton type="button" [loading]="reading()" (click)="readInvoice()">
+            {{ reading() ? text.reading : text.read }}
+          </button>
+        </div>
+        @if (draft(); as current) {
+          <p class="item">
+            <strong>{{ text.draftTitle(current.invoiceNumber, current.supplierName) }}</strong>
+            <span>{{ text.draftHint }}</span>
+          </p>
+          <div class="draft-scroll">
+            <table class="draft">
+              <thead>
+                <tr>
+                  <th scope="col">{{ text.lineDescription }}</th>
+                  <th scope="col">{{ text.linePart }}</th>
+                  <th scope="col">{{ text.lineQuantity }}</th>
+                  <th scope="col">{{ text.lineCost }}</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (line of lines.controls; track $index; let index = $index) {
+                  <tr [formGroup]="line">
+                    <td>{{ line.controls.description.value }}</td>
+                    <td>
+                      <select
+                        class="ui-control"
+                        formControlName="partId"
+                        [class.unmatched]="!line.controls.partId.value"
+                        [attr.aria-label]="
+                          text.lineLabel(text.linePart, line.controls.description.value)
+                        "
+                        [attr.aria-invalid]="lineInvalid(index) || null"
+                      >
+                        <option value="">{{ text.unmatched }}</option>
+                        @for (item of items(); track item.partId) {
+                          <option [value]="item.partId">{{ item.code }} · {{ item.name }}</option>
+                        }
+                      </select>
+                    </td>
+                    <td>
+                      <input
+                        class="ui-control"
+                        type="number"
+                        inputmode="decimal"
+                        min="0"
+                        formControlName="quantity"
+                        [attr.aria-label]="
+                          text.lineLabel(text.lineQuantity, line.controls.description.value)
+                        "
+                      />
+                    </td>
+                    <td>
+                      <input
+                        class="ui-control"
+                        type="text"
+                        inputmode="decimal"
+                        formControlName="unitCost"
+                        [attr.aria-label]="
+                          text.lineLabel(text.lineCost, line.controls.description.value)
+                        "
+                      />
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+          <div class="footer">
+            <button uiButton type="button" (click)="ref.close()">{{ text.cancel }}</button>
+            <button
+              uiButton
+              variant="primary"
+              type="button"
+              [loading]="saving()"
+              (click)="confirmInvoice()"
+            >
+              {{ text.confirm }}
+            </button>
+          </div>
+        }
+      }
+      @default {
+        <form class="dialog-form" novalidate [formGroup]="form" (ngSubmit)="save()">
+          @if (mode() === 'barcode') {
+            <app-barcode-scanner (scanned)="lookup($event)" />
+            <div class="lookup">
+              <ui-field [label]="text.barcode" [hint]="text.barcodeHint">
+                <input
+                  uiControl
+                  type="text"
+                  inputmode="numeric"
+                  autocomplete="off"
+                  maxlength="14"
+                  [formControl]="barcode"
+                  (keydown.enter)="$event.preventDefault(); lookup()"
+                />
+              </ui-field>
+              <button uiButton type="button" (click)="lookup()">{{ text.lookup }}</button>
+            </div>
+            @if (found(); as item) {
+              <p class="item" role="status">
+                <strong>{{ text.found(item.code, item.name) }}</strong>
+              </p>
+            }
+          } @else {
+            <ui-field [label]="text.part" [required]="true" [error]="errorOf('partId')">
+              <select uiControl formControlName="partId" (change)="selectPart()">
+                <option value="">{{ text.choosePart }}</option>
+                @for (item of items(); track item.partId) {
+                  <option [value]="item.partId">{{ item.code }} · {{ item.name }}</option>
+                }
+              </select>
+            </ui-field>
+          }
+          <div class="row">
+            <ui-field
+              [label]="text.quantity"
+              [required]="true"
+              [hint]="quantityHint()"
+              [error]="errorOf('quantity')"
+            >
+              <input
+                uiControl
+                type="number"
+                inputmode="decimal"
+                min="0"
+                [step]="selected()?.type === 'Part' ? 1 : 0.001"
+                formControlName="quantity"
+              />
+            </ui-field>
+            <ui-field [label]="text.unitCost" [required]="true" [error]="errorOf('unitCost')">
+              <input uiControl type="text" inputmode="decimal" formControlName="unitCost" />
+            </ui-field>
+          </div>
+          <ui-field [label]="text.reason">
+            <input uiControl type="text" formControlName="reason" maxlength="200" />
+          </ui-field>
+          <div class="footer">
+            <button uiButton type="button" (click)="ref.close()">{{ text.cancel }}</button>
+            <button uiButton variant="primary" type="submit" [loading]="saving()">
+              {{ text.save }}
+            </button>
+          </div>
+        </form>
+      }
+    }
+  </div>
+</ui-dialog-layout>

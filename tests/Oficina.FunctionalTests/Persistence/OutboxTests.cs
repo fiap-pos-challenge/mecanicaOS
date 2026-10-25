@@ -94,7 +94,7 @@ public sealed class OutboxTests(SqlServerFixture database) : IAsyncLifetime
 
         var processed = await ProcessAsync();
 
-        Assert.Equal(4, processed);
+        Assert.Equal(8, processed);
         await _notifier.Received(1).NotifyServiceOrderCompletedAsync(order.Number.Value, Arg.Any<CancellationToken>());
         await using var reader = database.CreateContext(TimeProvider.System);
         var messages = await reader.OutboxMessages.ToListAsync(TestContext.Current.CancellationToken);
@@ -164,7 +164,7 @@ public sealed class OutboxTests(SqlServerFixture database) : IAsyncLifetime
         var processed = await ProcessAsync(batchSize: 2);
 
         Assert.Equal(2, processed);
-        Assert.Equal(2, await CountMessagesAsync(onlyPending: true));
+        Assert.Equal(6, await CountMessagesAsync(onlyPending: true));
     }
 
     private async Task<ServiceOrder> SaveCompletedOrderAsync(long number)
@@ -198,7 +198,7 @@ public sealed class OutboxTests(SqlServerFixture database) : IAsyncLifetime
         await using var scope = provider.CreateAsyncScope();
         await using var context = database.CreateContext(TimeProvider.System);
         var options = Options.Create(new OutboxOptions { BatchSize = batchSize, MaxAttempts = maxAttempts, PollingIntervalSeconds = 1 });
-        var processor = new OutboxBatchProcessor(context, scope.ServiceProvider, _clock, options, NullLogger<OutboxBatchProcessor>.Instance);
+        var processor = new OutboxBatchProcessor(context, provider.GetRequiredService<IServiceScopeFactory>(), _clock, options, NullLogger<OutboxBatchProcessor>.Instance);
         return await processor.ProcessPendingAsync(TestContext.Current.CancellationToken);
     }
 

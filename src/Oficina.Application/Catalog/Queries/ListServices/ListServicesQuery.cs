@@ -5,4 +5,4 @@ using Oficina.Domain.Common.Results;
 
 namespace Oficina.Application.Catalog.Queries.ListServices;
 
-public sealed record ListServicesQuery(int Page, int PageSize, bool IncludeInactive) : IRequest<Result<PagedResult<ServiceDto>>>;
+public sealed record ListServicesQuery(int Page, int PageSize, bool IncludeInactive, string? Term = null, CatalogStatus? Status = null) : IRequest<Result<PagedResult<ServiceDto>>>;

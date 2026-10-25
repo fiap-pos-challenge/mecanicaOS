@@ -1,0 +1,72 @@
+:host {
+  display: block;
+  min-width: 0;
+}
+
+.hint {
+  margin: 0 0 var(--space-3);
+  color: var(--muted);
+  font-size: var(--text-sm);
+}
+
+.board {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(6, minmax(220px, 1fr));
+  gap: var(--space-3);
+  overflow-x: auto;
+  padding-bottom: var(--space-2);
+}
+
+.column {
+  display: grid;
+  grid-template-rows: auto 1fr;
+  gap: var(--space-2);
+  min-width: 0;
+  padding: var(--space-2);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  background: var(--surface2);
+}
+
+.column--allowed {
+  border-color: var(--ok);
+  background: var(--ok-soft);
+}
+
+.column--blocked {
+  opacity: 0.6;
+}
+
+.title {
+  margin: 0;
+  font-size: var(--text-md);
+}
+
+.cards {
+  display: grid;
+  align-content: start;
+  gap: var(--space-2);
+  min-height: 72px;
+}
+
+.empty {
+  margin: 0;
+  color: var(--muted);
+  font-size: var(--text-sm);
+}
+
+.cdk-drag-preview {
+  box-shadow: var(--shadow-overlay);
+}
+
+.cdk-drag-placeholder {
+  opacity: 0.4;
+}
+
+@media (max-width: 760px) {
+  .board {
+    grid-template-columns: minmax(0, 1fr);
+    overflow-x: visible;
+  }
+}

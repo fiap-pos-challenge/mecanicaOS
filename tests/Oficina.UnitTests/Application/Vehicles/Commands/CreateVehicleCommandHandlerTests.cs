@@ -76,7 +76,7 @@ public sealed class CreateVehicleCommandHandlerTests
     public CreateVehicleCommand Command()
     {
         return new(Guid.NewGuid(), VehicleTestData.LicensePlate().Value,VehicleTestData.brand , VehicleTestData.model,
-            VehicleTestData.VehicleYear().Value);
+            VehicleTestData.VehicleYear().Value, 42_000);
     }
 
 }

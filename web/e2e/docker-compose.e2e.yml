@@ -1,0 +1,77 @@
+name: oficina-e2e
+
+# Stack descartavel para o E2E: API real, SQL Server sem volume e a imagem nginx de producao do front.
+# Os convites viram arquivos .eml em web/e2e/.mail, lidos pelo teste da equipe.
+# Os segredos vêm do .env da raiz (copie de .env.example). Somente desenvolvimento e teste. O limite de login por IP sobe para os testes nao se bloquearem entre si;
+# o 429 do limite por IP e simulado no proprio teste.
+services:
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    environment:
+      ACCEPT_EULA: 'Y'
+      MSSQL_PID: Developer
+      MSSQL_SA_PASSWORD: ${MSSQL_SA_PASSWORD:?defina MSSQL_SA_PASSWORD no .env}
+    healthcheck:
+      test:
+        [
+          'CMD-SHELL',
+          '/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P "$$MSSQL_SA_PASSWORD" -C -b -Q ''SELECT 1'' -o /dev/null',
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 20s
+
+  api:
+    build:
+      context: ../..
+      dockerfile: Dockerfile
+    image: oficina-api:e2e
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ConnectionStrings__Oficina: Server=sqlserver,1433;Database=oficina;User Id=sa;Password=${MSSQL_SA_PASSWORD:?defina MSSQL_SA_PASSWORD no .env};Encrypt=True;TrustServerCertificate=True
+      Jwt__Secret: ${JWT_SECRET:?defina JWT_SECRET no .env}
+      DevelopmentAdmin__Email: ${DEV_ADMIN_EMAIL:?defina DEV_ADMIN_EMAIL no .env}
+      DevelopmentAdmin__Password: ${DEV_ADMIN_PASSWORD:?defina DEV_ADMIN_PASSWORD no .env}
+      Payments__PixWebhookSecret: ${PIX_WEBHOOK_SECRET:?defina PIX_WEBHOOK_SECRET no .env}
+      Security__LoginRateLimit__PermitLimit: '1000'
+      Security__PublicRateLimit__PermitLimit: '1000'
+      Email__PickupDirectory: /mail
+      Email__InvitationUrl: http://localhost:4300/invite
+    volumes:
+      - ./.mail:/mail
+
+  web:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+      # Mesma imagem de producao; so liga a API dos orcamentos, cujos dados o teste intercepta com page.route.
+      args:
+        NG_CONFIGURATION: production,e2e
+    image: oficina-web:e2e
+    depends_on:
+      api:
+        condition: service_healthy
+    environment:
+      API_UPSTREAM: http://api:8080
+    ports:
+      - '4300:8080'
+
+  # Mesma imagem com o modo demonstração (dados fictícios no navegador), testada em e2e/demo.spec.ts.
+  web-demo:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+      args:
+        NG_CONFIGURATION: production,demo
+    image: oficina-web:e2e-demo
+    depends_on:
+      api:
+        condition: service_healthy
+    environment:
+      API_UPSTREAM: http://api:8080
+    ports:
+      - '4301:8080'

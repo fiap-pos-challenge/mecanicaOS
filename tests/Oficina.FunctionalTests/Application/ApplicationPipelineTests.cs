@@ -90,7 +90,8 @@ public sealed class ApplicationPipelineTests(SqlServerFixture database) : IAsync
         var login = await SendAsync(new LoginCommand("admin@oficina.com", AdminPassword));
         var wrongPassword = await SendAsync(new LoginCommand("admin@oficina.com", "Errada@2026"));
 
-        Assert.Equal(3, login.Value.AccessToken.Split('.').Length);
+        Assert.Equal(3, login.Value.Response.AccessToken!.Split('.').Length);
+        Assert.NotNull(login.Value.RefreshToken);
         Assert.Equal(IdentityErrors.InvalidCredentials, wrongPassword.Error);
     }
 
@@ -107,14 +108,14 @@ public sealed class ApplicationPipelineTests(SqlServerFixture database) : IAsync
     }
 
     [Fact]
-    public async Task InactiveUser_CannotLogIn()
+    public async Task InactiveUser_WithRightPassword_GetsAccountDisabled()
     {
         await SaveAdminAsync();
         await database.QueryAsync("UPDATE users SET isActive = 0; SELECT 1 AS done");
 
         var login = await SendAsync(new LoginCommand("admin@oficina.com", AdminPassword));
 
-        Assert.Equal(IdentityErrors.InvalidCredentials, login.Error);
+        Assert.Equal(IdentityErrors.AccountDisabled, login.Error);
     }
 
     [Fact]

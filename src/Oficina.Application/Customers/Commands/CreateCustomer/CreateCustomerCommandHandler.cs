@@ -10,7 +10,7 @@ using Oficina.Domain.Customers.ValueObjects;
 
 namespace Oficina.Application.Customers.Commands.CreateCustomer;
 
-public sealed class CreateCustomerCommandHandler(ICustomerRepository customers, IUnitOfWork unitOfWork)
+public sealed class CreateCustomerCommandHandler(ICustomerRepository customers, IUnitOfWork unitOfWork, TimeProvider timeProvider)
     : IRequestHandler<CreateCustomerCommand, Result<CustomerDto>>
 {
     public async Task<Result<CustomerDto>> Handle(CreateCustomerCommand command, CancellationToken cancellationToken)
@@ -33,6 +33,12 @@ public sealed class CreateCustomerCommandHandler(ICustomerRepository customers, 
         if (customer.Error is { } invalidCustomer)
         {
             return invalidCustomer;
+        }
+
+        var consent = command.MessagingConsent ?? new MessagingConsentInput(false, false);
+        if (customer.Value.ChangeMessagingConsent(consent.WhatsApp, consent.Email, timeProvider.GetUtcNow()).Error is { } invalidConsent)
+        {
+            return invalidConsent;
         }
 
         customers.Add(customer.Value);

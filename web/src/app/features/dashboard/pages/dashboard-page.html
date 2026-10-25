@@ -1,0 +1,215 @@
+<header class="head">
+  <div>
+    <h1 class="page-title">{{ screen }}</h1>
+    <p class="sub" data-testid="greeting">
+      {{ title() }}
+      @if (snapshot()) {
+        · {{ text.subtitle(yardTotal()) }}
+      }
+    </p>
+  </div>
+  <div class="tools">
+    <ui-segmented
+      [label]="text.period"
+      [options]="periods"
+      [value]="period()"
+      (valueChange)="setPeriod($event)"
+    />
+    <button
+      uiButton
+      type="button"
+      [disabled]="draft() !== null"
+      (click)="customize()"
+      data-testid="customize"
+    >
+      {{ text.customize }}
+    </button>
+  </div>
+</header>
+
+@if (pending()) {
+  <ui-pending-notice class="block" [message]="pendingText" />
+}
+
+@if (failed()) {
+  <div class="alert block" role="alert">
+    <span>{{ text.loadError }}</span>
+    <button uiButton size="sm" type="button" (click)="load()">{{ text.retry }}</button>
+  </div>
+}
+
+@if (draft(); as draft) {
+  <section class="customize block" [attr.aria-label]="text.customizeTitle">
+    <h2 class="customize-title">{{ text.customizeTitle }}</h2>
+    <p class="sub">{{ text.customizeHint }}</p>
+    <ol class="settings">
+      @for (card of draft.cards; track card.id; let first = $first, last = $last) {
+        <li class="setting">
+          <label class="check">
+            <input
+              type="checkbox"
+              [checked]="card.visible"
+              [attr.aria-label]="text.show(text.cards[card.id])"
+              (change)="toggle(card.id)"
+            />
+            <span>{{ text.cards[card.id] }}</span>
+          </label>
+          <span class="order">
+            <button
+              uiButton
+              size="sm"
+              type="button"
+              [disabled]="first"
+              [attr.aria-label]="text.moveUp(text.cards[card.id])"
+              (click)="move(card.id, -1)"
+            >
+              <ui-icon [icon]="icons.up" [size]="16" />
+            </button>
+            <button
+              uiButton
+              size="sm"
+              type="button"
+              [disabled]="last"
+              [attr.aria-label]="text.moveDown(text.cards[card.id])"
+              (click)="move(card.id, 1)"
+            >
+              <ui-icon [icon]="icons.down" [size]="16" />
+            </button>
+          </span>
+        </li>
+      }
+    </ol>
+    <div class="actions">
+      <button uiButton type="button" (click)="cancel()">{{ text.cancel }}</button>
+      <button uiButton variant="primary" type="button" [loading]="saving()" (click)="save()">
+        {{ text.save }}
+      </button>
+    </div>
+  </section>
+}
+
+@if (!pending() && !failed()) {
+  @if (visibleCards().length === 0) {
+    <p class="empty" role="status">{{ text.allHidden }}</p>
+  }
+  <div class="grid">
+    @for (card of visibleCards(); track card) {
+      @switch (card) {
+        @case ('kpis') {
+          <section class="wide kpis" [attr.aria-label]="text.cards.kpis" data-card="kpis">
+            @if (loading()) {
+              @for (index of [1, 2, 3, 4]; track index) {
+                <ui-skeleton height="88px" />
+              }
+            } @else {
+              @for (kpi of kpis(); track kpi.label) {
+                <ui-kpi
+                  [label]="kpi.label"
+                  [value]="kpi.value"
+                  [delta]="kpi.delta"
+                  [trend]="kpi.trend"
+                />
+              }
+            }
+          </section>
+        }
+        @case ('dailyRevenue') {
+          <ui-card
+            [headingLevel]="2"
+            class="wide"
+            [title]="text.cards.dailyRevenue"
+            [subtitle]="text.hints.dailyRevenue"
+            data-card="dailyRevenue"
+          >
+            @if (loading()) {
+              <ui-skeleton height="240px" />
+            } @else {
+              <ui-chart
+                kind="column"
+                [stacked]="true"
+                [data]="revenueChart()"
+                [label]="text.cards.dailyRevenue"
+                [format]="money"
+              />
+            }
+          </ui-card>
+        }
+        @case ('attention') {
+          <ui-card
+            [headingLevel]="2"
+            [title]="text.cards.attention"
+            [subtitle]="text.hints.attention"
+            data-card="attention"
+          >
+            @if (loading()) {
+              <ui-skeleton height="160px" />
+            } @else {
+              <ul class="attention" [attr.aria-label]="text.attentionLabel">
+                @for (item of snapshot()?.attention ?? []; track item.id) {
+                  <li class="item" [attr.data-severity]="item.severity">
+                    <span class="dot" aria-hidden="true"></span>
+                    <div class="body">
+                      <strong>{{ item.title }}</strong>
+                      @if (item.aiSuggested) {
+                        <ui-ai-badge />
+                      }
+                      <small class="sub">{{ item.detail }}</small>
+                      <div class="item-actions">
+                        @if (item.action; as action) {
+                          <button
+                            uiButton
+                            size="sm"
+                            type="button"
+                            [loading]="acting() === item.id"
+                            (click)="act(item)"
+                          >
+                            {{ text.actions[action] }}
+                          </button>
+                        }
+                        @if (item.target; as target) {
+                          <a class="link" [routerLink]="link(target)">{{
+                            text.targets[target.kind]
+                          }}</a>
+                        }
+                      </div>
+                    </div>
+                  </li>
+                } @empty {
+                  <li class="none">{{ text.attentionEmpty }}</li>
+                }
+              </ul>
+            }
+          </ui-card>
+        }
+        @case ('topServices') {
+          <ui-card
+            [headingLevel]="2"
+            [title]="text.cards.topServices"
+            [subtitle]="text.hints.topServices"
+            data-card="topServices"
+          >
+            @if (loading()) {
+              <ui-skeleton height="240px" />
+            } @else {
+              <ui-chart kind="column" [data]="servicesChart()" [label]="text.cards.topServices" />
+            }
+          </ui-card>
+        }
+        @case ('yard') {
+          <ui-card
+            [headingLevel]="2"
+            [title]="text.cards.yard"
+            [subtitle]="text.hints.yard"
+            data-card="yard"
+          >
+            @if (loading()) {
+              <ui-skeleton height="240px" />
+            } @else {
+              <ui-chart kind="donut" [data]="yardChart()" [label]="text.cards.yard" />
+            }
+          </ui-card>
+        }
+      }
+    }
+  </div>
+}

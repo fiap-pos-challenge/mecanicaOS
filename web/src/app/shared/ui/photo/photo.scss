@@ -1,0 +1,14 @@
+:host {
+  display: block;
+  width: 100%;
+}
+
+img,
+.placeholder {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: var(--radius-sm);
+  background: var(--surface2);
+  object-fit: cover;
+}

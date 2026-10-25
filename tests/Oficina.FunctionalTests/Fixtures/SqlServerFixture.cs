@@ -1,10 +1,10 @@
+using DotNet.Testcontainers.Builders;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Oficina.Infrastructure.Persistence;
 using Oficina.Infrastructure.Persistence.Interceptors;
 using Respawn;
 using Respawn.Graph;
-using DotNet.Testcontainers.Builders;
 using Testcontainers.MsSql;
 
 namespace Oficina.FunctionalTests.Fixtures;

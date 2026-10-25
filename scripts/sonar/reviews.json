@@ -1,0 +1,9 @@
+[
+  {
+    "kind": "issue",
+    "project": "mecanicaos-api",
+    "rule": "csharpsquid:S5332",
+    "path": "src/Oficina.Infrastructure/Notifications/SmtpEmailSender.cs",
+    "justification": "Cliente da pasta de retirada (SpecifiedPickupDirectory): grava o e-mail como arquivo .eml no disco e não abre conexão de rede. O SmtpClient recusa EnableSsl nesse modo; o envio por servidor SMTP usa EnableSsl = true."
+  }
+]

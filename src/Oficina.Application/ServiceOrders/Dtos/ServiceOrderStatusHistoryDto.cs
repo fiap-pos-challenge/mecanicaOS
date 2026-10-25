@@ -6,6 +6,6 @@ public sealed record ServiceOrderStatusHistoryDto(
     ServiceOrderStatus? PreviousStatus,
     ServiceOrderStatus NewStatus,
     Guid? ChangedByUserId,
-    string? ChangedByName,
+    string? ChangedBy,
     string? Note,
     DateTimeOffset ChangedAt);

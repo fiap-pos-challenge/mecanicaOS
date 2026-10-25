@@ -8,11 +8,16 @@ namespace Oficina.Domain.Identity.Entities;
 
 public sealed class User : AggregateRoot
 {
+    public const int TwoFactorSecretMaxLength = 512;
+
     public const int NameMinLength = 2;
     public const int NameMaxLength = 120;
     public const int PasswordHashMaxLength = 255;
+    public const int MaxFailedLoginAttempts = 5;
 
-    private User(Guid id, string name, Email email, string passwordHash, Role role, bool isActive)
+    public static readonly TimeSpan LockoutDuration = TimeSpan.FromMinutes(15);
+
+    private User(Guid id, string name, Email email, string? passwordHash, Role role, bool isActive)
         : base(id)
     {
         Name = name;
@@ -26,15 +31,29 @@ public sealed class User : AggregateRoot
 
     public Email Email { get; private set; }
 
-    public string PasswordHash { get; private set; }
+    public string? PasswordHash { get; private set; }
 
     public Role Role { get; private set; }
 
     public bool IsActive { get; private set; }
 
+    public int FailedLoginAttempts { get; private set; }
+
+    public DateTimeOffset? LockoutEndAt { get; private set; }
+
+    public string? TwoFactorSecret { get; private set; }
+
+    public bool TwoFactorEnabled { get; private set; }
+
     public bool IsActiveAdmin => IsActive && Role == Role.Admin;
 
-    public bool CanLogin => IsActive && !IsDeleted;
+    public bool HasPendingInvitation => PasswordHash is null;
+
+    public UserStatus Status => !IsActive
+        ? UserStatus.Inactive
+        : HasPendingInvitation ? UserStatus.InvitationPending : UserStatus.Active;
+
+    public bool CanLogin => IsActive && !IsDeleted && !HasPendingInvitation;
 
     public static Result<User> Create(string name, Email email, string passwordHash, Role role)
     {
@@ -49,6 +68,33 @@ public sealed class User : AggregateRoot
         }
 
         return new User(Guid.CreateVersion7(), name.Trim(), email, passwordHash, role, isActive: true);
+    }
+
+    public static Result<User> Invite(string name, Email email, Role role)
+    {
+        if (!IsValidName(name))
+        {
+            return IdentityErrors.InvalidName;
+        }
+
+        return new User(Guid.CreateVersion7(), name.Trim(), email, passwordHash: null, role, isActive: true);
+    }
+
+    public Result DefinePassword(string passwordHash)
+    {
+        if (!HasPendingInvitation)
+        {
+            return IdentityErrors.InvitationAlreadyUsed;
+        }
+
+        if (string.IsNullOrWhiteSpace(passwordHash) || passwordHash.Length > PasswordHashMaxLength)
+        {
+            return IdentityErrors.InvalidPasswordHash;
+        }
+
+        PasswordHash = passwordHash;
+        RegisterSuccessfulLogin();
+        return Result.Success();
     }
 
     public Result ChangeName(string name)
@@ -83,10 +129,57 @@ public sealed class User : AggregateRoot
         }
 
         IsActive = true;
+        RegisterSuccessfulLogin();
         return Result.Success();
     }
 
     public void Delete() => IsActive = false;
+
+    public void PrepareTwoFactor(string secret)
+    {
+        TwoFactorSecret = secret;
+        TwoFactorEnabled = false;
+    }
+
+    public void ProtectTwoFactorSecret(string protectedSecret) => TwoFactorSecret = protectedSecret;
+
+    public Result EnableTwoFactor()
+    {
+        if (TwoFactorSecret is null)
+        {
+            return IdentityErrors.TwoFactorNotSetUp;
+        }
+
+        TwoFactorEnabled = true;
+        return Result.Success();
+    }
+
+    public void DisableTwoFactor()
+    {
+        TwoFactorEnabled = false;
+        TwoFactorSecret = null;
+    }
+
+    public bool IsLockedOut(DateTimeOffset now) => LockoutEndAt > now;
+
+    public TimeSpan LockoutRemaining(DateTimeOffset now) =>
+        LockoutEndAt is { } end && end > now ? end - now : TimeSpan.Zero;
+
+    public void RegisterFailedLogin(DateTimeOffset now)
+    {
+        FailedLoginAttempts++;
+        if (FailedLoginAttempts >= MaxFailedLoginAttempts)
+        {
+            FailedLoginAttempts = 0;
+            LockoutEndAt = now + LockoutDuration;
+        }
+    }
+
+    public void RegisterSuccessfulLogin()
+    {
+        FailedLoginAttempts = 0;
+        LockoutEndAt = null;
+    }
 
     private static bool IsValidName(string name) =>
         !string.IsNullOrWhiteSpace(name) && name.Trim().Length is >= NameMinLength and <= NameMaxLength;

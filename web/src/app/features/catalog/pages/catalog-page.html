@@ -1,0 +1,18 @@
+<header class="head">
+  <h1 class="page-title">{{ screen }}</h1>
+  <p class="sub">{{ text.subtitle }}</p>
+</header>
+
+<nav class="tabs" [attr.aria-label]="text.tabs">
+  @for (kind of kinds; track kind) {
+    <a
+      class="tab"
+      [routerLink]="['/catalog', kind]"
+      routerLinkActive="tab--active"
+      ariaCurrentWhenActive="page"
+      >{{ text.kinds[kind] }}</a
+    >
+  }
+</nav>
+
+<router-outlet />

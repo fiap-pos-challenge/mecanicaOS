@@ -146,7 +146,7 @@ public sealed class MaterializationTests(SqlServerFixture database) : IAsyncLife
         Assert.Empty(loaded.DomainEvents);
 
         Assert.True(loaded.Complete(null, TestData.Today.AddHours(2)).IsSuccess);
-        Assert.IsType<ServiceOrderCompleted>(Assert.Single(loaded.DomainEvents));
+        Assert.Single(loaded.DomainEvents.OfType<ServiceOrderCompleted>());
         Assert.True((await new UnitOfWork(context, new OutboxWriter()).CommitAsync(TestContext.Current.CancellationToken)).IsSuccess);
     }
 

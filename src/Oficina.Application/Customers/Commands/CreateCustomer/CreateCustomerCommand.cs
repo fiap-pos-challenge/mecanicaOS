@@ -9,4 +9,5 @@ public sealed record CreateCustomerCommand(
     string Document,
     string? Email,
     string Phone,
-    AddressInput? Address) : IRequest<Result<CustomerDto>>;
+    AddressInput? Address,
+    MessagingConsentInput? MessagingConsent = null) : IRequest<Result<CustomerDto>>;

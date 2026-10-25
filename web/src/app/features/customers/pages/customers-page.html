@@ -1,0 +1,149 @@
+<div class="page" [class.page--detail]="detailOpen()">
+  <section class="list" [attr.aria-labelledby]="'customers-title'">
+    <header class="head">
+      <div>
+        <h1 id="customers-title" class="page-title">{{ screen }}</h1>
+        <p class="sub">{{ text.subtitle(store.totalItems()) }}</p>
+      </div>
+      <div class="actions">
+        <button *appCan="'customers.import'" uiButton type="button" (click)="openImport()">
+          <ui-icon [icon]="icons.upload" [size]="16" />
+          {{ text.import }}
+        </button>
+        <a *appCan="'customers.manage'" uiButton variant="primary" routerLink="/customers/new">
+          <ui-icon [icon]="icons.plus" [size]="16" />
+          {{ text.newCustomer }}
+        </a>
+      </div>
+    </header>
+
+    <div class="toolbar" role="search" [attr.aria-label]="text.searchLabel">
+      <label class="search">
+        <span class="visually-hidden">{{ text.searchLabel }}</span>
+        <ui-icon [icon]="icons.search" [size]="16" />
+        <input
+          type="search"
+          autocomplete="off"
+          [formControl]="search"
+          [placeholder]="text.search"
+        />
+      </label>
+      <div class="filters" role="group" [attr.aria-label]="text.filters">
+        <ui-segmented
+          [label]="text.type"
+          [options]="typeOptions"
+          [value]="typeFilter()"
+          (valueChange)="setType($event)"
+        />
+        <ui-field [label]="text.situation">
+          <select uiControl (change)="setSituation($event)">
+            <option value="" [selected]="store.filters().situation === null">
+              {{ text.situationAll }}
+            </option>
+            <option value="Active" [selected]="store.filters().situation === 'Active'">
+              {{ situations.Active }}
+            </option>
+            <option
+              value="OpenServiceOrder"
+              [selected]="store.filters().situation === 'OpenServiceOrder'"
+            >
+              {{ situations.OpenServiceOrder }}
+            </option>
+          </select>
+        </ui-field>
+        <ui-field [label]="text.sort">
+          <select uiControl (change)="setSort($event)">
+            @for (option of sortOptions; track option.value) {
+              <option [value]="option.value" [selected]="store.filters().sort === option.value">
+                {{ option.label }}
+              </option>
+            }
+          </select>
+        </ui-field>
+        <div class="chips">
+          <button
+            uiChip
+            [selected]="store.filters().fleet"
+            (selectedChange)="store.update({ fleet: $event })"
+          >
+            {{ text.fleet }}
+          </button>
+          <button
+            uiChip
+            [selected]="store.filters().noReturn"
+            (selectedChange)="store.update({ noReturn: $event })"
+          >
+            {{ text.noReturn }}
+          </button>
+          @if (store.hasFilters()) {
+            <button uiButton variant="ghost" size="sm" type="button" (click)="clear()">
+              {{ text.clear }}
+            </button>
+          }
+        </div>
+      </div>
+    </div>
+
+    @if (store.summariesPending()) {
+      <ui-pending-notice class="pending" [message]="pending.customerSummary" />
+    }
+
+    @if (store.truncated()) {
+      <p class="notice" role="status">{{ text.truncated }}</p>
+    }
+
+    @if (store.error()) {
+      <div class="alert" role="alert">
+        <span>{{ text.loadError }}</span>
+        <button uiButton size="sm" type="button" (click)="store.load()">{{ text.retry }}</button>
+      </div>
+    }
+
+    <ui-table
+      [caption]="text.caption"
+      [columns]="columns"
+      [rows]="store.rows()"
+      [trackBy]="trackRow"
+      [loading]="store.loading()"
+      [emptyMessage]="text.empty"
+      [page]="store.page()"
+      [pageSize]="20"
+      [totalItems]="store.totalItems()"
+      (pageChange)="store.goTo($event)"
+    >
+      <ng-template uiCell="name" let-row>
+        <a
+          class="name"
+          [routerLink]="['/customers', row.customer.id]"
+          routerLinkActive="name--active"
+          [attr.aria-label]="text.open(row.customer.name)"
+          >{{ row.customer.name }}</a
+        >
+      </ng-template>
+      <ng-template uiCell="document" let-row>
+        <span class="mono">{{ row.customer.maskedDocument }}</span>
+      </ng-template>
+      <ng-template uiCell="vehicles" let-row>{{ vehicles(row) }}</ng-template>
+      <ng-template uiCell="lastVisit" let-row>
+        <span class="mono">{{ lastVisit(row) }}</span>
+      </ng-template>
+      <ng-template uiCell="total" let-row>
+        <span class="mono">{{ total(row) }}</span>
+      </ng-template>
+      <ng-template uiCell="situation" let-row>
+        @if (situation(row); as info) {
+          <span class="pills">
+            <ui-status-pill [tone]="info.tone">{{ info.label }}</ui-status-pill>
+            @if (info.fleet) {
+              <ui-status-pill tone="neutral">{{ text.fleet }}</ui-status-pill>
+            }
+          </span>
+        }
+      </ng-template>
+    </ui-table>
+  </section>
+
+  <section class="detail">
+    <router-outlet (activate)="onActivate($event)" (deactivate)="detailOpen.set(false)" />
+  </section>
+</div>

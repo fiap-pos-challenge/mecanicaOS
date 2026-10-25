@@ -34,6 +34,21 @@ public static class VehicleErrors
         "Informe um ano entre 1900 e o ano seguinte ao atual.",
         ErrorType.Validation);
 
+    public static readonly Error InvalidMileage = new(
+        "vehicle.invalidMileage",
+        "Informe a quilometragem entre 0 e 9.999.999 km.",
+        ErrorType.Validation);
+
+    public static readonly Error MileageDecrease = new(
+        "vehicle.mileageDecrease",
+        "A quilometragem não pode ser menor que a registrada.",
+        ErrorType.Validation);
+
+    public static readonly Error SameOwner = new(
+        "vehicle.sameOwner",
+        "O veículo já pertence a este cliente.",
+        ErrorType.Validation);
+
     public static readonly Error HasOpenServiceOrder = new(
         "vehicle.hasOpenServiceOrder",
         "Não é possível excluir o veículo porque ele possui ordem de serviço em aberto.",

@@ -1,0 +1,23 @@
+<ui-dialog-layout [title]="text.title">
+  <form class="dialog-form" novalidate (submit)="submit($event)">
+    <p class="hint">{{ text.description }}</p>
+    @if (error(); as message) {
+      <p class="alert" role="alert" data-testid="quote-dialog-error">{{ message }}</p>
+    }
+    <ui-field [label]="text.reason" [required]="true" [error]="invalid() ? text.required : null">
+      <textarea
+        uiControl
+        rows="3"
+        maxlength="500"
+        [value]="reason()"
+        (input)="setReason($event)"
+      ></textarea>
+    </ui-field>
+    <div class="footer">
+      <button uiButton type="button" (click)="ref.close(false)">{{ text.cancel }}</button>
+      <button uiButton variant="danger" type="submit" [loading]="saving()">
+        {{ text.submit }}
+      </button>
+    </div>
+  </form>
+</ui-dialog-layout>

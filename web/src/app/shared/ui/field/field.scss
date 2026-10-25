@@ -1,0 +1,27 @@
+:host {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 0;
+}
+
+.label {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.required {
+  color: var(--bad);
+}
+
+.message {
+  margin: 0;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.message--error {
+  color: var(--bad);
+  font-weight: 500;
+}

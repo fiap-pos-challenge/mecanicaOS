@@ -1,0 +1,60 @@
+<svg
+  xmlns="http://www.w3.org/2000/svg"
+  viewBox="0 0 24 24"
+  fill="none"
+  stroke="currentColor"
+  stroke-linecap="round"
+  stroke-linejoin="round"
+  aria-hidden="true"
+  focusable="false"
+  [attr.width]="size()"
+  [attr.height]="size()"
+  [attr.stroke-width]="strokeWidth()"
+>
+  @for (element of icon(); track $index) {
+    @switch (element[0]) {
+      @case ('path') {
+        <path [attr.d]="attr(element, 'd')" />
+      }
+      @case ('circle') {
+        <circle
+          [attr.cx]="attr(element, 'cx')"
+          [attr.cy]="attr(element, 'cy')"
+          [attr.r]="attr(element, 'r')"
+        />
+      }
+      @case ('ellipse') {
+        <ellipse
+          [attr.cx]="attr(element, 'cx')"
+          [attr.cy]="attr(element, 'cy')"
+          [attr.rx]="attr(element, 'rx')"
+          [attr.ry]="attr(element, 'ry')"
+        />
+      }
+      @case ('rect') {
+        <rect
+          [attr.x]="attr(element, 'x')"
+          [attr.y]="attr(element, 'y')"
+          [attr.width]="attr(element, 'width')"
+          [attr.height]="attr(element, 'height')"
+          [attr.rx]="attr(element, 'rx')"
+          [attr.ry]="attr(element, 'ry')"
+        />
+      }
+      @case ('line') {
+        <line
+          [attr.x1]="attr(element, 'x1')"
+          [attr.y1]="attr(element, 'y1')"
+          [attr.x2]="attr(element, 'x2')"
+          [attr.y2]="attr(element, 'y2')"
+        />
+      }
+      @case ('polyline') {
+        <polyline [attr.points]="attr(element, 'points')" />
+      }
+      @case ('polygon') {
+        <polygon [attr.points]="attr(element, 'points')" />
+      }
+    }
+  }
+</svg>

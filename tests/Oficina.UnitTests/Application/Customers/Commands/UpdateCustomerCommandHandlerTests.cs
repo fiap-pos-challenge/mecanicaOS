@@ -1,6 +1,8 @@
+using Microsoft.Extensions.Time.Testing;
 using NSubstitute;
 using Oficina.Application.Abstractions.Persistence;
 using Oficina.Application.Customers.Commands.UpdateCustomer;
+using Oficina.Application.Customers.Dtos;
 using Oficina.Domain.Common.Errors;
 using Oficina.Domain.Common.Results;
 using Oficina.Domain.Customers.Errors;
@@ -12,6 +14,7 @@ public sealed class UpdateCustomerCommandHandlerTests
 {
     private readonly ICustomerRepository _customers = Substitute.For<ICustomerRepository>();
     private readonly IUnitOfWork _unitOfWork = Substitute.For<IUnitOfWork>();
+    private readonly FakeTimeProvider _clock = new(new DateTimeOffset(2026, 10, 5, 12, 0, 0, TimeSpan.Zero));
     private readonly UpdateCustomerCommandHandler _handler;
     private readonly Oficina.Domain.Customers.Entities.Customer _customer = CustomerTestData.Customer();
 
@@ -19,7 +22,7 @@ public sealed class UpdateCustomerCommandHandlerTests
     {
         _customers.GetByIdAsync(_customer.Id, Arg.Any<CancellationToken>()).Returns(_customer);
         _unitOfWork.CommitAsync(Arg.Any<CancellationToken>()).Returns(Result.Success());
-        _handler = new UpdateCustomerCommandHandler(_customers, _unitOfWork);
+        _handler = new UpdateCustomerCommandHandler(_customers, _unitOfWork, _clock);
     }
 
     [Fact]
@@ -45,6 +48,36 @@ public sealed class UpdateCustomerCommandHandlerTests
 
         Assert.Null(result.Value.Address);
         Assert.Null(_customer.Address);
+    }
+
+    [Fact]
+    public async Task Handle_ConsentChange_StampsTheDateAndKeepsItWhenOmitted()
+    {
+        var granted = await _handler.Handle(Command() with { Email = "maria@exemplo.com", MessagingConsent = new MessagingConsentInput(true, true) }, CancellationToken.None);
+        _clock.Advance(TimeSpan.FromDays(1));
+        var kept = await _handler.Handle(Command() with { Email = "maria@exemplo.com" }, CancellationToken.None);
+
+        Assert.Equal(new MessagingConsentDto(true, true, new DateTimeOffset(2026, 10, 5, 12, 0, 0, TimeSpan.Zero)), granted.Value.MessagingConsent);
+        Assert.Equal(granted.Value.MessagingConsent, kept.Value.MessagingConsent);
+    }
+
+    [Fact]
+    public async Task Handle_RemovingTheEmail_DropsTheEmailConsent()
+    {
+        await _handler.Handle(Command() with { Email = "maria@exemplo.com", MessagingConsent = new MessagingConsentInput(true, true) }, CancellationToken.None);
+
+        var result = await _handler.Handle(Command(), CancellationToken.None);
+
+        Assert.Equal(new MessagingConsentDto(true, false, _clock.GetUtcNow()), result.Value.MessagingConsent);
+    }
+
+    [Fact]
+    public async Task Handle_EmailConsentWithoutEmail_ReturnsTheDomainError()
+    {
+        var result = await _handler.Handle(Command() with { MessagingConsent = new MessagingConsentInput(false, true) }, CancellationToken.None);
+
+        Assert.Equal(CustomerErrors.EmailConsentWithoutEmail, result.Error);
+        await _unitOfWork.DidNotReceive().CommitAsync(Arg.Any<CancellationToken>());
     }
 
     [Fact]

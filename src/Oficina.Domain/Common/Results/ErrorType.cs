@@ -8,5 +8,8 @@ public enum ErrorType
     BusinessRule,
     Unauthorized,
     Forbidden,
+    TooManyRequests,
     Unexpected,
+    Locked,
+    TooLarge,
 }

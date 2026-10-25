@@ -29,6 +29,6 @@ public sealed class DevelopmentAdminSeeder(
         }
 
         users.Add(User.Create(settings.Name, email, passwordHasher.Hash(settings.Password), Role.Admin).Value);
-        await unitOfWork.CommitAsync(cancellationToken);
+        await unitOfWork.CommitOrThrowAsync(cancellationToken);
     }
 }

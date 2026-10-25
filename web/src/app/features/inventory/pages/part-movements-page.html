@@ -1,0 +1,68 @@
+<a class="back" routerLink="/inventory">
+  <ui-icon [icon]="icons.back" [size]="16" />
+  {{ text.back }}
+</a>
+
+@switch (state()) {
+  @case ('loading') {
+    <ui-skeleton height="240px" />
+  }
+  @case ('pending') {
+    <h1 class="title">{{ text.screen }}</h1>
+    <ui-pending-notice [message]="pendingText" />
+  }
+  @case ('notFound') {
+    <p class="alert" role="alert">{{ text.notFound }}</p>
+  }
+  @case ('error') {
+    <p class="alert" role="alert">{{ text.loadError }}</p>
+  }
+  @case ('ready') {
+    @if (data(); as current) {
+      <header class="head">
+        <h1 class="title">{{ text.title(current.item.name) }}</h1>
+        <p class="meta">
+          <span class="code">{{ current.item.code }}</span>
+          @if (situation(); as value) {
+            <ui-status-pill [tone]="situationTones[value]">{{ situations[value] }}</ui-status-pill>
+          }
+        </p>
+      </header>
+      <dl class="summary">
+        <div>
+          <dt>{{ text.summary.stock }}</dt>
+          <dd>{{ amount(current.item.stockQuantity) }}</dd>
+        </div>
+        <div>
+          <dt>{{ text.summary.minimum }}</dt>
+          <dd>{{ amount(current.item.minimumStock) }}</dd>
+        </div>
+        <div>
+          <dt>{{ text.summary.location }}</dt>
+          <dd>{{ current.item.location ?? '—' }}</dd>
+        </div>
+        <div>
+          <dt>{{ text.summary.outflow }}</dt>
+          <dd>{{ amount(current.item.outflow30d) }}</dd>
+        </div>
+      </dl>
+      <ui-table
+        [caption]="text.caption"
+        [columns]="columns"
+        [rows]="current.movements"
+        [trackBy]="trackRow"
+        [emptyMessage]="text.empty"
+      >
+        <ng-template uiCell="type" let-row>
+          <ui-status-pill [tone]="movementTone(row)">{{ movementLabel(row) }}</ui-status-pill>
+        </ng-template>
+        <ng-template uiCell="quantity" let-row>
+          <span class="mono">{{ quantity(row) }}</span>
+        </ng-template>
+        <ng-template uiCell="balance" let-row>
+          <span class="mono">{{ amount(row.balanceAfter) }}</span>
+        </ng-template>
+      </ui-table>
+    }
+  }
+}

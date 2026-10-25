@@ -6,6 +6,7 @@ public sealed record VehicleDto(
     string Brand,
     string LicensePlate,
     int Year,
+    int Mileage,
     Guid CustomerId,
     DateTimeOffset CreatedAt,
     DateTimeOffset? UpdatedAt);

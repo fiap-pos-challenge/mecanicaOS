@@ -1,6 +1,6 @@
 name: oficina
 
-# Ambiente de desenvolvimento: os valores abaixo são só para uso local e não servem para produção.
+# Ambiente de desenvolvimento. Os segredos vêm do .env (copie de .env.example); nada sensível fica neste arquivo.
 services:
   sqlserver:
     image: mcr.microsoft.com/mssql/server:2022-latest
@@ -8,7 +8,7 @@ services:
     environment:
       ACCEPT_EULA: "Y"
       MSSQL_PID: Developer
-      MSSQL_SA_PASSWORD: Oficina@Dev123
+      MSSQL_SA_PASSWORD: ${MSSQL_SA_PASSWORD:?defina MSSQL_SA_PASSWORD no .env}
     ports:
       - "1433:1433"
     volumes:
@@ -35,12 +35,107 @@ services:
         condition: service_healthy
     environment:
       ASPNETCORE_ENVIRONMENT: Development
-      ConnectionStrings__Oficina: Server=sqlserver,1433;Database=oficina;User Id=sa;Password=Oficina@Dev123;Encrypt=True;TrustServerCertificate=True
+      ConnectionStrings__Oficina: Server=sqlserver,1433;Database=oficina;User Id=sa;Password=${MSSQL_SA_PASSWORD:?defina MSSQL_SA_PASSWORD no .env};Encrypt=True;TrustServerCertificate=True
+      Jwt__Secret: ${JWT_SECRET:?defina JWT_SECRET no .env}
+      DevelopmentAdmin__Email: ${DEV_ADMIN_EMAIL:?defina DEV_ADMIN_EMAIL no .env}
+      DevelopmentAdmin__Password: ${DEV_ADMIN_PASSWORD:?defina DEV_ADMIN_PASSWORD no .env}
+      # Chaves do Data Protection (cifram o segredo do 2FA) persistidas em volume.
+      DataProtection__KeysPath: /keys
+      # Somente desenvolvimento: cada e-mail (convites) vira um arquivo .eml em ./.mail, no host.
+      Email__PickupDirectory: /mail
+      # Segredo do webhook Pix simulado, usado também pela carga de demonstração.
+      Payments__PixWebhookSecret: ${PIX_WEBHOOK_SECRET:?defina PIX_WEBHOOK_SECRET no .env}
     ports:
       - "8080:8080"
+    volumes:
+      - ./.mail:/mail
+      - api-keys:/keys
     networks:
       - oficina
     restart: unless-stopped
+
+  # Carga de demonstração: na primeira subida, preenche o banco vazio como uma oficina grande em uso
+  # (equipe de todos os perfis, clientes, veículos, catálogo, estoque e OS em todas as etapas). Roda uma vez e sai.
+  seed:
+    image: node:22-alpine
+    container_name: oficina-seed
+    depends_on:
+      api:
+        condition: service_healthy
+    environment:
+      API_URL: http://api:8080
+      PIX_WEBHOOK_SECRET: ${PIX_WEBHOOK_SECRET:?defina PIX_WEBHOOK_SECRET no .env}
+      ADMIN_EMAIL: ${DEV_ADMIN_EMAIL:?defina DEV_ADMIN_EMAIL no .env}
+      ADMIN_PASSWORD: ${DEV_ADMIN_PASSWORD:?defina DEV_ADMIN_PASSWORD no .env}
+      SEED_USERS_PASSWORD: ${SEED_USERS_PASSWORD:?defina SEED_USERS_PASSWORD no .env}
+    volumes:
+      - ./scripts/seed:/seed:ro
+    command: ["node", "/seed/seed-oficina.mjs"]
+    networks:
+      - oficina
+    restart: "no"
+
+  # Frontend Angular servido pelo nginx (sem root), com CSP estrita e proxy de /api para a API.
+  web:
+    build:
+      context: ./web
+      dockerfile: Dockerfile
+    image: ${WEB_IMAGE:-oficina-web:local}
+    container_name: oficina-web
+    depends_on:
+      api:
+        condition: service_healthy
+    environment:
+      API_UPSTREAM: http://api:8080
+    ports:
+      - "4200:8080"
+    networks:
+      - oficina
+    restart: unless-stopped
+
+  # Modo demonstração (somente validação manual): `docker compose --profile demo up -d --build`.
+  # Login, clientes e usuários usam a API real; as demais telas usam dados fictícios no navegador.
+  web-demo:
+    profiles: ["demo"]
+    build:
+      context: ./web
+      dockerfile: Dockerfile
+      args:
+        NG_CONFIGURATION: production,demo
+    image: oficina-web:demo
+    container_name: oficina-web-demo
+    depends_on:
+      api:
+        condition: service_healthy
+    environment:
+      API_UPSTREAM: http://api:8080
+    ports:
+      - "4300:8080"
+    networks:
+      - oficina
+
+  # Qualidade e vulnerabilidades (fora do ambiente da aplicação): só sobe com o profile quality.
+  # Rode tudo com `node scripts/sonar/run-analysis.mjs`; o painel fica em http://localhost:9000.
+  sonarqube:
+    profiles: ["quality"]
+    image: sonarqube:26.9.0.129388-community
+    container_name: oficina-sonarqube
+    environment:
+      SONAR_ES_BOOTSTRAP_CHECKS_DISABLE: "true"
+    ports:
+      - "9000:9000"
+    volumes:
+      - sonarqube-data:/opt/sonarqube/data
+      - sonarqube-extensions:/opt/sonarqube/extensions
+      - sonarqube-logs:/opt/sonarqube/logs
+    networks:
+      - oficina
+    healthcheck:
+      test: ["CMD", "bash", "-c", "exec 3<>/dev/tcp/127.0.0.1/9000 && printf 'GET /api/system/status HTTP/1.0\r\nHost: localhost\r\n\r\n' >&3 && grep -q '\"status\":\"UP\"' <&3"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 60s
 
 networks:
   oficina:
@@ -49,3 +144,11 @@ networks:
 volumes:
   sqlserver-data:
     name: oficina-sqlserver-data
+  api-keys:
+    name: oficina-api-keys
+  sonarqube-data:
+    name: oficina-sonarqube-data
+  sonarqube-extensions:
+    name: oficina-sonarqube-extensions
+  sonarqube-logs:
+    name: oficina-sonarqube-logs

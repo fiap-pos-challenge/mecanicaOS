@@ -7,5 +7,5 @@ public interface IServiceQueries
 {
     Task<ServiceDto?> GetByIdAsync(Guid id, CancellationToken cancellationToken);
 
-    Task<PagedResult<ServiceDto>> ListAsync(PageRequest page, bool includeInactive, CancellationToken cancellationToken);
+    Task<PagedResult<ServiceDto>> ListAsync(PageRequest page, CatalogFilter filter, CancellationToken cancellationToken);
 }

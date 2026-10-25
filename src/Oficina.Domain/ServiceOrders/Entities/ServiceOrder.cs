@@ -5,6 +5,7 @@ using Oficina.Domain.Common.Results;
 using Oficina.Domain.Common.ValueObjects;
 using Oficina.Domain.Inventory.Entities;
 using Oficina.Domain.Inventory.Errors;
+using Oficina.Domain.Quotes.Errors;
 using Oficina.Domain.ServiceOrders.Enums;
 using Oficina.Domain.ServiceOrders.Errors;
 using Oficina.Domain.ServiceOrders.Events;
@@ -16,11 +17,13 @@ namespace Oficina.Domain.ServiceOrders.Entities;
 public sealed class ServiceOrder : AggregateRoot
 {
     public const int ProblemDescriptionMinLength = 3;
+    public const int MaxPhotos = 12;
 
     private readonly List<ServiceItem> _serviceItems;
     private readonly List<PartItem> _partItems;
     private readonly List<Quote> _quotes;
     private readonly List<StatusHistoryEntry> _statusHistory;
+    private readonly List<TimeEntry> _timeEntries;
 
     private ServiceOrder(
         Guid id,
@@ -42,6 +45,9 @@ public sealed class ServiceOrder : AggregateRoot
         _partItems = new List<PartItem>();
         _quotes = new List<Quote>();
         _statusHistory = new List<StatusHistoryEntry>();
+        _timeEntries = new List<TimeEntry>();
+        Checklist = ChecklistItem.DefaultLabels.Select((label, index) => new ChecklistItem($"item-{index + 1}", label, null)).ToList();
+        Diagnosis = string.Empty;
     }
 
     public ServiceOrderNumber Number { get; private set; }
@@ -61,6 +67,28 @@ public sealed class ServiceOrder : AggregateRoot
     public DateTimeOffset? CompletedAt { get; private set; }
 
     public DateTimeOffset? DeliveredAt { get; private set; }
+
+    public int Version { get; private set; }
+
+    public Guid? MechanicId { get; private set; }
+
+    public DateTimeOffset? PromisedAt { get; private set; }
+
+    public int? Mileage { get; private set; }
+
+    public string Diagnosis { get; private set; }
+
+    public bool SentToQuote { get; private set; }
+
+    public bool Reopened { get; private set; }
+
+    public List<ChecklistItem> Checklist { get; private set; }
+
+    public int PhotoCount { get; private set; }
+
+    public IReadOnlyCollection<TimeEntry> TimeEntries => _timeEntries.AsReadOnly();
+
+    public bool TimerRunning => _timeEntries.Exists(entry => entry.IsRunning);
 
     public bool IsOpen => Status != ServiceOrderStatus.Delivered;
 
@@ -141,6 +169,7 @@ public sealed class ServiceOrder : AggregateRoot
         }
 
         _serviceItems.Add(ServiceItem.Create(Id, service.Id, service.Name, service.BasePrice, quantity));
+        Touch();
         return Result.Success();
     }
 
@@ -162,6 +191,7 @@ public sealed class ServiceOrder : AggregateRoot
         }
 
         _partItems.Add(PartItem.Create(Id, part.Id, part.Name, part.UnitPrice, quantity));
+        Touch();
         return Result.Success();
     }
 
@@ -227,6 +257,62 @@ public sealed class ServiceOrder : AggregateRoot
         return Result.Success();
     }
 
+    public Result ApproveQuote(QuoteScope acceptedScope, ApprovalToken approvalToken, Guid? changedByUserId, DateTimeOffset now)
+    {
+        if (Status is ServiceOrderStatus.Received or ServiceOrderStatus.InDiagnosis)
+        {
+            var submitted = SubmitQuote(acceptedScope, approvalToken, changedByUserId, now);
+            if (submitted.IsFailure)
+            {
+                return submitted;
+            }
+        }
+
+        if (Status != ServiceOrderStatus.WaitingApproval)
+        {
+            return QuoteErrors.NotAwaitingApproval;
+        }
+
+        Replace(acceptedScope);
+        TotalAmount = acceptedScope.Total;
+        return ApproveQuote(changedByUserId, now);
+    }
+
+    public Result SubmitQuote(QuoteScope scope, ApprovalToken approvalToken, Guid? changedByUserId, DateTimeOffset now)
+    {
+        if (Status == ServiceOrderStatus.Received)
+        {
+            MoveTo(ServiceOrderStatus.InDiagnosis, changedByUserId, null, now);
+        }
+
+        if (Status == ServiceOrderStatus.WaitingApproval)
+        {
+            return Result.Success();
+        }
+
+        if (Status != ServiceOrderStatus.InDiagnosis)
+        {
+            return QuoteErrors.NotAwaitingApproval;
+        }
+
+        Replace(scope);
+        var sent = SendQuote(approvalToken, changedByUserId, now);
+        if (sent.IsFailure)
+        {
+            return sent;
+        }
+
+        TotalAmount = scope.Total;
+        return Result.Success();
+    }
+
+    public Result RejectQuoteAnswer(string reason, Guid? changedByUserId, DateTimeOffset now) => Status switch
+    {
+        ServiceOrderStatus.WaitingApproval => RejectQuote(reason, changedByUserId, now),
+        ServiceOrderStatus.Received or ServiceOrderStatus.InDiagnosis => Result.Success(),
+        _ => QuoteErrors.NotAwaitingApproval,
+    };
+
     public Result RejectQuote(string reason, Guid? changedByUserId, DateTimeOffset now)
     {
         if (Status != ServiceOrderStatus.WaitingApproval || CurrentQuote is not { } quote)
@@ -254,6 +340,7 @@ public sealed class ServiceOrder : AggregateRoot
         }
 
         CompletedAt = now;
+        StopTimer(now);
         MoveTo(ServiceOrderStatus.Completed, changedByUserId, null, now);
         Raise(new ServiceOrderCompleted(Id, Number.Value, CustomerId, now));
         return Result.Success();
@@ -271,9 +358,124 @@ public sealed class ServiceOrder : AggregateRoot
         return Result.Success();
     }
 
+    public void Plan(DateTimeOffset? promisedAt, int? mileage)
+    {
+        PromisedAt = promisedAt;
+        Mileage = mileage;
+        Touch();
+    }
+
+    public void AssignMechanic(Guid mechanicId)
+    {
+        if (MechanicId != mechanicId)
+        {
+            MechanicId = mechanicId;
+            Touch();
+        }
+    }
+
+    public Result StartTimer(Guid mechanicId, DateTimeOffset now)
+    {
+        if (Status is not (ServiceOrderStatus.InDiagnosis or ServiceOrderStatus.InProgress))
+        {
+            return ServiceOrderErrors.InvalidTransition;
+        }
+
+        MechanicId ??= mechanicId;
+        if (!TimerRunning)
+        {
+            _timeEntries.Add(TimeEntry.Start(Id, mechanicId, now));
+            Touch();
+        }
+
+        return Result.Success();
+    }
+
+    public void StopTimer(DateTimeOffset now)
+    {
+        foreach (var entry in _timeEntries.Where(entry => entry.IsRunning))
+        {
+            entry.Stop(now);
+            Touch();
+        }
+    }
+
+    public Result UpdateChecklist(IReadOnlyCollection<(string Id, string? State)> changes)
+    {
+        if (changes.Any(change => change.State is not null && !ChecklistItem.States.Contains(change.State)))
+        {
+            return ServiceOrderErrors.InvalidChecklist;
+        }
+
+        Checklist = Checklist
+            .Select(item => changes.FirstOrDefault(change => change.Id == item.Id) is { Id: not null } change ? item with { State = change.State } : item)
+            .ToList();
+        Touch();
+        return Result.Success();
+    }
+
+    public Result RegisterPhoto()
+    {
+        if (PhotoCount >= MaxPhotos)
+        {
+            return ServiceOrderErrors.TooManyPhotos;
+        }
+
+        PhotoCount++;
+        Touch();
+        return Result.Success();
+    }
+
+    public void WriteDiagnosis(string description)
+    {
+        Diagnosis = description.Trim();
+        Touch();
+    }
+
+    public Result MarkSentToQuote(string? description)
+    {
+        if (Status != ServiceOrderStatus.InDiagnosis)
+        {
+            return ServiceOrderErrors.ItemsOnlyInDiagnosis;
+        }
+
+        if (!string.IsNullOrWhiteSpace(description))
+        {
+            Diagnosis = description.Trim();
+        }
+
+        SentToQuote = true;
+        Touch();
+        return Result.Success();
+    }
+
+    public bool HasItem(Guid catalogItemId) =>
+        _serviceItems.Exists(item => item.ServiceId == catalogItemId) || _partItems.Exists(item => item.PartId == catalogItemId);
+
+    private void Replace(QuoteScope scope)
+    {
+        _serviceItems.Clear();
+        _partItems.Clear();
+        foreach (var (service, quantity) in scope.Services)
+        {
+            _serviceItems.Add(ServiceItem.Create(Id, service.Id, service.Name, service.BasePrice, quantity));
+        }
+
+        foreach (var (part, quantity) in scope.Parts)
+        {
+            _partItems.Add(PartItem.Create(Id, part.Id, part.Name, part.UnitPrice, quantity));
+        }
+
+        Touch();
+    }
+
+    private void Touch() => Version++;
+
     private void MoveTo(ServiceOrderStatus newStatus, Guid? changedByUserId, string? note, DateTimeOffset now)
     {
         _statusHistory.Add(StatusHistoryEntry.Record(Id, Status, newStatus, changedByUserId, note, now));
         Status = newStatus;
+        Touch();
+        Raise(new ServiceOrderStatusChanged(Id, Number.Value, newStatus.ToString(), now));
     }
 }

@@ -1,8 +1,10 @@
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using Oficina.Api.Contracts.ServiceOrders;
 using Oficina.Api.ExceptionHandling;
+using Oficina.Api.Extensions;
 using Oficina.Application.ServiceOrders.Commands.ApproveQuoteByToken;
 using Oficina.Application.ServiceOrders.Dtos;
 using Oficina.Application.ServiceOrders.Queries.LookupServiceOrder;
@@ -10,8 +12,10 @@ using Oficina.Application.ServiceOrders.Queries.LookupServiceOrder;
 namespace Oficina.Api.Controllers.Public;
 
 [Route("api/public")]
+[EnableRateLimiting(SecurityExtensions.PublicRateLimitPolicy)]
 [Tags("Public")]
 [AllowAnonymous]
+[ProducesResponseType<ProblemDetails>(StatusCodes.Status429TooManyRequests, ProblemResponses.ContentType)]
 public sealed class PublicServiceOrdersController(ISender sender) : ApiControllerBase
 {
     [HttpPost("service-orders/lookup")]

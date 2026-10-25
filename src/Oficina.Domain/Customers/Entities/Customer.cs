@@ -34,6 +34,12 @@ public sealed class Customer : AggregateRoot
 
     public Address? Address { get; private set; }
 
+    public bool ConsentWhatsApp { get; private set; }
+
+    public bool ConsentEmail { get; private set; }
+
+    public DateTimeOffset? ConsentUpdatedAt { get; private set; }
+
     public static Result<Customer> Create(string name, Document document, Email? email, Phone phone, Address? address)
     {
         if (!IsValidName(name))
@@ -60,6 +66,24 @@ public sealed class Customer : AggregateRoot
     }
 
     public void ChangeAddress(Address? address) => Address = address;
+
+    public Result ChangeMessagingConsent(bool whatsApp, bool email, DateTimeOffset now)
+    {
+        if (email && Email is null)
+        {
+            return CustomerErrors.EmailConsentWithoutEmail;
+        }
+
+        if (whatsApp == ConsentWhatsApp && email == ConsentEmail)
+        {
+            return Result.Success();
+        }
+
+        ConsentWhatsApp = whatsApp;
+        ConsentEmail = email;
+        ConsentUpdatedAt = now;
+        return Result.Success();
+    }
 
     private static bool IsValidName(string name) =>
         !string.IsNullOrWhiteSpace(name) && name.Trim().Length is >= NameMinLength and <= NameMaxLength;

@@ -22,10 +22,17 @@ public class UpdateVehicleCommandValidatorTests
         Assert.Equal(code, failure.ErrorCode);
     }
 
+    [Fact]
+    public void Validate_NegativeMileage_ReturnsInvalidMileage()
+    {
+        var failure = Assert.Single(_validator.Validate(Command() with { Mileage = -5 }).Errors);
+        Assert.Equal(Oficina.Domain.Customers.Errors.VehicleErrors.InvalidMileage.Code, failure.ErrorCode);
+    }
+
     private static UpdateVehicleCommand Command() =>
         new UpdateVehicleCommand(Guid.NewGuid(),
             VehicleTestData.model,
             VehicleTestData.brand,
-            VehicleTestData.VehicleYear().Value
-        );
+            VehicleTestData.VehicleYear().Value,
+            50_000);
 }

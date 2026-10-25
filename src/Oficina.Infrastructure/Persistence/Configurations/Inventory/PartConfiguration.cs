@@ -24,9 +24,13 @@ public sealed class PartConfiguration : IEntityTypeConfiguration<Part>
         builder.Property(part => part.Type).HasConversion<string>().HasMaxLength(10).IsUnicode(false).IsRequired();
         builder.Property(part => part.UnitOfMeasure).HasMaxLength(Part.UnitOfMeasureMaxLength).IsUnicode(false).IsRequired();
         builder.Property(part => part.UnitPrice).HasConversion<MoneyConverter>().HasPrecision(12, 2).IsRequired();
+        builder.Property(part => part.Cost).HasConversion<MoneyConverter>().HasPrecision(12, 2).IsRequired();
+        builder.Property(part => part.Supplier).HasMaxLength(Part.SupplierMaxLength);
+        builder.Property(part => part.Barcode).HasMaxLength(Part.BarcodeLength).IsUnicode(false);
         builder.Property(part => part.StockQuantity).HasPrecision(12, 3).IsRequired();
         builder.Property(part => part.MinimumStock).HasPrecision(12, 3).IsRequired();
         builder.Property(part => part.IsActive).IsRequired();
+        builder.Property(part => part.Location).HasMaxLength(Part.LocationMaxLength).IsUnicode(false).IsRequired().HasDefaultValue(Part.DefaultLocation);
         builder.Property<byte[]>(ConcurrencyToken.RowVersion).IsRowVersion().IsRequired();
 
         builder.HasMany(part => part.StockMovements)

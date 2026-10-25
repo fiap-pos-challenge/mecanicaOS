@@ -1,0 +1,44 @@
+<ui-dialog-layout [title]="text.title">
+  <form class="dialog-form" novalidate [formGroup]="form" (ngSubmit)="save()">
+    @if (error(); as message) {
+      <p class="alert" role="alert" data-testid="inventory-dialog-error">{{ message }}</p>
+    }
+    <p class="item">
+      <strong>{{ item.code }} · {{ item.name }}</strong>
+      <span>{{ balance() }}</span>
+    </p>
+    <ui-field
+      [label]="text.quantity"
+      [required]="true"
+      [hint]="item.type === 'Part' ? entry.quantityPart : entry.quantitySupply"
+      [error]="quantityError()"
+    >
+      <input
+        uiControl
+        type="number"
+        inputmode="decimal"
+        min="0"
+        [step]="item.type === 'Part' ? 1 : 0.001"
+        formControlName="quantity"
+      />
+    </ui-field>
+    <ui-field [label]="text.reason">
+      <input uiControl type="text" formControlName="reason" maxlength="200" />
+    </ui-field>
+    <ui-field [label]="text.order">
+      <input
+        uiControl
+        type="number"
+        inputmode="numeric"
+        min="1"
+        formControlName="serviceOrderNumber"
+      />
+    </ui-field>
+    <div class="footer">
+      <button uiButton type="button" (click)="ref.close()">{{ entry.cancel }}</button>
+      <button uiButton variant="primary" type="submit" [loading]="saving()">
+        {{ text.save }}
+      </button>
+    </div>
+  </form>
+</ui-dialog-layout>

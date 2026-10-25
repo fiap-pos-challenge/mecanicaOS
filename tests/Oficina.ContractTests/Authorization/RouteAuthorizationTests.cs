@@ -13,9 +13,27 @@ public sealed class RouteAuthorizationTests(ContractApiFactory factory)
     private static readonly string[] AnonymousAllowlist =
     {
         "api/auth/login",
+        "api/auth/invitations/inspect",
+        "api/auth/invitations/accept",
+        "api/auth/2fa/verify",
+        "api/auth/refresh",
+        "api/auth/logout",
         "health",
         "api/public/service-orders/lookup",
         "api/public/quotes/{token}/approve",
+        "api/public/portal/access",
+        "api/public/portal/confirm",
+        "api/public/portal/order",
+        "api/public/portal/quote/approve",
+        "api/public/portal/quote/reject",
+        "api/public/portal/payments/pix",
+        "api/public/portal/payments/{id:guid}",
+        "api/public/portal/payments/card",
+        "api/public/portal/photos/{photoId:guid}",
+        "api/public/portal/documents/{code}",
+        "api/public/portal/documents/{code}/pdf",
+        "api/public/documents/{code}/verification",
+        "api/public/payments/pix/webhook",
     };
 
     [Fact]
@@ -50,18 +68,22 @@ public sealed class RouteAuthorizationTests(ContractApiFactory factory)
             Assert.True(policies.Length > 0 && policies.All(policy => policy is not null), Route(endpoint));
             if (Route(endpoint).StartsWith("api/admin/", StringComparison.Ordinal))
             {
-                Assert.All(policies, policy => Assert.Contains(policy, new[] { Policies.AdminOnly, Policies.AdminOrAttendant, Policies.Authenticated }));
+                Assert.All(policies, policy => Assert.Contains(policy, new[] { Policies.Authenticated, Policies.AdminOnly, Policies.AdminOrManager, Policies.Staff, Policies.Mechanics }));
             }
         }
     }
 
     [Fact]
-    public void UserAdministration_IsAdminOnly()
+    public void UserAdministration_ChangesAreAdminOnlyAndReadsAllowTheManager()
     {
         var userEndpoints = Endpoints().Where(endpoint => Route(endpoint).StartsWith("api/admin/users", StringComparison.Ordinal)).ToArray();
 
-        Assert.Equal(8, userEndpoints.Length);
-        Assert.All(userEndpoints, endpoint => Assert.Equal(Policies.AdminOnly, endpoint.Metadata.GetMetadata<IAuthorizeData>()!.Policy));
+        Assert.Equal(10, userEndpoints.Length);
+        foreach (var endpoint in userEndpoints)
+        {
+            var isRead = endpoint.Metadata.GetMetadata<HttpMethodMetadata>()?.HttpMethods.SequenceEqual(new[] { "GET" }) == true;
+            Assert.Equal(isRead ? Policies.AdminOrManager : Policies.AdminOnly, endpoint.Metadata.GetMetadata<IAuthorizeData>()?.Policy);
+        }
     }
 
     private static string Route(RouteEndpoint endpoint) => endpoint.RoutePattern.RawText!.Trim('/');

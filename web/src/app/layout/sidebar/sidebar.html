@@ -1,0 +1,73 @@
+@if (layout.isMobile() && layout.drawerOpen()) {
+  <button
+    type="button"
+    class="backdrop"
+    tabindex="-1"
+    data-testid="drawer-backdrop"
+    [attr.aria-label]="text.closeMenu"
+    (click)="close()"
+  ></button>
+}
+@if (visible()) {
+  <div
+    id="app-sidebar"
+    class="sidebar"
+    [class.sidebar--drawer]="layout.isMobile()"
+    [class.sidebar--compact]="compact()"
+    [attr.role]="layout.isMobile() ? 'dialog' : null"
+    [attr.aria-modal]="layout.isMobile() ? 'true' : null"
+    [attr.aria-label]="layout.isMobile() ? text.mainNavigation : null"
+    [cdkTrapFocus]="layout.isMobile()"
+    [cdkTrapFocusAutoCapture]="layout.isMobile()"
+  >
+    <div class="brand">
+      @if (!compact()) {
+        <a class="logo" [routerLink]="auth.home()" [attr.aria-label]="text.home"
+          >mecanica<b>OS</b></a
+        >
+      }
+      @if (layout.isMobile()) {
+        <button uiIconButton [label]="text.closeMenu" (click)="close()">
+          <ui-icon [icon]="icons.close" [size]="18" />
+        </button>
+      } @else {
+        <button
+          uiIconButton
+          [label]="compact() ? text.expandMenu : text.collapseMenu"
+          [attr.aria-expanded]="!compact()"
+          aria-controls="app-sidebar-nav"
+          (click)="layout.toggleCollapsed()"
+        >
+          <ui-icon [icon]="compact() ? icons.expand : icons.collapse" [size]="18" />
+        </button>
+      }
+    </div>
+    <nav id="app-sidebar-nav" class="nav" [attr.aria-label]="text.mainNavigation">
+      @for (section of sections(); track section.group) {
+        <p
+          class="group-label"
+          [class.visually-hidden]="compact()"
+          [id]="'nav-group-' + section.group"
+        >
+          {{ section.label }}
+        </p>
+        <ul class="items" [attr.aria-labelledby]="'nav-group-' + section.group">
+          @for (item of section.items; track item.path) {
+            <li>
+              <a
+                class="item"
+                [routerLink]="'/' + item.path"
+                routerLinkActive="item--active"
+                ariaCurrentWhenActive="page"
+                [attr.title]="compact() ? item.label : null"
+              >
+                <ui-icon [icon]="item.icon" [size]="18" />
+                <span [class.visually-hidden]="compact()">{{ item.label }}</span>
+              </a>
+            </li>
+          }
+        </ul>
+      }
+    </nav>
+  </div>
+}

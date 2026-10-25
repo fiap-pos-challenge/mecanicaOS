@@ -1,4 +1,5 @@
 using Oficina.Application.Common.Pagination;
+using Oficina.Application.Users.Dtos;
 using Oficina.Domain.Common.ValueObjects;
 using Oficina.Domain.Identity.Entities;
 using Oficina.Domain.Identity.Enums;
@@ -24,7 +25,7 @@ public sealed class UserQueriesTests(SqlServerFixture database) : IAsyncLifetime
         await SaveAsync(NewUser("Zeca", "zeca@oficina.com"), NewUser("Ana", "ana@oficina.com"));
         await using var context = database.CreateContext(TimeProvider.System);
 
-        var page = await new UserQueries(context).ListAsync(new PageRequest(1, 1), CancellationToken);
+        var page = await new UserQueries(context).ListAsync(new PageRequest(1, 1), new UserFilter(), CancellationToken);
 
         Assert.Equal("Ana", Assert.Single(page.Items).Name);
         Assert.Equal(2, page.TotalItems);

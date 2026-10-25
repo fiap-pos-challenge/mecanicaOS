@@ -10,4 +10,9 @@ public sealed class HttpCurrentUser(IHttpContextAccessor httpContextAccessor) : 
         Guid.TryParse(httpContextAccessor.HttpContext?.User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value, out var userId)
             ? userId
             : null;
+
+    public Guid? SessionId =>
+        Guid.TryParse(httpContextAccessor.HttpContext?.User.FindFirst(JwtTokenGenerator.SessionClaimType)?.Value, out var sessionId)
+            ? sessionId
+            : null;
 }

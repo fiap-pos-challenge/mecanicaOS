@@ -1,0 +1,200 @@
+<a class="back" routerLink="/catalog/packages">
+  <ui-icon [icon]="icons.back" [size]="16" />
+  {{ text.back }}
+</a>
+
+@switch (state()) {
+  @case ('loading') {
+    <ui-skeleton height="320px" />
+  }
+  @case ('pending') {
+    <ui-pending-notice [message]="pendingText" />
+  }
+  @case ('notFound') {
+    <p class="alert" role="alert">{{ text.notFound }}</p>
+  }
+  @case ('error') {
+    <div class="alert" role="alert">
+      <span>{{ text.loadError }}</span>
+      <button uiButton size="sm" type="button" (click)="retry()">{{ text.retry }}</button>
+    </div>
+  }
+  @case ('ready') {
+    <header class="head">
+      <h1 class="title">{{ title() }}</h1>
+      @if (item(); as current) {
+        <p class="meta">
+          <ui-status-pill [tone]="current.isActive ? 'ok' : 'neutral'">
+            {{ text.status(current.isActive) }}
+          </ui-status-pill>
+        </p>
+      }
+    </header>
+
+    @if (optionsPending()) {
+      <ui-pending-notice class="pending-block" [message]="pendingText" />
+    }
+
+    @if (!canManage()) {
+      <p class="notice" role="note">{{ text.readOnly }}</p>
+    }
+
+    <form class="layout" novalidate [formGroup]="form" (ngSubmit)="save()">
+      <div class="form">
+        @if (error(); as message) {
+          <p class="alert" role="alert" data-testid="catalog-form-error">{{ message }}</p>
+        }
+        <ui-card [headingLevel]="2" [title]="pack.details">
+          <div class="grid">
+            <ui-field class="wide" [label]="text.name" [required]="true" [error]="errorOf('name')">
+              <input uiControl type="text" formControlName="name" maxlength="120" />
+            </ui-field>
+            <ui-field class="wide" [label]="text.description">
+              <textarea uiControl rows="2" formControlName="description" maxlength="500"></textarea>
+            </ui-field>
+          </div>
+        </ui-card>
+
+        <ui-card [headingLevel]="2" [title]="pack.items" [subtitle]="pack.itemsHint">
+          @if (canManage()) {
+            <div class="picker">
+              <ui-field [label]="pack.search" [hint]="pack.searchHint">
+                <input uiControl type="search" autocomplete="off" [formControl]="search" />
+              </ui-field>
+            </div>
+            @if (search.value.trim()) {
+              @if (results().length === 0) {
+                <p class="empty" role="status">{{ pack.noResults }}</p>
+              } @else {
+                <ul class="results">
+                  @for (option of results(); track option.itemId) {
+                    <li>
+                      <button
+                        type="button"
+                        class="result"
+                        [attr.aria-label]="pack.add(option.name)"
+                        (click)="add(option)"
+                      >
+                        <span>
+                          <ui-status-pill [tone]="option.kind === 'Service' ? 'violet' : 'info'">
+                            {{ kinds[option.kind] }}
+                          </ui-status-pill>
+                          {{ option.name }}
+                        </span>
+                        <span class="line-total">{{ money(option.unitPrice) }}</span>
+                      </button>
+                    </li>
+                  }
+                </ul>
+              }
+            }
+          }
+
+          @if (form.controls.items.length === 0) {
+            <p class="empty" [class.warning]="itemsError()">{{ pack.noItems }}</p>
+          } @else {
+            <ul class="lines" formArrayName="items" [attr.aria-label]="pack.items">
+              @for (
+                line of form.controls.items.controls;
+                track line.controls.itemId.value;
+                let index = $index
+              ) {
+                <li class="line" [formGroupName]="index">
+                  <span class="line-kind">
+                    <ui-status-pill
+                      [tone]="line.controls.kind.value === 'Service' ? 'violet' : 'info'"
+                    >
+                      {{ kinds[line.controls.kind.value] }}
+                    </ui-status-pill>
+                  </span>
+                  <span class="line-name">
+                    {{ line.controls.name.value }}
+                    <span class="line-unit">{{ unitPriceText(index) }}</span>
+                  </span>
+                  <input
+                    class="ui-control qty"
+                    type="number"
+                    min="0.001"
+                    step="0.001"
+                    formControlName="quantity"
+                    [attr.aria-label]="pack.quantityOf(line.controls.name.value)"
+                    [attr.aria-invalid]="quantityInvalid(index) || null"
+                  />
+                  <span class="line-total">{{ lineTotalText(index) }}</span>
+                  @if (canManage()) {
+                    <button
+                      uiIconButton
+                      type="button"
+                      [label]="pack.removeItem(line.controls.name.value)"
+                      (click)="remove(index)"
+                    >
+                      <ui-icon [icon]="icons.remove" [size]="14" />
+                    </button>
+                  }
+                </li>
+              }
+            </ul>
+          }
+        </ui-card>
+
+        <ui-card [headingLevel]="2" [title]="pack.suggestion" [subtitle]="pack.suggestionHint">
+          <div class="grid" formGroupName="suggestion">
+            <ui-field [label]="pack.minMileage" [error]="rangeError()">
+              <input uiControl type="number" min="0" step="1000" formControlName="minMileage" />
+            </ui-field>
+            <ui-field [label]="pack.maxMileage">
+              <input uiControl type="number" min="0" step="1000" formControlName="maxMileage" />
+            </ui-field>
+          </div>
+        </ui-card>
+      </div>
+
+      <div class="side">
+        <ui-card [headingLevel]="2" [title]="pack.summary">
+          <div class="summary" aria-live="polite">
+            <p class="summary-row">
+              <span>{{ pack.itemsTotal }}</span>
+              <span class="summary-value" data-testid="package-items-total">{{
+                money(summary().total)
+              }}</span>
+            </p>
+            <ui-field [label]="pack.price" [required]="true" [error]="errorOf('price')">
+              <input
+                uiControl
+                type="text"
+                inputmode="decimal"
+                formControlName="price"
+                (blur)="formatPrice()"
+              />
+            </ui-field>
+            @if (summary(); as current) {
+              @if (current.savings !== null) {
+                <div class="savings" [class.savings--bad]="current.savings < 0">
+                  <span>{{ pack.savings }}</span>
+                  <span class="savings-value" data-testid="package-savings">{{
+                    money(current.savings)
+                  }}</span>
+                  @if (current.percent !== null) {
+                    <span>{{ pack.savingsPercent(percentText(current.percent)) }}</span>
+                  }
+                  @if (current.savings < 0) {
+                    <span role="status">{{ pack.moreExpensive }}</span>
+                  }
+                </div>
+              }
+            }
+            @if (canManage()) {
+              <button uiButton variant="primary" type="submit" [loading]="saving()">
+                {{ text.save }}
+              </button>
+            }
+          </div>
+        </ui-card>
+
+        @if (item(); as current) {
+          <app-price-history kind="packages" [itemId]="current.id" [version]="historyVersion()" />
+        }
+      </div>
+    </form>
+  }
+}

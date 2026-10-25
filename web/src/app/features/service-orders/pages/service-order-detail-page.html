@@ -1,0 +1,226 @@
+<a class="back" routerLink="/service-orders">
+  <ui-icon [icon]="icons.back" [size]="16" />
+  {{ detailText.back }}
+</a>
+
+@switch (state()) {
+  @case ('loading') {
+    <ui-skeleton height="320px" />
+  }
+  @case ('pending') {
+    <ui-pending-notice [message]="pendingText" />
+  }
+  @case ('notFound') {
+    <p class="alert" role="alert">{{ detailText.notFound }}</p>
+  }
+  @case ('error') {
+    <div class="alert" role="alert">
+      <span>{{ detailText.loadError }}</span>
+      <button uiButton size="sm" type="button" (click)="load(id() ?? '')">{{ text.retry }}</button>
+    </div>
+  }
+  @case ('ready') {
+    @if (order(); as current) {
+      <header class="head">
+        <div class="identity">
+          <h1 class="page-title">{{ detailText.title(current.number) }}</h1>
+          <p class="meta">
+            @if (status(); as pill) {
+              <ui-status-pill [tone]="pill.tone">{{ pill.label }}</ui-status-pill>
+            }
+            @for (item of tags(); track item.tag) {
+              <ui-status-pill [tone]="item.tone">{{ item.label }}</ui-status-pill>
+            }
+          </p>
+          <p class="meta">
+            <ui-plate [value]="current.plate" />
+            <span>{{ current.vehicle }}</span>
+            <span>{{ mileage() }}</span>
+          </p>
+        </div>
+      </header>
+
+      @if (change(); as notice) {
+        <div class="notice" role="status" data-testid="order-change">
+          <strong>{{
+            notice.conflict
+              ? text.changes.conflict(current.number)
+              : text.changes.remote(current.number)
+          }}</strong>
+          <ul>
+            @for (line of notice.lines; track $index) {
+              <li>{{ line }}</li>
+            }
+          </ul>
+          <button uiButton size="sm" type="button" (click)="change.set(null)">
+            {{ text.changes.dismiss }}
+          </button>
+        </div>
+      }
+
+      @if (error(); as message) {
+        <p class="alert" role="alert" data-testid="detail-error">{{ message }}</p>
+      }
+
+      <div class="layout">
+        <div class="column">
+          <ui-card [headingLevel]="2" [title]="detailText.customer">
+            <dl class="facts">
+              <div>
+                <dt>{{ detailText.customer }}</dt>
+                <dd>{{ current.customerName }}</dd>
+              </div>
+              <div>
+                <dt>{{ detailText.complaint }}</dt>
+                <dd>{{ current.problemDescription }}</dd>
+              </div>
+              <div>
+                <dt>{{ detailText.mechanic }}</dt>
+                <dd>{{ current.mechanicName ?? text.unassigned }}</dd>
+              </div>
+              <div>
+                <dt>{{ detailText.promised }}</dt>
+                <dd>{{ promised() }}</dd>
+              </div>
+            </dl>
+          </ui-card>
+
+          @if (canManage() && actions().length > 0) {
+            <ui-card [headingLevel]="2" [title]="detailText.actions">
+              <ul class="actions">
+                @for (action of actions(); track action.status) {
+                  <li>
+                    <button
+                      uiButton
+                      variant="primary"
+                      type="button"
+                      [disabled]="!action.allowed || busy()"
+                      (click)="move(action.status)"
+                    >
+                      {{ action.label }}
+                    </button>
+                    @if (action.reason; as reason) {
+                      <small class="muted">{{ reason }}</small>
+                    }
+                  </li>
+                }
+              </ul>
+            </ui-card>
+          }
+
+          <ui-card [headingLevel]="2" [title]="detailText.quote">
+            @if (quote(); as q) {
+              <p class="muted">#{{ q.number }} · v{{ q.version }} · {{ q.status }}</p>
+              <ul class="lines">
+                @for (item of q.items; track $index) {
+                  <li>
+                    <span>{{ item.quantity }} × {{ item.name }}</span>
+                    <span class="mono">{{ item.totalText }}</span>
+                  </li>
+                }
+              </ul>
+              <p class="total">
+                <span>{{ text.list.columns.total }}</span
+                ><span class="mono">{{ q.totalText }}</span>
+              </p>
+              <a routerLink="/quotes">{{ detailText.openQuotes }}</a>
+            } @else {
+              <p class="muted">{{ detailText.noQuote }}</p>
+            }
+          </ui-card>
+
+          <ui-card [headingLevel]="2" [title]="detailText.parts">
+            <ul class="lines">
+              @for (part of current.parts; track part.name) {
+                <li>
+                  <span>{{ part.quantity }} {{ part.unit }} · {{ part.name }}</span>
+                  <ui-status-pill [tone]="part.reserved ? 'ok' : 'warn'">{{
+                    part.reserved ? detailText.reserved : detailText.missing(part.leadTimeDays)
+                  }}</ui-status-pill>
+                </li>
+              } @empty {
+                <li class="muted">{{ detailText.noParts }}</li>
+              }
+            </ul>
+          </ui-card>
+        </div>
+
+        <div class="column">
+          <ui-card [headingLevel]="2" [title]="detailText.timeline">
+            <ol class="timeline">
+              @for (entry of history(); track $index) {
+                <li>
+                  <strong>{{ entry.label }}</strong>
+                  <small class="muted">{{ entry.when }}</small>
+                  @if (entry.note; as note) {
+                    <small>{{ note }}</small>
+                  }
+                </li>
+              }
+            </ol>
+          </ui-card>
+
+          <ui-card [headingLevel]="2" [title]="detailText.photos">
+            <div class="photos">
+              @for (photo of current.photos; track photo.id) {
+                <figure>
+                  <ui-photo [path]="photo.url" [alt]="photo.caption" [width]="120" [height]="90" />
+                  <figcaption class="muted">{{ photo.caption }}</figcaption>
+                </figure>
+              } @empty {
+                <p class="muted">{{ detailText.noPhotos }}</p>
+              }
+            </div>
+          </ui-card>
+
+          <ui-card [headingLevel]="2" [title]="detailText.time">
+            <ul class="lines">
+              @for (entry of time().entries; track entry.id) {
+                <li>
+                  <span>{{ entry.mechanicName }} · {{ entry.when }}</span>
+                  <span class="mono">{{ detailText.minutes(entry.minutes) }}</span>
+                </li>
+              } @empty {
+                <li class="muted">{{ detailText.noTime }}</li>
+              }
+            </ul>
+            <p class="muted">{{ detailText.totalTime(time().total) }}</p>
+            @if (
+              canClock() && (current.status === 'InDiagnosis' || current.status === 'InProgress')
+            ) {
+              <button uiButton size="sm" type="button" [disabled]="busy()" (click)="toggleTime()">
+                {{ time().running ? detailText.stopTime : detailText.startTime }}
+              </button>
+            }
+          </ui-card>
+
+          <ui-card [headingLevel]="2" [title]="detailText.documents">
+            <ul class="lines" data-testid="order-documents">
+              @for (document of current.documents; track document.code) {
+                <li>
+                  <button
+                    uiButton
+                    size="sm"
+                    type="button"
+                    [attr.aria-label]="
+                      detailText.openDocument(
+                        detailText.documentKinds[document.kind],
+                        document.code
+                      )
+                    "
+                    (click)="openDocument(document.code)"
+                  >
+                    {{ detailText.documentKinds[document.kind] }}
+                  </button>
+                  <span class="mono">{{ document.code }}</span>
+                </li>
+              } @empty {
+                <li class="muted">{{ detailText.noDocuments }}</li>
+              }
+            </ul>
+          </ui-card>
+        </div>
+      </div>
+    }
+  }
+}

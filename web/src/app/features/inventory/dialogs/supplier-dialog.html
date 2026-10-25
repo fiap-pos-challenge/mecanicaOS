@@ -1,0 +1,44 @@
+<ui-dialog-layout [title]="supplier ? text.editTitle : text.newTitle">
+  <form class="dialog-form" novalidate [formGroup]="form" (ngSubmit)="save()">
+    @if (error(); as message) {
+      <p class="alert" role="alert" data-testid="inventory-dialog-error">{{ message }}</p>
+    }
+    <ui-field [label]="text.name" [required]="true" [error]="errorOf('name')">
+      <input uiControl type="text" formControlName="name" maxlength="120" />
+    </ui-field>
+    <div class="row">
+      <ui-field [label]="text.document" [error]="errorOf('document')">
+        <input
+          uiControl
+          type="text"
+          inputmode="numeric"
+          formControlName="document"
+          maxlength="18"
+          (input)="maskDocument()"
+        />
+      </ui-field>
+      <ui-field [label]="text.leadTime" [required]="true" [error]="errorOf('leadTimeDays')">
+        <input uiControl type="number" min="0" max="365" formControlName="leadTimeDays" />
+      </ui-field>
+    </div>
+    <div class="row">
+      <ui-field [label]="text.email" [error]="errorOf('email')">
+        <input uiControl type="email" formControlName="email" maxlength="160" />
+      </ui-field>
+      <ui-field [label]="text.phone">
+        <input
+          uiControl
+          type="tel"
+          inputmode="tel"
+          formControlName="phone"
+          maxlength="15"
+          (input)="maskPhone()"
+        />
+      </ui-field>
+    </div>
+    <div class="footer">
+      <button uiButton type="button" (click)="ref.close()">{{ text.cancel }}</button>
+      <button uiButton variant="primary" type="submit" [loading]="saving()">{{ text.save }}</button>
+    </div>
+  </form>
+</ui-dialog-layout>

@@ -1,0 +1,19 @@
+<a class="skip-link" href="#main-content">{{ text.skipToContent }}</a>
+<div
+  class="shell"
+  [class.shell--collapsed]="layout.collapsed() && !layout.isMobile()"
+  [class.shell--mobile]="layout.isMobile()"
+>
+  <app-sidebar />
+  <div class="main">
+    <app-topbar />
+    <main id="main-content" class="content" tabindex="-1">
+      <router-outlet />
+    </main>
+  </div>
+</div>
+@if (layout.isMobile()) {
+  <app-bottom-nav />
+}
+<ui-toast-region />
+<app-session-watch />

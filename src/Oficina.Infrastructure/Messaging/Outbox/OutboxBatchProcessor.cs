@@ -10,7 +10,7 @@ namespace Oficina.Infrastructure.Messaging.Outbox;
 
 public sealed partial class OutboxBatchProcessor(
     OficinaDbContext context,
-    IServiceProvider serviceProvider,
+    IServiceScopeFactory scopeFactory,
     TimeProvider timeProvider,
     IOptions<OutboxOptions> options,
     ILogger<OutboxBatchProcessor> logger)
@@ -55,8 +55,10 @@ public sealed partial class OutboxBatchProcessor(
 
         try
         {
-            foreach (var handler in serviceProvider.GetServices(handlerType).OfType<object>())
+            foreach (var handlerImplementation in HandlerTypes(handlerType))
             {
+                await using var scope = scopeFactory.CreateAsyncScope();
+                var handler = scope.ServiceProvider.GetServices(handlerType).OfType<object>().First(candidate => candidate.GetType() == handlerImplementation);
                 if (handle?.Invoke(handler, new[] { domainEvent, cancellationToken }) is Task handling)
                 {
                     await handling;
@@ -71,6 +73,12 @@ public sealed partial class OutboxBatchProcessor(
             LogHandlerFailure(message.Id, message.Type, message.Attempts, exception.GetType().Name);
             return false;
         }
+    }
+
+    private IReadOnlyList<Type> HandlerTypes(Type handlerType)
+    {
+        using var scope = scopeFactory.CreateScope();
+        return scope.ServiceProvider.GetServices(handlerType).OfType<object>().Select(handler => handler.GetType()).Distinct().ToList();
     }
 
     [LoggerMessage(Level = LogLevel.Warning, Message = "Outbox message {MessageId} has unknown event type {EventType}")]

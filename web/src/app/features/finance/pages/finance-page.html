@@ -1,0 +1,91 @@
+<header class="head">
+  <div>
+    <h1 class="page-title">{{ screen }}</h1>
+    <p class="sub">{{ text.subtitle }}</p>
+  </div>
+  <ui-segmented
+    [label]="text.period"
+    [options]="periods"
+    [value]="period()"
+    (valueChange)="setPeriod($event)"
+  />
+</header>
+
+@switch (state()) {
+  @case ('loading') {
+    <div class="kpis">
+      @for (index of [1, 2, 3, 4]; track index) {
+        <ui-skeleton height="88px" />
+      }
+    </div>
+    <ui-skeleton height="240px" />
+  }
+  @case ('pending') {
+    <ui-pending-notice [message]="pendingText" />
+  }
+  @case ('error') {
+    <div class="alert" role="alert">
+      <span>{{ text.loadError }}</span>
+      <button uiButton size="sm" type="button" (click)="load()">{{ text.retry }}</button>
+    </div>
+  }
+  @case ('ready') {
+    @if (summary(); as data) {
+      <section class="kpis" [attr.aria-label]="screen">
+        @for (kpi of kpis(); track kpi.label) {
+          <ui-kpi [label]="kpi.label" [value]="kpi.value" [delta]="kpi.delta" />
+        }
+      </section>
+      <div class="grid">
+        <ui-card [headingLevel]="2" [title]="text.receivables" [subtitle]="text.receivablesHint">
+          <ui-table
+            [caption]="text.receivables"
+            [columns]="receivableColumns"
+            [rows]="data.receivables"
+            [trackBy]="trackOrder"
+            [emptyMessage]="text.receivablesEmpty"
+          >
+            <ng-template uiCell="order" let-row>
+              <a class="link" [routerLink]="['/service-orders', row.serviceOrderId]">{{
+                text.openOrder(row.number)
+              }}</a>
+            </ng-template>
+          </ui-table>
+        </ui-card>
+        <ui-card [headingLevel]="2" [title]="text.byMethod">
+          <ui-table
+            [caption]="text.byMethod"
+            [columns]="methodColumns"
+            [rows]="data.byMethod"
+            [trackBy]="trackMethod"
+            [emptyMessage]="text.byMethodEmpty"
+          />
+        </ui-card>
+        <ui-card class="wide" [headingLevel]="2" [title]="text.receipts">
+          <ui-table
+            [caption]="text.receipts"
+            [columns]="receiptColumns"
+            [rows]="data.receipts"
+            [trackBy]="trackOrder"
+            [emptyMessage]="text.receiptsEmpty"
+          >
+            <ng-template uiCell="order" let-row>
+              <a class="link" [routerLink]="['/service-orders', row.serviceOrderId]">{{
+                text.openOrder(row.number)
+              }}</a>
+            </ng-template>
+          </ui-table>
+        </ui-card>
+        <ui-card class="wide" [headingLevel]="2" [title]="text.commissions">
+          <ui-table
+            [caption]="text.commissions"
+            [columns]="commissionColumns"
+            [rows]="data.commissions"
+            [trackBy]="trackCommission"
+            [emptyMessage]="text.commissionsEmpty"
+          />
+        </ui-card>
+      </div>
+    }
+  }
+}

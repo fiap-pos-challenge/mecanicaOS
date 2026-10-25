@@ -1,0 +1,89 @@
+<header class="topbar">
+  @if (layout.isMobile()) {
+    <button
+      uiIconButton
+      [outlined]="true"
+      [label]="text.openMenu"
+      aria-controls="app-sidebar"
+      [attr.aria-expanded]="layout.drawerOpen()"
+      (click)="layout.openDrawer()"
+    >
+      <ui-icon [icon]="icons.menu" [size]="18" />
+    </button>
+  }
+  <div class="search" role="search">
+    <label class="visually-hidden" for="global-search">{{ text.searchLabel }}</label>
+    <ui-icon [icon]="icons.search" [size]="16" />
+    <input
+      #search
+      id="global-search"
+      type="search"
+      autocomplete="off"
+      [placeholder]="text.searchPlaceholder"
+    />
+    @if (!layout.isMobile()) {
+      <kbd aria-hidden="true">{{ text.searchShortcut }}</kbd>
+    }
+  </div>
+  <div class="notifications">
+    <button
+      #bell
+      uiIconButton
+      [outlined]="true"
+      [label]="text.notifications"
+      aria-controls="notifications-panel"
+      [attr.aria-expanded]="notificationsOpen()"
+      (click)="toggleNotifications()"
+    >
+      <ui-icon [icon]="icons.bell" [size]="18" />
+    </button>
+    @if (notifications.unread() > 0) {
+      <span class="badge" data-testid="unread-badge">
+        <span aria-hidden="true">{{ notifications.unread() }}</span>
+        <span class="visually-hidden">{{
+          notificationText.unreadCount(notifications.unread())
+        }}</span>
+      </span>
+    }
+    <span class="visually-hidden" role="status">{{ notifications.announcement() }}</span>
+    @if (notificationsOpen()) {
+      <section id="notifications-panel" class="popover" [attr.aria-label]="text.notifications">
+        <app-notification-center (navigated)="notificationsOpen.set(false)" />
+      </section>
+    }
+  </div>
+  <button uiIconButton [outlined]="true" [label]="themeLabel()" (click)="theme.cycle()">
+    <ui-icon [icon]="themeIcon()" [size]="18" />
+  </button>
+  @if (auth.user(); as user) {
+    <div class="account">
+      <button
+        #account
+        type="button"
+        class="account-button"
+        aria-controls="account-panel"
+        [attr.aria-expanded]="userMenuOpen()"
+        [attr.aria-label]="userText.menu(user.name)"
+        (click)="toggleUserMenu()"
+      >
+        <ui-avatar [name]="user.name" aria-hidden="true" />
+      </button>
+      @if (userMenuOpen()) {
+        <section
+          id="account-panel"
+          class="popover account-panel"
+          [attr.aria-label]="userText.menu(user.name)"
+        >
+          <p class="account-name">{{ user.name }}</p>
+          <p class="account-role">
+            <span class="visually-hidden">{{ userText.role }}: </span>{{ roles[user.role] }}
+          </p>
+          <button type="button" class="account-logout" (click)="logout()">
+            <ui-icon [icon]="icons.logout" [size]="16" />
+            {{ userText.logout }}
+          </button>
+        </section>
+      }
+    </div>
+  }
+</header>

@@ -4,6 +4,11 @@ namespace Oficina.Domain.Customers.Errors;
 
 public static class CustomerErrors
 {
+    public static readonly Error EmailConsentWithoutEmail = new(
+        "customer.emailConsentWithoutEmail",
+        "Para aceitar mensagens por e-mail, informe o e-mail do cliente.",
+        ErrorType.Validation);
+
     public static readonly Error InvalidName = new(
         "customer.invalidName",
         "Informe o nome do cliente com 2 a 160 caracteres.",
@@ -23,6 +28,11 @@ public static class CustomerErrors
         "customer.incompleteAddress",
         "O endereço é opcional, mas, se informado, precisa ter CEP, logradouro, número, bairro, cidade e UF.",
         ErrorType.Validation);
+
+    public static readonly Error ZipCodeNotFound = new(
+        "address.zipCodeNotFound",
+        "CEP não encontrado. Preencha o endereço manualmente.",
+        ErrorType.NotFound);
 
     public static readonly Error InvalidZipCode = new(
         "customer.invalidZipCode",

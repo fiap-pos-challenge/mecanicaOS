@@ -10,5 +10,5 @@ public interface IUserQueries
 
     Task<UserDto?> GetByEmailAsync(Email email, CancellationToken cancellationToken);
 
-    Task<PagedResult<UserDto>> ListAsync(PageRequest page, CancellationToken cancellationToken);
+    Task<PagedResult<UserDto>> ListAsync(PageRequest page, UserFilter filter, CancellationToken cancellationToken);
 }

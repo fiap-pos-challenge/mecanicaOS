@@ -12,6 +12,7 @@ public sealed class CreateVehicleCommandValidator : AbstractValidator<CreateVehi
         RuleFor(command => command.Year).ValidYear();
         RuleFor(command => command.Model).ValidModel();
         RuleFor(command => command.Brand).ValidBrand();
+        RuleFor(command => command.Mileage).ValidMileage();
     }
 
 }

@@ -1,0 +1,86 @@
+<div class="scroll" role="region" tabindex="0" [attr.aria-label]="caption()">
+  <table>
+    <caption class="visually-hidden">
+      {{
+        caption()
+      }}
+    </caption>
+    <thead>
+      <tr>
+        @for (column of columns(); track column.key) {
+          <th scope="col" [class.end]="column.align === 'end'" [attr.aria-sort]="ariaSort(column)">
+            @if (column.sortable) {
+              <button
+                type="button"
+                class="sort"
+                [attr.aria-label]="text.sortBy(column.header)"
+                (click)="toggleSort(column)"
+              >
+                {{ column.header }}
+                @switch (ariaSort(column)) {
+                  @case ('ascending') {
+                    <ui-icon [icon]="icons.asc" [size]="14" />
+                  }
+                  @case ('descending') {
+                    <ui-icon [icon]="icons.desc" [size]="14" />
+                  }
+                  @default {
+                    <ui-icon [icon]="icons.sort" [size]="14" />
+                  }
+                }
+              </button>
+            } @else {
+              {{ column.header }}
+            }
+          </th>
+        }
+      </tr>
+    </thead>
+    <tbody [attr.aria-busy]="loading() || null">
+      @if (loading()) {
+        @for (row of loadingRows; track row) {
+          <tr>
+            @for (column of columns(); track column.key) {
+              <td><ui-skeleton /></td>
+            }
+          </tr>
+        }
+      } @else if (rows().length === 0) {
+        <tr>
+          <td class="empty" [attr.colspan]="columns().length">{{ emptyMessage() }}</td>
+        </tr>
+      } @else {
+        @for (row of rows(); track trackBy()(row)) {
+          <tr>
+            @for (column of columns(); track column.key) {
+              <td [class.end]="column.align === 'end'">
+                @if (cellTemplate(column.key); as template) {
+                  <ng-container *ngTemplateOutlet="template; context: { $implicit: row }" />
+                } @else {
+                  {{ cellValue(row, column) }}
+                }
+              </td>
+            }
+          </tr>
+        }
+      }
+    </tbody>
+  </table>
+</div>
+@if (totalPages() > 1) {
+  <nav class="pager" [attr.aria-label]="text.pagination">
+    <button uiButton size="sm" type="button" [disabled]="page() <= 1" (click)="goTo(page() - 1)">
+      {{ text.previous }}
+    </button>
+    <span class="page-info" aria-live="polite">{{ text.pageInfo(page(), totalPages()) }}</span>
+    <button
+      uiButton
+      size="sm"
+      type="button"
+      [disabled]="page() >= totalPages()"
+      (click)="goTo(page() + 1)"
+    >
+      {{ text.next }}
+    </button>
+  </nav>
+}

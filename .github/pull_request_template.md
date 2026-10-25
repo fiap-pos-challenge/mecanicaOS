@@ -12,5 +12,5 @@ Closes #
 - [ ] Comentários só explicam o porquê (XML comments apenas em controllers e DTOs)
 - [ ] Endpoint com policy explícita, XML comment e respostas documentadas no Swagger
 - [ ] Nada sigiloso em log (senha, hash, JWT, token de orçamento, CPF/CNPJ, e-mail, telefone, placa, corpo de requisição)
-- [ ] `.env.example`, README e `docs/ddd/linguagem-ubiqua.md` atualizados, se aplicável
+- [ ] README e `docs/ddd/linguagem-ubiqua.md` atualizados, se aplicável
 - [ ] Se o modelo EF mudou, a migration foi gerada e o PR avisa

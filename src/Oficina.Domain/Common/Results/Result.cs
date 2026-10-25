@@ -12,9 +12,9 @@ public class Result : IResultFactory<Result>
 
     public static Result Success() => new(null);
 
-    public static Result Failure(Error error) => new(error);
-
     public static Result<T> Success<T>(T value) => Result<T>.Success(value);
+
+    public static Result Failure(Error error) => new(error);
 
     public static implicit operator Result(Error error) => Failure(error);
 }

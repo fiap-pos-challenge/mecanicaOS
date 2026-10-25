@@ -1,22 +1,21 @@
 using MediatR;
 using Oficina.Application.Abstractions.Persistence;
 using Oficina.Application.Abstractions.Security;
+using Oficina.Application.Quotes.Decisions;
 using Oficina.Application.ServiceOrders.Dtos;
 using Oficina.Application.ServiceOrders.Queries;
 using Oficina.Domain.Common.Results;
 using Oficina.Domain.ServiceOrders.Errors;
 using Oficina.Domain.ServiceOrders.Repositories;
-using Oficina.Domain.ServiceOrders.Services;
 
 namespace Oficina.Application.ServiceOrders.Commands.ApproveQuote;
 
 public sealed class ApproveQuoteCommandHandler(
     IServiceOrderRepository serviceOrders,
-    QuoteApprovalPolicy policy,
+    QuoteDecider decider,
     IServiceOrderQueries queries,
     ICurrentUser currentUser,
-    IUnitOfWork unitOfWork,
-    TimeProvider timeProvider) : IRequestHandler<ApproveQuoteCommand, Result<ServiceOrderDetailDto>>
+    IUnitOfWork unitOfWork) : IRequestHandler<ApproveQuoteCommand, Result<ServiceOrderDetailDto>>
 {
     public async Task<Result<ServiceOrderDetailDto>> Handle(ApproveQuoteCommand command, CancellationToken cancellationToken)
     {
@@ -25,7 +24,7 @@ public sealed class ApproveQuoteCommandHandler(
             return ServiceOrderErrors.NotFound;
         }
 
-        var approved = await policy.ApproveAsync(serviceOrder, currentUser.UserId, timeProvider.GetUtcNow(), cancellationToken);
+        var approved = await decider.ApproveServiceOrderAsync(serviceOrder, currentUser.UserId, cancellationToken);
         if (approved.Error is { } approvalError)
         {
             return approvalError;

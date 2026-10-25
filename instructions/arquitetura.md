@@ -1,6 +1,6 @@
 # Arquitetura — Oficina MVP
 
-Documento de referência da arquitetura do MVP do Tech Challenge (Pós Tech SOAT, Fase 1). A fonte da verdade dos requisitos é `docs/enunciado/tech-challenge-fase1.pdf`; fluxos, rotas e modelo de dados estão em `docs/arquitetura/`.
+Documento de referência da arquitetura do MVP do Tech Challenge (Pós Tech SOAT, Fase 1). A fonte da verdade dos requisitos é `docs/enunciado/tech-challenge-fase1.pdf`; os diagramas (C4, Event Storming, DDD e Domain Storytelling) estão em `docs/arquitetura/` e a documentação DDD em `docs/ddd/`. As rotas estão no contrato OpenAPI (`tests/Oficina.ContractTests/OpenApi/Snapshots/openapi.json`).
 
 As convenções de código, testes, Git e CI estão em [padrao-desenvolvimento.md](padrao-desenvolvimento.md).
 
@@ -23,15 +23,17 @@ As convenções de código, testes, Git e CI estão em [padrao-desenvolvimento.m
 
 ## 2. Stack
 
-.NET 10 LTS, ASP.NET Core Web API (Controllers), PostgreSQL 16, EF Core 10 + Npgsql + EFCore.NamingConventions, Riok.Mapperly, Swashbuckle, JWT Bearer + BCrypt, ProblemDetails, xUnit + NSubstitute, WebApplicationFactory + Testcontainers + Respawn, coverlet + ReportGenerator, BannedApiAnalyzers, Trivy, Docker multi-stage + docker compose, GitHub Actions.
+.NET 10 LTS, ASP.NET Core Web API (Controllers), SQL Server 2022, EF Core 10 + Microsoft.EntityFrameworkCore.SqlServer, MediatR 12.5.0, FluentValidation, Riok.Mapperly, Swashbuckle, JWT Bearer + BCrypt, ProblemDetails, SignalR, xUnit v3 + NSubstitute, WebApplicationFactory + Testcontainers + Respawn, coverlet + ReportGenerator, BannedApiAnalyzers, SonarQube Community (Docker, profile `quality`), Docker multi-stage + docker compose, GitHub Actions. Front-end em Angular (`web/`).
 
-### Por que PostgreSQL
+### Por que SQL Server
 
-- A aprovação do orçamento e a baixa de estoque precisam acontecer na mesma transação. O PostgreSQL garante isso (ACID).
-- A coluna de sistema `xmin` serve como token de concorrência otimista, sem precisar de coluna extra.
+- A aprovação do orçamento e a baixa de estoque precisam acontecer na mesma transação. O SQL Server garante isso (ACID).
+- A coluna `rowversion` serve como token de concorrência otimista em `ServiceOrder`, `Part` e `Estimate`.
 - A sequence gera o número da OS que o cliente vê.
-- Índices únicos parciais garantem que um veículo tenha só uma OS aberta.
-- É gratuito, tem provider maduro no EF Core e roda no Testcontainers.
+- Índices únicos filtrados (`deletedAt IS NULL`) garantem unicidade só entre registros ativos.
+- A edição Developer é gratuita, tem provider oficial no EF Core, imagem oficial em Docker e módulo no Testcontainers.
+
+O PostgreSQL foi a primeira escolha (Etapas 1 e 2) e foi trocado na Etapa 3; a justificativa pública está no README.
 
 ## 3. Camadas
 
@@ -178,10 +180,10 @@ A `ServiceOrder` recebe `Service` e `Part` como argumento só para ler o preço 
 | Repositório e queries | Recurso não encontrado | 404 (`NotFoundException`) |
 | Agregado e domain services | Transição inválida, conflito, estoque insuficiente na aprovação | 409 |
 | Agregado | Regra de negócio, como peça sem saldo na inclusão | 422 (`BusinessRuleException`) |
-| Banco | Violação de `xmin` ou de índice único | 409 |
+| Banco | Violação de `rowversion` ou de índice único | 409 |
 | Qualquer outra exceção | — | 500, com log |
 
-O código só tem `try/catch` em três lugares: no handler global de exceções, no rollback do UnitOfWork e na tradução de erros do Npgsql.
+O código só tem `try/catch` em três lugares: no handler global de exceções, no rollback do UnitOfWork e na tradução de `SqlException` (concorrência e índice único).
 
 **Transação da aprovação:** o evento `EstimateApproved` dispara a baixa de estoque antes do commit. Se faltar saldo, a transação inteira sofre rollback e a resposta é 409.
 
@@ -243,7 +245,7 @@ O cliente não faz login. Ele acompanha a OS pelo número mais o CPF/CNPJ e resp
 ## 9. Persistência
 
 - O schema é criado pelo EF Core com `EnsureCreatedAsync` no startup. Não há migrations.
-- O modelo EF define o schema inteiro: nomes em snake_case, `xmin` em `ServiceOrder` e `Part`, a sequence do número da OS e o índice único parcial de OS aberta por veículo.
+- O modelo EF define o schema inteiro: nomes em camelCase, `rowversion` em `ServiceOrder`, `Part` e `Estimate`, a sequence do número da OS e o índice único filtrado de OS aberta por veículo.
 - Não há seed em código nem credenciais no repositório. Dados de teste são inseridos direto no banco, e o `EnsureCreated` não mexe em banco que já existe.
 - Quando o modelo muda, é preciso recriar o banco com `docker compose down -v` e reinserir os dados manuais.
 - A exclusão lógica usa global query filter. `created_at` e `updated_at` são preenchidos pelo UnitOfWork.
@@ -279,7 +281,6 @@ Depois disso, cada contexto entra seguindo os épicos E3 a E7.
 
 - Orçamento complementar durante `InProgress` e rejeição com encerramento da OS.
 - Ajuste de inventário e rota separada de histórico de status (o histórico já vem no detalhe da OS).
-- Rate limiting nas rotas públicas, que só entra se sobrar tempo.
 
 O acesso de demonstração será feito com o admin inserido manualmente no banco. O README explica como gerar o hash BCrypt.
 
@@ -318,3 +319,18 @@ O que está implementado e testado no código. Onde houver diferença, esta seç
 | Senha | BCrypt fator 12, política de 8 a 64 caracteres com maiúscula, minúscula, número e símbolo. Login com e-mail inexistente compara com um hash fictício (mesmo tempo de resposta) |
 | Docker | `sqlserver` (healthcheck) e `api` (Development: cria o banco, aplica as migrations e cria o Admin de teste na subida). Rede `oficina-network`, volume `oficina-sqlserver-data`, API na porta 8080, credenciais só de desenvolvimento no `docker-compose.yml` |
 | Testes | Unitários (domínio, handlers, validators, behaviors), de contrato (OpenAPI, JSON, ProblemDetails, autorização, dado pessoal na URL) e funcionais (SQL Server real com Testcontainers e Respawn, API ponta a ponta, matriz de perfis) |
+
+## 15. Estado ao fim da Etapa 5
+
+Onde houver diferença, esta seção prevalece sobre as anteriores.
+
+| Tema | Como ficou |
+|---|---|
+| Escopo | Back-end completo da Fase 1 (OS, orçamento com versões e aprovação total ou parcial, portal do cliente, catálogo, estoque, relatórios, automações, notificações e configurações) e front-end Angular em `web/` |
+| Aplicação | Um command ou query por caso de uso (MediatR), com handler e validator. Não existem classes `*Service` fora de `Domain.Catalog` (`Service` é termo do domínio). Controllers injetam só `ISender` (teste de arquitetura) |
+| Transações | A aprovação do orçamento, a substituição dos itens da OS e a baixa de estoque acontecem em um único commit. Efeitos externos (e-mail, tempo real, recibo) saem depois do commit pelo Outbox |
+| Eventos | `QuoteApproved`, `QuoteRejected`, `QuoteSent`, `ServiceOrderStatusChanged`, `StockDeducted`, `StockBelowMinimum`, `PaymentConfirmed` e `NotificationCreated`, gravados no Outbox e entregues por `OutboxProcessor` com um escopo de DI por handler |
+| Pagamento | Pix simulado (webhook com HMAC, segredo em `.env`). Cartão, WhatsApp e emissão fiscal ficam fora do escopo |
+| Segurança | Segredos só no `.env` (modelo versionado em `.env.example`), User Secrets fora do Docker, segredo do 2FA cifrado com Data Protection, rate limiting no login e em todo `/api/public/**` (429 em ProblemDetails) |
+| Qualidade | SonarQube Community em Docker (`docker compose --profile quality`), analisado por `node scripts/sonar/run-analysis.mjs`, com quality gate nos projetos `mecanicaos-api` e `mecanicaos-web`. O Trivy deixou de ser usado |
+| Documentação DDD | `docs/ddd/` (linguagem ubíqua, rastreabilidade, PDFs e SVGs exportados dos `.drawio` de `docs/arquitetura/`) |

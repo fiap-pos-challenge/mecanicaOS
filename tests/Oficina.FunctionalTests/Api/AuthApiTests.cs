@@ -34,7 +34,7 @@ public sealed class AuthApiTests(SqlServerFixture database) : ApiTestBase(databa
     }
 
     [Fact]
-    public async Task Login_WrongPasswordOrInactiveUser_Returns401()
+    public async Task Login_WrongPasswordUnknownEmailOrInactiveUserWithWrongPassword_Returns401()
     {
         var inactive = await SaveUserWithPasswordAsync(Role.Mechanic, "inativo@oficina.com");
         await SaveUserWithPasswordAsync(Role.Mechanic, "ativo@oficina.com");
@@ -42,11 +42,46 @@ public sealed class AuthApiTests(SqlServerFixture database) : ApiTestBase(databa
         using var client = Factory.CreateClient();
 
         await AssertProblemAsync(await client.PostAsJsonAsync("/api/auth/login", new { email = "ativo@oficina.com", password = "Errada@2026" }, CancellationToken), HttpStatusCode.Unauthorized, IdentityErrors.InvalidCredentials.Code);
-        await AssertProblemAsync(await client.PostAsJsonAsync("/api/auth/login", new { email = "inativo@oficina.com", password = Password }, CancellationToken), HttpStatusCode.Unauthorized, IdentityErrors.InvalidCredentials.Code);
+        await AssertProblemAsync(await client.PostAsJsonAsync("/api/auth/login", new { email = "inativo@oficina.com", password = "Errada@2026" }, CancellationToken), HttpStatusCode.Unauthorized, IdentityErrors.InvalidCredentials.Code);
+        await AssertProblemAsync(await client.PostAsJsonAsync("/api/auth/login", new { email = "nenhum@oficina.com", password = Password }, CancellationToken), HttpStatusCode.Unauthorized, IdentityErrors.InvalidCredentials.Code);
     }
 
     [Fact]
-    public async Task Login_SixthAttemptWithinAMinute_Returns429()
+    public async Task Login_InactiveUserWithRightPassword_Returns403AccountDisabled()
+    {
+        var inactive = await SaveUserWithPasswordAsync(Role.Mechanic, "inativo@oficina.com");
+        await Database.QueryAsync($"UPDATE users SET isActive = 0 WHERE id = '{inactive.Id}'; SELECT 1 AS done");
+        using var client = Factory.CreateClient();
+
+        await AssertProblemAsync(await client.PostAsJsonAsync("/api/auth/login", new { email = "inativo@oficina.com", password = Password }, CancellationToken), HttpStatusCode.Forbidden, IdentityErrors.AccountDisabled.Code);
+    }
+
+    [Fact]
+    public async Task Login_FiveWrongPasswords_LocksTheAccountWithRetryAfter()
+    {
+        await SaveUserWithPasswordAsync(Role.Attendant, "ana@oficina.com");
+        using var client = Factory.CreateClient();
+        var wrong = new { email = "ana@oficina.com", password = "Errada@2026" };
+
+        for (var attempt = 1; attempt < Oficina.Domain.Identity.Entities.User.MaxFailedLoginAttempts; attempt++)
+        {
+            Assert.Equal(HttpStatusCode.Unauthorized, (await client.PostAsJsonAsync("/api/auth/login", wrong, CancellationToken)).StatusCode);
+        }
+
+        using var locked = await client.PostAsJsonAsync("/api/auth/login", wrong, CancellationToken);
+
+        Assert.Equal(HttpStatusCode.TooManyRequests, locked.StatusCode);
+        var problem = await ReadJsonAsync(locked);
+        Assert.Equal("identity.accountLocked", problem.GetProperty("code").GetString());
+        Assert.Equal(900, problem.GetProperty("retryAfterSeconds").GetInt32());
+        Assert.Equal(TimeSpan.FromSeconds(900), locked.Headers.RetryAfter?.Delta);
+        var row = Assert.Single(await Database.QueryAsync("SELECT failedLoginAttempts, CASE WHEN lockoutEndAt IS NULL THEN 0 ELSE 1 END AS locked FROM users"));
+        Assert.Equal(0, row["failedLoginAttempts"]);
+        Assert.Equal(1, row["locked"]);
+    }
+
+    [Fact]
+    public async Task Login_SixthAttemptWithinAMinute_Returns429WithRetryAfter()
     {
         using var client = Factory.CreateClient();
         var credentials = new { email = "x@oficina.com", password = "Errada@2026" };
@@ -58,6 +93,7 @@ public sealed class AuthApiTests(SqlServerFixture database) : ApiTestBase(databa
 
         using var blocked = await client.PostAsJsonAsync("/api/auth/login", credentials, CancellationToken);
 
+        Assert.True(blocked.Headers.RetryAfter?.Delta > TimeSpan.Zero);
         await AssertProblemAsync(blocked, HttpStatusCode.TooManyRequests, CommonErrors.TooManyRequests.Code);
     }
 

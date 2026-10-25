@@ -34,13 +34,13 @@ public static class TestData
             LicensePlate.Create(plate).Value,
             "Volkswagen",
             "Gol",
-            VehicleYear.Create(2020).Value, Today).Value;
+            VehicleYear.Create(2020).Value, 42_000, Today).Value;
 
     public static User User(string email = "admin@oficina.com", Role role = Role.Admin) =>
         Domain.Identity.Entities.User.Create("Ana Lima", Email.Create(email).Value, "$2a$12$hash", role).Value;
 
     public static Service Service(decimal price = 100m) =>
-        Domain.Catalog.Entities.Service.Create("Troca de óleo", "Inclui filtro", Money.Create(price).Value, 30).Value;
+        Domain.Catalog.Entities.Service.Create("Troca de óleo", "Inclui filtro", Money.Create(price).Value, 30, 10m, 90).Value;
 
     public static Part Part(string code = "FLT-001", decimal stock = 10m)
     {
@@ -49,8 +49,8 @@ public static class TestData
             "Filtro de óleo",
             PartType.Part,
             "un",
-            Money.Create(25m).Value,
-            2m).Value;
+            Money.Create(25m).Value, Money.Zero,
+            2m, null, null).Value;
         if (stock > 0)
         {
             part.RegisterEntry(Quantity.Create(stock).Value, "Carga inicial", null);

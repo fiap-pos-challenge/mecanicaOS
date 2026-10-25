@@ -43,12 +43,21 @@ public sealed class CreateVehicleCommandValidatorTests
     }
 
 
+    [Theory]
+    [InlineData(-1)]
+    [InlineData(10_000_000)]
+    public void Validate_MileageOutOfRange_ReturnsInvalidMileage(int mileage)
+    {
+        var failure = Assert.Single(_validator.Validate(Command() with { Mileage = mileage }).Errors);
+        Assert.Equal(VehicleErrors.InvalidMileage.Code, failure.ErrorCode);
+    }
+
     private static CreateVehicleCommand Command() =>
         new CreateVehicleCommand(Guid.NewGuid(),
             VehicleTestData.LicensePlate().Value,
             VehicleTestData.brand,
             VehicleTestData.model,
-            VehicleTestData.VehicleYear().Value
-    );
+            VehicleTestData.VehicleYear().Value,
+            42_000);
 
 }

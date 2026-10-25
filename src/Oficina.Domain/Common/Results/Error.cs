@@ -9,6 +9,8 @@ public sealed record Error(string Code, string Message, ErrorType Type, IReadOnl
     {
     }
 
+    public TimeSpan? RetryAfter { get; init; }
+
     public static Error Validation(IReadOnlyCollection<FieldError> fields) =>
         CommonErrors.ValidationFailed with { Fields = fields };
 }

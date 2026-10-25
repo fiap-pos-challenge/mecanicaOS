@@ -1,0 +1,151 @@
+:host {
+  display: block;
+  padding-top: var(--space-2);
+}
+
+.back {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  margin-bottom: var(--space-4);
+  color: var(--muted);
+  font-size: var(--text-sm);
+  text-decoration: none;
+}
+
+.head {
+  margin-bottom: var(--space-4);
+}
+
+.identity {
+  display: grid;
+  gap: var(--space-1);
+}
+
+.page-title {
+  margin: 0;
+}
+
+.meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  align-items: center;
+  margin: 0;
+  color: var(--muted);
+  font-size: var(--text-sm);
+}
+
+.alert,
+.notice {
+  display: grid;
+  gap: var(--space-2);
+  justify-items: start;
+  margin: 0 0 var(--space-4);
+  padding: var(--space-3);
+  border-radius: var(--radius-md);
+  font-size: var(--text-sm);
+
+  ul {
+    margin: 0;
+    padding-left: var(--space-4);
+  }
+}
+
+.alert {
+  border: 1px solid var(--bad);
+  background: var(--bad-soft);
+}
+
+.notice {
+  border: 1px solid var(--accent);
+  background: var(--accent-soft);
+}
+
+.layout {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: var(--space-4);
+  align-items: start;
+}
+
+.column {
+  display: grid;
+  gap: var(--space-4);
+  min-width: 0;
+}
+
+.facts {
+  display: grid;
+  gap: var(--space-2);
+  margin: 0;
+
+  dt {
+    color: var(--muted);
+    font-size: var(--text-sm);
+  }
+
+  dd {
+    margin: 0;
+  }
+}
+
+.actions,
+.lines,
+.timeline {
+  display: grid;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.actions li {
+  display: grid;
+  gap: var(--space-1);
+  justify-items: start;
+}
+
+.lines li,
+.total {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: var(--space-2);
+  margin: 0;
+}
+
+.total {
+  margin-top: var(--space-2);
+  font-weight: 700;
+}
+
+.timeline li {
+  display: grid;
+  gap: 2px;
+  padding-left: var(--space-3);
+  border-left: 2px solid var(--accent);
+}
+
+.photos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+
+  figure {
+    margin: 0;
+  }
+
+  ui-photo {
+    width: 120px;
+  }
+}
+
+.mono {
+  font-family: var(--f-mono);
+}
+
+.muted {
+  color: var(--muted);
+  font-size: var(--text-sm);
+}

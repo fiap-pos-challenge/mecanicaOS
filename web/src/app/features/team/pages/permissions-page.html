@@ -1,0 +1,91 @@
+<a class="back" routerLink="/team">
+  <ui-icon [icon]="icons.back" [size]="16" />
+  {{ text.back }}
+</a>
+
+<header class="head">
+  <h1 class="title">{{ text.title }}</h1>
+  <p class="sub">{{ text.subtitle }}</p>
+</header>
+
+@if (!customizable()) {
+  <p class="notice" role="note">{{ text.readOnly }}</p>
+}
+
+@switch (state()) {
+  @case ('loading') {
+    <ui-skeleton height="320px" />
+  }
+  @case ('pending') {
+    <ui-pending-notice [message]="pending.roles" />
+  }
+  @case ('error') {
+    <div class="alert" role="alert">
+      <span>{{ text.loadError }}</span>
+      <button uiButton size="sm" type="button" (click)="load()">{{ text.retry }}</button>
+    </div>
+  }
+  @case ('ready') {
+    <div class="matrix-scroll">
+      <table class="matrix">
+        <caption class="visually-hidden">
+          {{
+            text.caption
+          }}
+        </caption>
+        <thead>
+          <tr>
+            <th scope="col">{{ text.permission }}</th>
+            @for (role of roles(); track role.role) {
+              <th scope="col">{{ roleLabel(role.role) }}</th>
+            }
+          </tr>
+        </thead>
+        @for (group of groups; track group.module) {
+          <tbody>
+            <tr class="module">
+              <th scope="colgroup" [attr.colspan]="roles().length + 1">
+                {{ modules[group.module] }}
+              </th>
+            </tr>
+            @for (permission of group.permissions; track permission) {
+              <tr>
+                <th scope="row">{{ labels[permission] }}</th>
+                @for (role of roles(); track role.role) {
+                  <td [class.yes]="allowed(role, permission)">
+                    @if (allowed(role, permission)) {
+                      <ui-icon [icon]="icons.yes" [size]="16" />
+                      <span class="visually-hidden">{{ text.allowed }}</span>
+                    } @else {
+                      <ui-icon [icon]="icons.no" [size]="14" />
+                      <span class="visually-hidden">{{ text.denied }}</span>
+                    }
+                  </td>
+                }
+              </tr>
+            }
+          </tbody>
+        }
+      </table>
+    </div>
+
+    <div class="accordion">
+      @for (entry of roleGroups(); track entry.role.role) {
+        <details class="role">
+          <summary>
+            <span class="role-name">{{ roleLabel(entry.role.role) }}</span>
+            <span class="count">{{ text.count(entry.role.permissions.size) }}</span>
+          </summary>
+          @for (group of entry.groups; track group.module) {
+            <h2 class="module-title">{{ modules[group.module] }}</h2>
+            <ul class="list">
+              @for (permission of group.permissions; track permission) {
+                <li>{{ labels[permission] }}</li>
+              }
+            </ul>
+          }
+        </details>
+      }
+    </div>
+  }
+}

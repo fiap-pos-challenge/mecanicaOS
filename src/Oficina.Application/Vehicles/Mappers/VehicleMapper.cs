@@ -14,6 +14,10 @@ public static partial class VehicleMapper
     [MapperIgnoreSource(nameof(Vehicle.DeletedAt))]
     public static partial VehicleDto ToDto(this Vehicle vehicle);
 
+    private static string LicensePlateToString(LicensePlate licensePlate) => licensePlate.Value;
+
+    private static int VehicleYearToInt(VehicleYear vehicleYear) => vehicleYear.Value;
+
     public static Result<LicensePlate?> ToOptionalLicensePlate(string? value)
     {
         if (string.IsNullOrWhiteSpace(value))
@@ -29,8 +33,4 @@ public static partial class VehicleMapper
 
         return plate.Value;
     }
-
-    private static string LicensePlateToString(LicensePlate licensePlate) => licensePlate.Value;
-
-    private static int VehicleYearToInt(VehicleYear vehicleYear) => vehicleYear.Value;
 }

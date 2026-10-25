@@ -1,0 +1,42 @@
+:host {
+  display: block;
+  padding: 18px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  box-shadow: var(--shadow);
+}
+
+.label {
+  margin: 0;
+  color: var(--muted);
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.value {
+  margin: 6px 0 2px;
+  font-family: var(--f-display);
+  font-size: var(--text-2xl);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.delta {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  margin: 0;
+  color: var(--muted);
+  font-family: var(--f-mono);
+  font-size: 12px;
+}
+
+.delta--up {
+  color: var(--ok);
+}
+
+.delta--down {
+  color: var(--bad);
+}
