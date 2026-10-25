@@ -11,8 +11,6 @@ public sealed class EmailOptions
     [Range(1, 65535)]
     public int SmtpPort { get; set; } = 25;
 
-    public bool EnableSsl { get; set; }
-
     public string? PickupDirectory { get; set; }
 
     [Required]

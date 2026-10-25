@@ -17,7 +17,7 @@ public sealed class OperationsApiTests(SqlServerFixture database) : ApiTestBase(
     private async Task RunAutomationsAsync()
     {
         await using var scope = Factory.Services.CreateAsyncScope();
-        await scope.ServiceProvider.GetRequiredService<AutomationService>().RunAsync(CancellationToken);
+        await scope.ServiceProvider.GetRequiredService<AutomationRunner>().RunAsync(CancellationToken);
     }
 
     private async Task WaitForAsync(string sql)
@@ -123,7 +123,7 @@ public sealed class OperationsApiTests(SqlServerFixture database) : ApiTestBase(
         Assert.True(saved.GetProperty("items")[0].GetProperty("email").GetBoolean());
         Assert.Empty((await ReadJsonAsync(await attendant.GetAsync("/api/admin/notifications", CancellationToken))).GetProperty("items").EnumerateArray());
         await admin.PostAsJsonAsync("/api/admin/reports/exports", new { definition = new { measure = "revenue", groupBy = "month", period = new { preset = "thisMonth", from = (string?)null, to = (string?)null }, chart = "column" }, format = "xlsx" }, CancellationToken);
-        Assert.Contains(Factory.Emails.Messages, message => message.Subject == "Exportação de relatório pronta");
+        await EventuallyAsync(() => Task.FromResult(Factory.Emails.Messages.Any(message => message.Subject == "Exportação de relatório pronta")), "export e-mail after commit");
 
         using var anonymous = Factory.CreateClient();
         Assert.Equal(HttpStatusCode.Unauthorized, (await anonymous.PostAsync("/api/hubs/realtime/negotiate?negotiateVersion=1", null, CancellationToken)).StatusCode);

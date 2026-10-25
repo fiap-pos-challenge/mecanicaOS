@@ -25,5 +25,3 @@ public sealed class InvitationIssuer(IUserInvitationRepository invitations, IEma
             new InvitationMessage(user.Name, user.Email.Value, issued.Token, issued.Invitation.ExpiresAt),
             cancellationToken);
 }
-
-public sealed record IssuedInvitation(UserInvitation Invitation, string Token);

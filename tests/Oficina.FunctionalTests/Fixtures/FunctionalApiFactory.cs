@@ -12,10 +12,18 @@ using Oficina.Infrastructure.Addresses;
 
 namespace Oficina.FunctionalTests.Fixtures;
 
-public sealed class FunctionalApiFactory(SqlServerFixture database) : WebApplicationFactory<Program>
+public sealed class FunctionalApiFactory : WebApplicationFactory<Program>
 {
     public const string AllowedOrigin = "http://localhost:4200";
     public const string PixWebhookSecret = "segredo-pix-teste";
+
+    private readonly SqlServerFixture _database;
+
+    public FunctionalApiFactory(SqlServerFixture database)
+    {
+        _database = database;
+        ClientOptions.BaseAddress = new Uri("https://localhost");
+    }
 
     public CapturingEmailSender Emails { get; } = new();
 
@@ -33,13 +41,14 @@ public sealed class FunctionalApiFactory(SqlServerFixture database) : WebApplica
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
-        builder.UseSetting("ConnectionStrings:Oficina", database.ConnectionString);
+        builder.UseSetting("ConnectionStrings:Oficina", _database.ConnectionString);
         builder.UseSetting("Database:ApplyMigrationsOnStartup", "true");
         builder.UseSetting("Outbox:PollingIntervalSeconds", "1");
         builder.UseSetting("Jwt:Secret", Convert.ToBase64String(RandomNumberGenerator.GetBytes(48)));
         builder.UseSetting("DevelopmentAdmin:Email", string.Empty);
         builder.UseSetting("Cors:AllowedOrigins:0", AllowedOrigin);
         builder.UseSetting("Payments:PixWebhookSecret", PixWebhookSecret);
+        builder.UseSetting("Security:PublicRateLimit:PermitLimit", "1000");
         builder.ConfigureTestServices(services =>
         {
             services.AddSingleton<IEmailSender>(Emails);

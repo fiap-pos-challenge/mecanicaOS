@@ -1,17 +1,7 @@
-using System.ComponentModel.DataAnnotations;
 using Microsoft.Extensions.Options;
 using Oficina.Application.Abstractions.Links;
 
 namespace Oficina.Infrastructure.Links;
-
-public sealed class PublicLinksOptions
-{
-    public const string SectionName = "PublicLinks";
-
-    [Required]
-    [Url]
-    public string BaseUrl { get; set; } = "http://localhost:4200";
-}
 
 public sealed class PublicLinks(IOptions<PublicLinksOptions> options) : IPublicLinks
 {

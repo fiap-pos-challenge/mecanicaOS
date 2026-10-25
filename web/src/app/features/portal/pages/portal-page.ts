@@ -16,6 +16,8 @@ import { UiDialogService } from '../../../shared/ui/dialog/dialog';
 import { UiControl, UiField } from '../../../shared/ui/field/field';
 import { UiIcon } from '../../../shared/ui/icon/icon';
 import { UiPendingNotice } from '../../../shared/ui/pending-notice/pending-notice';
+import { PhotoSource } from '../../../shared/ui/photo/photo-source';
+import { UiPhoto } from '../../../shared/ui/photo/photo';
 import { UiPlate } from '../../../shared/ui/plate/plate';
 import { UiSkeleton } from '../../../shared/ui/skeleton/skeleton';
 import { ToastService } from '../../../shared/ui/toast/toast';
@@ -24,6 +26,7 @@ import { formatBrl } from '../../../shared/util/money';
 import { DocumentDialog } from '../../documents/components/document-dialog';
 import { formatDocumentDate } from '../../documents/components/document-sheet';
 import { providePortalData } from '../data/portal.gateway';
+import { PortalPhotoSource } from '../state/portal-photo-source';
 import { PortalStore } from '../state/portal.store';
 
 const timeFormatter = new Intl.DateTimeFormat('pt-BR', {
@@ -35,8 +38,12 @@ const timeFormatter = new Intl.DateTimeFormat('pt-BR', {
 
 @Component({
   selector: 'app-portal-page',
-  imports: [UiButton, UiControl, UiField, UiIcon, UiPendingNotice, UiPlate, UiSkeleton],
-  providers: [providePortalData(), PortalStore],
+  imports: [UiButton, UiControl, UiField, UiIcon, UiPendingNotice, UiPhoto, UiPlate, UiSkeleton],
+  providers: [
+    providePortalData(),
+    PortalStore,
+    { provide: PhotoSource, useClass: PortalPhotoSource },
+  ],
   templateUrl: './portal-page.html',
   styleUrl: './portal-page.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

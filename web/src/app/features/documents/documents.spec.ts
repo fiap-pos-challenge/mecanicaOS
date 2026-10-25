@@ -123,7 +123,7 @@ describe('DocumentViewer', () => {
 });
 
 describe('DocumentDialog', () => {
-  async function open(data: object) {
+  async function openDocument(data: object) {
     await render(Host, { providers: providers() });
     signInWithFakeApi('Attendant');
     TestBed.inject(UiDialogService).open(DocumentDialog, data);
@@ -131,7 +131,7 @@ describe('DocumentDialog', () => {
   }
 
   it('loads a document by code', async () => {
-    const dialog = await open({ code: 'ORC1-3324-A7KD', allowSend: true });
+    const dialog = await openDocument({ code: 'ORC1-3324-A7KD', allowSend: true });
     expect(await within(dialog).findByTestId('verification-code')).toHaveTextContent(
       'ORC1-3324-A7KD',
     );
@@ -139,7 +139,7 @@ describe('DocumentDialog', () => {
   });
 
   it('shows the given document and load errors', async () => {
-    const dialog = await open({ document: receipt });
+    const dialog = await openDocument({ document: receipt });
     expect(within(dialog).getByText(text.title(text.kinds.Receipt, 3310, null))).toBeVisible();
 
     TestBed.inject(UiDialogService).open(DocumentDialog, { code: 'missing' });

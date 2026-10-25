@@ -11,7 +11,6 @@ using Oficina.Domain.ServiceOrders.Entities;
 using Oficina.Domain.ServiceOrders.Enums;
 using Oficina.Domain.ServiceOrders.Errors;
 using Oficina.Domain.ServiceOrders.Repositories;
-using Oficina.Domain.ServiceOrders.Services;
 using Oficina.Domain.ServiceOrders.ValueObjects;
 using Oficina.UnitTests.Builders;
 
@@ -32,7 +31,7 @@ public sealed class ApproveQuoteByTokenCommandHandlerTests
         _serviceOrders.GetByApprovalTokenAsync(ApprovalToken.FromRawToken(RawToken).Value, Arg.Any<CancellationToken>()).Returns(_order);
         _parts.GetByIdAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>()).Returns(ServiceOrderBuilder.CreatePart());
         _unitOfWork.CommitAsync(Arg.Any<CancellationToken>()).Returns(Result.Success());
-        _handler = new ApproveQuoteByTokenCommandHandler(_serviceOrders, new QuoteApprovalPolicy(_parts), _queries, _unitOfWork, TimeProvider.System);
+        _handler = new ApproveQuoteByTokenCommandHandler(_serviceOrders, QuoteDeciderFactory.Create(_serviceOrders, _parts, Substitute.For<Oficina.Application.Abstractions.Security.ICurrentUser>()), _queries, _unitOfWork);
     }
 
     [Fact]

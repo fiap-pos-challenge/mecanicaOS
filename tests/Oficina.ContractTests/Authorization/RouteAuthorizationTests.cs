@@ -29,6 +29,7 @@ public sealed class RouteAuthorizationTests(ContractApiFactory factory)
         "api/public/portal/payments/pix",
         "api/public/portal/payments/{id:guid}",
         "api/public/portal/payments/card",
+        "api/public/portal/photos/{photoId:guid}",
         "api/public/portal/documents/{code}",
         "api/public/portal/documents/{code}/pdf",
         "api/public/documents/{code}/verification",

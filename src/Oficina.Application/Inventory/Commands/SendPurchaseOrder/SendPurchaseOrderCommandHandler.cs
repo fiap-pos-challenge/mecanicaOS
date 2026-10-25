@@ -33,7 +33,11 @@ public sealed class SendPurchaseOrderCommandHandler(IPurchaseOrderRepository ord
         if (supplier?.Email is { } email && await emailSender.SendAsync(PurchaseOrderEmail.Message(email, detail), cancellationToken))
         {
             order.MarkSent();
-            await unitOfWork.CommitAsync(cancellationToken);
+            if ((await unitOfWork.CommitAsync(cancellationToken)).Error is { } sentError)
+            {
+                return sentError;
+            }
+
             detail = (await queries.OrderAsync(order.Id, cancellationToken))!;
         }
 

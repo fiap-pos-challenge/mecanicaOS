@@ -113,8 +113,11 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Create throwaway .env
+        run: bash scripts/ci/create-env.sh
+
       - name: Start stack with the published image
-        run: docker compose up --detach --no-build --wait --wait-timeout 300
+        run: docker compose up --detach --no-build --wait --wait-timeout 300 sqlserver api
 
       - name: Call health check
         run: |

@@ -30,6 +30,9 @@ ENV ASPNETCORE_HTTP_PORTS=8080 \
 
 COPY --from=build /app/publish .
 
+# Data Protection keys (2FA secret encryption) live in /keys, mounted as a volume by docker compose.
+RUN mkdir -p /keys && chown "$APP_UID" /keys
+
 # Non-root user provided by the official .NET images.
 USER $APP_UID
 EXPOSE 8080

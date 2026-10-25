@@ -19,7 +19,7 @@ Regras que todo desenvolvedor do grupo segue. As decisões de arquitetura estão
 | Sem `ArgumentNullException.ThrowIfNull` em construtores | `BannedSymbols.txt` |
 | Sem `throw new NotImplementedException()` | `BannedSymbols.txt` |
 | Sem `DateTime.Now` e `DateTime.UtcNow` (usar `TimeProvider`) | `BannedSymbols.txt` |
-| Sem `Math.Round` e `MidpointRounding` (arredondamento manual no `Money`) | `BannedSymbols.txt` |
+| Sem `Math.Round` e `MidpointRounding` (arredondamento meio para cima só em `Money` e `Measure`) | `BannedSymbols.txt` e teste de arquitetura |
 | Sem collection expressions | `.editorconfig` (`IDE0300` a `IDE0305` desligados) |
 | Sem comentários `TODO` | Checagem no CI |
 | Sem arquivos `.gitkeep` | Checagem no CI |
@@ -102,7 +102,7 @@ O sufixo `Service` é proibido em classes técnicas, porque `Service` é uma ent
 - `global.json` fixa a versão do SDK do .NET 10.
 - `.config/dotnet-tools.json` lista as ferramentas locais (ex.: `reportgenerator`). Instale com `dotnet tool restore`.
 - Pacotes NuGet ficam centralizados em `Directory.Packages.props`, só em versões estáveis. Adicionar pacote novo exige aprovação do grupo no PR.
-- Em desenvolvimento, as credenciais locais (senha do `sa`, chave do JWT e Admin de teste) ficam versionadas no `docker-compose.yml` e no `appsettings.Development.json`, marcadas no README como "somente desenvolvimento". Fora de Development, segredos só por variável de ambiente.
+- Segredos ficam só no `.env` da raiz (ignorado pelo Git), criado a partir do `.env.example` versionado (`cp .env.example .env`). O `docker-compose.yml` falha com mensagem clara quando falta uma variável. Fora do Docker, a API lê os segredos de User Secrets (`dotnet user-secrets`, projeto `src/Oficina.Api`). Nenhum segredo fica no `appsettings*.json`, no `docker-compose.yml` ou no código, e `npm run check:secrets` confere isso.
 - Finais de linha em LF, controlados pelo `.gitattributes` (`* text=auto eol=lf`).
 - Quando o modelo EF mudar, gere uma nova migration (`dotnet dotnet-ef migrations add <Nome> --project src/Oficina.Infrastructure --startup-project src/Oficina.Api --output-dir Persistence/Migrations`). A API aplica as migrations na subida quando `Database__ApplyMigrationsOnStartup=true`.
 
@@ -179,3 +179,14 @@ O `cd.yml` publica a imagem no GitHub Container Registry e faz um teste de fuma�
 | Validação | Um validator por command/query. As regras reaproveitam os value objects (`MustCreate`) e o código e a mensagem vêm do catálogo (`WithError`). Campos no erro em camelCase |
 | Testes | Um `…HandlerTests` e um `…ValidatorTests` por caso de uso (sucesso, cada erro, `CommitAsync` só no sucesso). Contrato com o `ISender` substituído; funcional com banco real. Snapshot do OpenAPI atualizado só com `UPDATE_OPENAPI_SNAPSHOT=1` |
 | Docker | `docker compose up -d --build` sobe o SQL Server e a API em Development (migrations e Admin de teste `admin@oficina.local` na subida). `docker compose down -v` zera o banco |
+
+## 13. Estado ao fim da Etapa 5
+
+| Tema | Como ficou |
+|---|---|
+| Casos de uso | Um command ou query por caso de uso, com handler e validator. Nenhuma classe técnica com sufixo `Service`; controllers injetam só `ISender` |
+| Testes de arquitetura | `Oficina.UnitTests/Architecture` (um tipo por arquivo com o nome do arquivo, zero comentários, arredondamento só nos value objects) e `Oficina.ContractTests/Architecture` (dependências entre camadas, controllers e nomes) |
+| Segredos | `.env` local a partir do `.env.example`; no CI, `scripts/ci/create-env.sh` gera um `.env` descartável com valores aleatórios |
+| Qualidade | `node scripts/sonar/run-analysis.mjs` sobe o SonarQube em Docker, analisa back-end e front-end e grava `docs/seguranca/sonarqube-relatorio.md`. O quality gate precisa passar nos dois projetos antes do PR para a `main` |
+| Dependências | `dotnet list package --vulnerable --include-transitive` e `npm audit` sem vulnerabilidades, registrados em `docs/seguranca/dependencias.md` |
+| Front-end | Mesmas regras do back-end (zero comentários, textos só no catálogo, cobertura mínima de 85%), checadas por `npm run lint` e `npm test` em `web/` |

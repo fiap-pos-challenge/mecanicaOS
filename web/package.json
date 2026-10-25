@@ -59,6 +59,7 @@
     "jsdom": "^30.0.0",
     "lighthouse": "^13.5.0",
     "msw": "^2.15.0",
+    "pdf-lib": "^1.17.1",
     "prettier": "^3.8.1",
     "puppeteer-core": "^25.12.0",
     "typescript": "~6.0.2",
@@ -69,6 +70,7 @@
     "node": ">=24.15.0"
   },
   "overrides": {
-    "js-yaml": "^5.4.2"
+    "js-yaml": "^5.4.2",
+    "vite": "8.3.5"
   }
 }

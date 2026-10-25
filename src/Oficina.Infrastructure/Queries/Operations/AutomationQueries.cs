@@ -1,9 +1,10 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
-using Oficina.Application.Automations;
+using Oficina.Application.Automations.Dtos;
+using Oficina.Application.Automations.Queries;
+using Oficina.Application.Jobs.Models;
 using Oficina.Application.Reports;
 using Oficina.Domain.Automations;
-using Oficina.Domain.Jobs.Entities;
 using Oficina.Domain.ServiceOrders.Enums;
 using Oficina.Infrastructure.Messaging.Outbox;
 using Oficina.Infrastructure.Persistence;
@@ -87,7 +88,7 @@ public sealed class AutomationQueries(OficinaDbContext context, IOptions<OutboxO
             new("ai", 0, 0, 0),
             new("payments", await context.PortalCharges.CountAsync(charge => charge.PaidAt >= since, cancellationToken), 0, await context.PortalCharges.CountAsync(charge => charge.Status == "Pending" && charge.ExpiresAt > now, cancellationToken)),
             new("imports", await jobs.CountAsync(job => job.Kind == BackgroundJob.CustomerImport && job.Status == "Completed", cancellationToken), await jobs.CountAsync(job => job.Kind == BackgroundJob.CustomerImport && job.Status == "Failed", cancellationToken), 0),
-            new("reports", await jobs.CountAsync(job => job.Kind == ReportService.ExportKind, cancellationToken), 0, 0),
+            new("reports", await jobs.CountAsync(job => job.Kind == ReportExportRequest.Kind, cancellationToken), 0, 0),
             new("automations", await executions.CountAsync(execution => execution.Status == ExecutionStatus.Done && execution.FinishedAt >= since, cancellationToken), await executions.CountAsync(execution => execution.Status == ExecutionStatus.Failed, cancellationToken), await executions.CountAsync(execution => execution.Status == ExecutionStatus.Pending, cancellationToken)),
         ];
     }

@@ -68,7 +68,7 @@ public sealed class OficinaDbContext(DbContextOptions<OficinaDbContext> options)
 
     public DbSet<Domain.Audit.Entities.AuditEntry> AuditEntries => Set<Domain.Audit.Entities.AuditEntry>();
 
-    public DbSet<Domain.Jobs.Entities.BackgroundJob> BackgroundJobs => Set<Domain.Jobs.Entities.BackgroundJob>();
+    public DbSet<Application.Jobs.Models.BackgroundJob> BackgroundJobs => Set<Application.Jobs.Models.BackgroundJob>();
 
     public DbSet<Domain.Dashboard.DashboardAction> DashboardActions => Set<Domain.Dashboard.DashboardAction>();
 

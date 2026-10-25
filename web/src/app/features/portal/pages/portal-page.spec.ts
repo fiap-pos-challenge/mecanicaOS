@@ -93,6 +93,32 @@ describe('PortalPage', () => {
     expect(await screen.findByTestId('portal-locked')).toBeVisible();
   });
 
+  it('keeps the confirmation open and explains the wait when the portal is throttled', async () => {
+    const { user } = await show(PORTAL_TOKEN);
+    const throttled = {
+      kind: 'api-error' as const,
+      status: 429,
+      code: 'common.tooManyRequests',
+      title: 'Too Many Requests',
+      detail: messages.errors.tooManyRequests,
+      traceId: null,
+      fieldErrors: [],
+      retryAfterSeconds: 60,
+    };
+    vi.spyOn(TestBed.inject(PortalGateway), 'confirm')
+      .mockReturnValueOnce(throwError(() => throttled))
+      .mockReturnValueOnce(
+        throwError(() => ({ ...throttled, status: 409, code: 'portal.tryAgain' })),
+      );
+
+    await enter(user, '000');
+    expect(await screen.findByText(messages.errors.tooManyRequests)).toBeVisible();
+    expect(screen.getByRole('heading', { name: text.confirmTitle })).toBeVisible();
+    await enter(user, '000');
+    expect(await screen.findByText(messages.errors.tooManyRequests)).toBeVisible();
+    expect(screen.queryByTestId('portal-locked')).toBeNull();
+  });
+
   it('shows the timeline, photos and quote and approves the marked items', async () => {
     const { user, view } = await show(PORTAL_TOKEN);
     await enter(user);
@@ -100,7 +126,7 @@ describe('PortalPage', () => {
     expect(await screen.findByRole('heading', { name: text.hello('Joana') })).toBeVisible();
     const current = screen.getByText(text.steps.WaitingApproval).closest('li');
     expect(current).toHaveAttribute('aria-current', 'step');
-    expect(screen.getByAltText('Pastilha gasta')).toBeVisible();
+    expect(await screen.findByAltText('Pastilha gasta')).toBeVisible();
     await expectNoAxeViolations(view.container);
 
     const total = screen.getByTestId('portal-total');

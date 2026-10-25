@@ -17,6 +17,7 @@ public sealed class ReauthenticateCommandHandler(
     IReauthenticationRepository reauthentications,
     IPasswordHasher passwordHasher,
     ICurrentUser currentUser,
+    ISecretProtector protector,
     IUnitOfWork unitOfWork,
     TimeProvider timeProvider) : IRequestHandler<ReauthenticateCommand, Result<ReauthenticationDto>>
 {
@@ -30,7 +31,7 @@ public sealed class ReauthenticateCommandHandler(
 
         var proven = command.Password is { Length: > 0 } password
             ? user.PasswordHash is { } hash && passwordHasher.Verify(password, hash)
-            : command.Code is { Length: > 0 } code && user.TwoFactorEnabled && user.TwoFactorSecret is { } secret && Totp.Verify(secret, code, now);
+            : command.Code is { Length: > 0 } code && user.TwoFactorEnabled && user.TwoFactorSecret is { } stored && protector.Unprotect(stored) is { } secret && Totp.Verify(secret, code, now);
         if (!proven)
         {
             return IdentityErrors.ReauthenticationFailed;

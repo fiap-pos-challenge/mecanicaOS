@@ -136,11 +136,8 @@
     margin: 0;
   }
 
-  img {
-    display: block;
-    border-radius: var(--radius-sm);
-    background: var(--surface2);
-    object-fit: cover;
+  ui-photo {
+    width: 120px;
   }
 }
 

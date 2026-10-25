@@ -9,10 +9,10 @@ public static class SessionCookies
     public static string? ReadRefresh(HttpRequest request) => request.Cookies[RefreshCookieName];
 
     public static void WriteRefresh(HttpResponse response, string token, DateTimeOffset expiresAt) =>
-        response.Cookies.Append(RefreshCookieName, token, Options(response.HttpContext.Request, expiresAt));
+        response.Cookies.Append(RefreshCookieName, token, Options(expiresAt));
 
     public static void ClearRefresh(HttpResponse response) =>
-        response.Cookies.Delete(RefreshCookieName, Options(response.HttpContext.Request, null));
+        response.Cookies.Delete(RefreshCookieName, Options(null));
 
     public static string? ReadDevice(HttpRequest request)
     {
@@ -20,10 +20,10 @@ public static class SessionCookies
         return string.IsNullOrWhiteSpace(agent) ? null : agent;
     }
 
-    private static CookieOptions Options(HttpRequest request, DateTimeOffset? expiresAt) => new()
+    private static CookieOptions Options(DateTimeOffset? expiresAt) => new()
     {
         HttpOnly = true,
-        Secure = request.IsHttps,
+        Secure = true,
         SameSite = SameSiteMode.Strict,
         Path = CookiePath,
         Expires = expiresAt,

@@ -6267,6 +6267,79 @@
             }
           }
         }
+      },
+      "delete": {
+        "tags": [
+          "Parts"
+        ],
+        "summary": "Delete part",
+        "description": "Logical delete: same rule as deactivate (the part leaves the default listing and new service orders, history is kept). Already inactive: 409. Used by an active package: 409 catalog.usedByActivePackage. Roles: Admin, Manager.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "204": {
+            "description": "No Content"
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
       }
     },
     "/api/admin/parts/{id}/price-history": {
@@ -6538,6 +6611,16 @@
               }
             }
           },
+          "429": {
+            "description": "Too Many Requests",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
           "200": {
             "description": "OK",
             "content": {
@@ -6618,6 +6701,16 @@
               }
             }
           },
+          "429": {
+            "description": "Too Many Requests",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
           "200": {
             "description": "OK",
             "content": {
@@ -6688,12 +6781,101 @@
               }
             }
           },
+          "429": {
+            "description": "Too Many Requests",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
           "200": {
             "description": "OK",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/PortalOrderDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/public/portal/photos/{photoId}": {
+      "get": {
+        "tags": [
+          "Portal"
+        ],
+        "summary": "Get portal photo",
+        "description": "Returns one photo of the service order linked to the portal session (header X-Portal-Session). The order view only carries the photo path.",
+        "parameters": [
+          {
+            "name": "X-Portal-Session",
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "photoId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too Many Requests",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ServiceOrderPhotoContentDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
                 }
               }
             }
@@ -6749,6 +6931,16 @@
           },
           "500": {
             "description": "Internal Server Error",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too Many Requests",
             "content": {
               "application/problem\u002Bjson": {
                 "schema": {
@@ -6856,6 +7048,16 @@
               }
             }
           },
+          "429": {
+            "description": "Too Many Requests",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
           "200": {
             "description": "OK",
             "content": {
@@ -6936,6 +7138,16 @@
               }
             }
           },
+          "429": {
+            "description": "Too Many Requests",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
           "200": {
             "description": "OK",
             "content": {
@@ -7005,6 +7217,16 @@
               }
             }
           },
+          "429": {
+            "description": "Too Many Requests",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
           "200": {
             "description": "OK",
             "content": {
@@ -7057,6 +7279,16 @@
           },
           "500": {
             "description": "Internal Server Error",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too Many Requests",
             "content": {
               "application/problem\u002Bjson": {
                 "schema": {
@@ -7133,6 +7365,16 @@
               }
             }
           },
+          "429": {
+            "description": "Too Many Requests",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
           "200": {
             "description": "OK",
             "content": {
@@ -7201,6 +7443,16 @@
               }
             }
           },
+          "429": {
+            "description": "Too Many Requests",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
           "200": {
             "description": "OK",
             "content": {
@@ -7254,6 +7506,16 @@
           },
           "500": {
             "description": "Internal Server Error",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too Many Requests",
             "content": {
               "application/problem\u002Bjson": {
                 "schema": {
@@ -7331,6 +7593,16 @@
               }
             }
           },
+          "429": {
+            "description": "Too Many Requests",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
           "204": {
             "description": "No Content"
           },
@@ -7386,6 +7658,16 @@
           },
           "500": {
             "description": "Internal Server Error",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too Many Requests",
             "content": {
               "application/problem\u002Bjson": {
                 "schema": {
@@ -7457,6 +7739,16 @@
           },
           "500": {
             "description": "Internal Server Error",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too Many Requests",
             "content": {
               "application/problem\u002Bjson": {
                 "schema": {
@@ -9786,7 +10078,7 @@
           "Service Orders"
         ],
         "summary": "List service orders",
-        "description": "Returns a page of service orders from the newest to the oldest, optionally filtered by status and by exact license plate. Roles: Admin, Manager, Attendant, Mechanic.",
+        "description": "Returns a page of service orders from the newest to the oldest, optionally filtered by status. To filter by license plate use POST /api/admin/service-orders/search (the plate never goes in the URL). Roles: Admin, Manager, Attendant, Mechanic.",
         "parameters": [
           {
             "name": "page",
@@ -9808,13 +10100,6 @@
           },
           {
             "name": "status",
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "plate",
             "in": "query",
             "schema": {
               "type": "string"
@@ -9973,6 +10258,86 @@
         }
       }
     },
+    "/api/admin/service-orders/search": {
+      "post": {
+        "tags": [
+          "Service Orders"
+        ],
+        "summary": "Search service orders",
+        "description": "Same page as the list, filtered by exact license plate and optional status. The plate goes in the body because personal data never goes in the URL. Roles: Admin, Manager, Attendant, Mechanic.",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SearchServiceOrdersRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SearchServiceOrdersRequest"
+              }
+            },
+            "application/*\u002Bjson": {
+              "schema": {
+                "$ref": "#/components/schemas/SearchServiceOrdersRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ServiceOrderSummaryDtoPagedResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/admin/service-orders/{id}": {
       "get": {
         "tags": [
@@ -10028,6 +10393,87 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ServiceOrderDetailDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/service-orders/{id}/photos/{photoId}": {
+      "get": {
+        "tags": [
+          "Service Orders"
+        ],
+        "summary": "Get service order photo",
+        "description": "Returns one photo of the service order (content type and data URL). Lists and details only carry the photo path, so each photo loads on demand. Roles: Admin, Manager, Attendant, Mechanic.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "photoId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ServiceOrderPhotoContentDto"
                 }
               }
             }
@@ -11452,6 +11898,79 @@
                 }
               }
             }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Services"
+        ],
+        "summary": "Delete service",
+        "description": "Logical delete: same rule as deactivate (the service leaves the default listing and new service orders, history is kept). Already inactive: 409. Used by an active package: 409 catalog.usedByActivePackage. Roles: Admin, Manager.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "204": {
+            "description": "No Content"
           },
           "404": {
             "description": "Not Found",
@@ -19344,6 +19863,30 @@
         },
         "additionalProperties": false
       },
+      "SearchServiceOrdersRequest": {
+        "type": "object",
+        "properties": {
+          "licensePlate": {
+            "type": "string",
+            "nullable": true
+          },
+          "status": {
+            "type": "string",
+            "nullable": true
+          },
+          "page": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "pageSize": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
       "SearchUserRequest": {
         "type": "object",
         "properties": {
@@ -19920,6 +20463,28 @@
           "total": {
             "type": "number",
             "format": "double"
+          }
+        },
+        "additionalProperties": false
+      },
+      "ServiceOrderPhotoContentDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "contentType": {
+            "type": "string",
+            "nullable": true
+          },
+          "dataUrl": {
+            "type": "string",
+            "nullable": true
+          },
+          "caption": {
+            "type": "string",
+            "nullable": true
           }
         },
         "additionalProperties": false

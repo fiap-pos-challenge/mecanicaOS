@@ -100,6 +100,16 @@ public static class ServiceOrderErrors
         ErrorType.Validation,
         [new FieldError("contentType", "serviceOrders.photoType", "Envie a foto em JPG, PNG ou WebP.")]);
 
+    public static readonly Error TooManyPhotos = new(
+        "serviceOrders.tooManyPhotos",
+        "A OS já tem o máximo de 12 fotos.",
+        ErrorType.BusinessRule);
+
+    public static readonly Error PhotoNotFound = new(
+        "serviceOrders.photoNotFound",
+        "Foto não encontrada.",
+        ErrorType.NotFound);
+
     public static readonly Error PhotoTooLarge = new(
         "serviceOrders.photoSize",
         "A foto passou do tamanho máximo de 5 MB.",

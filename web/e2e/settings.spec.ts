@@ -1,6 +1,7 @@
 import { expect, Page, test } from '@playwright/test';
 import { messages } from '../src/app/core/i18n/messages.pt-BR';
 import { FakeBackendState } from '../src/testing/fake-api/fake-api/fake-backend';
+import { FAKE_ADMIN_PASSWORD } from '../src/testing/fake-api/fake-api/fake-database';
 import { ACCOUNTS } from './accounts';
 import { interceptFakeApis } from './fake-backend';
 import {
@@ -48,14 +49,14 @@ test.describe('settings with the contract API intercepted', () => {
     await page.getByRole('button', { name: text.save }).click();
     await confirm(page, 'senha-errada');
     await expect(page.getByRole('dialog').getByText(text.reauth.failed)).toBeVisible();
-    await confirm(page, ACCOUNTS.admin.password);
+    await confirm(page, FAKE_ADMIN_PASSWORD);
     await expect(page.getByText(text.saved)).toBeVisible();
     expect(state.database.quotes.discountLimits.Attendant).toBe(15);
 
     await page.getByRole('tab', { name: text.tabs.payments }).click();
     await field(page, text.payments.maxInstallments).fill('12');
     await page.getByRole('button', { name: text.save }).click();
-    await confirm(page, ACCOUNTS.admin.password);
+    await confirm(page, FAKE_ADMIN_PASSWORD);
     await expect(page.getByText(text.saved).first()).toBeVisible();
     await expect.poll(() => state.database.quotes.payment.maxInstallments).toBe(12);
 
@@ -73,7 +74,7 @@ test.describe('settings with the contract API intercepted', () => {
     await expect(page.locator('[data-testid="message-preview"] img')).toHaveCount(0);
     await body.fill('Olá {cliente}, veja {link}');
     await page.getByRole('button', { name: text.save }).click();
-    await confirm(page, ACCOUNTS.admin.password);
+    await confirm(page, FAKE_ADMIN_PASSWORD);
     await expect
       .poll(() => state.database.settings.messages.templates[0]?.body)
       .toBe('Olá {cliente}, veja {link}');
@@ -81,7 +82,7 @@ test.describe('settings with the contract API intercepted', () => {
     await page.getByRole('tab', { name: text.tabs.security }).click();
     await field(page, text.security.idle).fill('20');
     await page.getByRole('button', { name: text.save }).click();
-    await confirm(page, ACCOUNTS.admin.password);
+    await confirm(page, FAKE_ADMIN_PASSWORD);
     await expect.poll(() => state.database.settings.security.idleMinutes).toBe(20);
     const table = page.getByRole('table', { name: text.security.auditCaption });
     await expect(table).toContainText('Política de segurança alterada');

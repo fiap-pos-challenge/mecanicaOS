@@ -1,10 +1,19 @@
 import { createHmac } from 'node:crypto';
 
 const API = (process.env.API_URL ?? 'http://localhost:8080').replace(/\/$/, '');
-const ADMIN_EMAIL = process.env.ADMIN_EMAIL ?? 'admin@oficina.local';
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD ?? 'Admin@123';
-const PIX_SECRET = process.env.PIX_WEBHOOK_SECRET ?? '';
-const PASSWORD = 'Oficina@2026';
+const required = (name) => {
+  const value = process.env[name];
+  if (!value) {
+    console.error(`[seed] defina ${name} (veja o .env.example).`);
+    process.exit(1);
+  }
+
+  return value;
+};
+const ADMIN_EMAIL = required('ADMIN_EMAIL');
+const ADMIN_PASSWORD = required('ADMIN_PASSWORD');
+const PIX_SECRET = required('PIX_WEBHOOK_SECRET');
+const PASSWORD = required('SEED_USERS_PASSWORD');
 const PHOTO =
   'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==';
 
@@ -415,12 +424,12 @@ async function main() {
     body: { supplierId: suppliers['Distribuidora Freio Sul'], lines: [{ partId: parts['PST-DIA'], quantity: 10, unitCost: 90 }] },
   });
 
-  log('Pronto. Usuários (senha Oficina@2026):');
+  log('Pronto. Usuários (senha SEED_USERS_PASSWORD do .env):');
   for (const member of TEAM) {
     log(`  ${member.role.padEnd(9)} ${member.email}`);
   }
 
-  log(`  Admin     ${ADMIN_EMAIL} (senha ${ADMIN_PASSWORD})`);
+  log(`  Admin     ${ADMIN_EMAIL} (senha DEV_ADMIN_PASSWORD do .env)`);
   log(`Portal do cliente com orçamento pendente: ${portalQuote.link.replace(/^https?:\/\/[^/]+/, 'http://localhost:4200')}`);
   log(`  confirmação: últimos 3 dígitos do telefone de ${joana.name} (${joana.phone.replace(/\D/g, '').slice(-3)})`);
 }

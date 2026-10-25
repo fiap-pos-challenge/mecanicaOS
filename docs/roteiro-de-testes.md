@@ -5,9 +5,12 @@ Roteiro curto para testar todas as funcionalidades pelo navegador. Tempo estimad
 ## 1. Subir o sistema
 
 ```bash
+cp .env.example .env
 docker compose up -d --build
 docker compose logs seed
 ```
+
+No Windows, use `copy .env.example .env`. As senhas de desenvolvimento ficam no `.env`.
 
 - Abra **http://localhost:4200**.
 - Na primeira subida, o serviço `seed` preenche o banco como uma oficina em uso. O log mostra os usuários e um **link do portal do cliente**.
@@ -17,13 +20,13 @@ docker compose logs seed
 
 | Perfil | E-mail | Senha |
 |---|---|---|
-| Administrador | `admin@oficina.local` | `Admin@123` |
-| Gerente | `gerente@oficina.local` | `Oficina@2026` |
-| Atendente | `ana.atendente@oficina.local` | `Oficina@2026` |
-| Atendente | `bruno.atendente@oficina.local` | `Oficina@2026` |
-| Mecânico | `marcos.mecanico@oficina.local` | `Oficina@2026` |
-| Mecânico | `paula.mecanica@oficina.local` | `Oficina@2026` |
-| Mecânico | `rafael.mecanico@oficina.local` | `Oficina@2026` |
+| Administrador | `admin@oficina.local` | `DEV_ADMIN_PASSWORD` do `.env` |
+| Gerente | `gerente@oficina.local` | `SEED_USERS_PASSWORD` do `.env` |
+| Atendente | `ana.atendente@oficina.local` | `SEED_USERS_PASSWORD` do `.env` |
+| Atendente | `bruno.atendente@oficina.local` | `SEED_USERS_PASSWORD` do `.env` |
+| Mecânico | `marcos.mecanico@oficina.local` | `SEED_USERS_PASSWORD` do `.env` |
+| Mecânico | `paula.mecanica@oficina.local` | `SEED_USERS_PASSWORD` do `.env` |
+| Mecânico | `rafael.mecanico@oficina.local` | `SEED_USERS_PASSWORD` do `.env` |
 
 > O login aceita 5 tentativas por minuto por IP. Se aparecer "muitas tentativas", espere 1 minuto.
 

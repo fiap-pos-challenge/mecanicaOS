@@ -18,12 +18,28 @@ public sealed class DevelopmentAdminSeederTests(SqlServerFixture database) : Api
         Assert.Equal("Admin", admin["role"]);
     }
 
-    private async Task StartWithSeedAsync()
+    private const string AdminPassword = "Seeder#Test2026";
+
+    [Fact]
+    public async Task Startup_WithoutTheAdminPassword_DoesNotCreateAnyUser()
     {
         await using var factory = Factory.WithWebHostBuilder(builder => builder.UseSetting("DevelopmentAdmin:Email", "admin@oficina.local"));
         using var client = factory.CreateClient();
 
-        using var login = await client.PostAsJsonAsync("/api/auth/login", new { email = "admin@oficina.local", password = "Admin@123" }, CancellationToken);
+        using var login = await client.PostAsJsonAsync("/api/auth/login", new { email = "admin@oficina.local", password = AdminPassword }, CancellationToken);
+
+        Assert.Equal(HttpStatusCode.Unauthorized, login.StatusCode);
+        Assert.Empty(await Database.QueryAsync("SELECT email FROM users"));
+    }
+
+    private async Task StartWithSeedAsync()
+    {
+        await using var factory = Factory.WithWebHostBuilder(builder => builder
+            .UseSetting("DevelopmentAdmin:Email", "admin@oficina.local")
+            .UseSetting("DevelopmentAdmin:Password", AdminPassword));
+        using var client = factory.CreateClient();
+
+        using var login = await client.PostAsJsonAsync("/api/auth/login", new { email = "admin@oficina.local", password = AdminPassword }, CancellationToken);
 
         Assert.Equal(HttpStatusCode.OK, login.StatusCode);
     }

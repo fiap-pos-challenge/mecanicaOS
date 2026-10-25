@@ -6,7 +6,6 @@ namespace Oficina.Domain.Common.ValueObjects;
 public sealed class Money : ValueObject
 {
     private const decimal CentsPerUnit = 100m;
-    private const decimal HalfCent = 0.5m;
 
     private Money(decimal amount) => Amount = amount;
 
@@ -30,21 +29,14 @@ public sealed class Money : ValueObject
 
     public Money Multiply(int factor) => new(RoundHalfUp(Amount * factor));
 
+    public static decimal Round(decimal amount) => RoundHalfUp(amount);
+
+    public static long ToCents(decimal amount) => (long)Measure.Round(amount * CentsPerUnit, 0);
+
     protected override IEnumerable<object?> GetEqualityComponents()
     {
         yield return Amount;
     }
 
-    private static decimal RoundHalfUp(decimal value)
-    {
-        var scaled = value * CentsPerUnit;
-        var truncated = decimal.Truncate(scaled);
-
-        if (scaled - truncated >= HalfCent)
-        {
-            truncated += 1;
-        }
-
-        return (truncated / CentsPerUnit) + 0.00m;
-    }
+    private static decimal RoundHalfUp(decimal value) => Measure.Round(value, 2) + 0.00m;
 }

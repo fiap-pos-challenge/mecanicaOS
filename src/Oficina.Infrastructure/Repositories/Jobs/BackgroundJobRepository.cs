@@ -1,6 +1,6 @@
 using Microsoft.EntityFrameworkCore;
-using Oficina.Domain.Jobs.Entities;
-using Oficina.Domain.Jobs.Repositories;
+using Oficina.Application.Jobs;
+using Oficina.Application.Jobs.Models;
 using Oficina.Infrastructure.Persistence;
 
 namespace Oficina.Infrastructure.Repositories.Jobs;

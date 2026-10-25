@@ -84,6 +84,16 @@ public sealed class PartsController(ISender sender) : ApiControllerBase
         return Respond(await sender.Send(command, cancellationToken), Ok);
     }
 
+    [HttpDelete("{id:guid}")]
+    [Authorize(Policy = Policies.AdminOrManager)]
+    [EndpointSummary("Delete part")]
+    [EndpointDescription("Logical delete: same rule as deactivate (the part leaves the default listing and new service orders, history is kept). Already inactive: 409. Used by an active package: 409 catalog.usedByActivePackage. Roles: Admin, Manager.")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound, ProblemResponses.ContentType)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status409Conflict, ProblemResponses.ContentType)]
+    public async Task<IActionResult> Delete(Guid id, CancellationToken cancellationToken) =>
+        Respond(await sender.Send(new DeactivatePartCommand(id), cancellationToken));
+
     [HttpPost("{id:guid}/deactivate")]
     [Authorize(Policy = Policies.AdminOrManager)]
     [EndpointSummary("Deactivate part")]

@@ -1,17 +1,36 @@
+using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using Oficina.Api.Contracts.Portal;
 using Oficina.Api.ExceptionHandling;
-using Oficina.Application.Portal;
+using Oficina.Api.Extensions;
+using Oficina.Application.Documents.Dtos;
+using Oficina.Application.Documents.Queries.GetDocument;
+using Oficina.Application.Documents.Queries.GetDocumentPdf;
+using Oficina.Application.Documents.Queries.VerifyDocument;
+using Oficina.Application.Portal.Commands.ApproveQuoteFromPortal;
+using Oficina.Application.Portal.Commands.ConfirmPixPayment;
+using Oficina.Application.Portal.Commands.ConfirmPortalIdentity;
+using Oficina.Application.Portal.Commands.CreatePixCharge;
+using Oficina.Application.Portal.Commands.RefreshChargeStatus;
+using Oficina.Application.Portal.Commands.RejectQuoteFromPortal;
+using Oficina.Application.Portal.Commands.RequestCardPayment;
 using Oficina.Application.Portal.Dtos;
-using Oficina.Domain.Portal.Errors;
+using Oficina.Application.Portal.Queries.GetPortalAccess;
+using Oficina.Application.Portal.Queries.GetPortalOrder;
+using Oficina.Application.Portal.Queries.GetPortalPhoto;
+using Oficina.Application.Portal.Queries.GetPortalSessionOrder;
+using Oficina.Application.ServiceOrders.Dtos;
 
 namespace Oficina.Api.Controllers.Public;
 
 [Route("api/public")]
+[EnableRateLimiting(SecurityExtensions.PublicRateLimitPolicy)]
 [Tags("Portal")]
 [AllowAnonymous]
-public sealed class PublicPortalController(PortalService portal, IConfiguration configuration) : ApiControllerBase
+[ProducesResponseType<ProblemDetails>(StatusCodes.Status429TooManyRequests, ProblemResponses.ContentType)]
+public sealed class PublicPortalController(ISender sender) : ApiControllerBase
 {
     public const string SessionHeader = "X-Portal-Session";
     public const string SignatureHeader = "X-Pix-Signature";
@@ -23,7 +42,7 @@ public sealed class PublicPortalController(PortalService portal, IConfiguration 
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound, ProblemResponses.ContentType)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status423Locked, ProblemResponses.ContentType)]
     public async Task<IActionResult> Access(PortalTokenBody request, CancellationToken cancellationToken) =>
-        Respond(await portal.AccessAsync(request.Token, cancellationToken), Ok);
+        Respond(await sender.Send(new GetPortalAccessQuery(request.Token), cancellationToken), Ok);
 
     [HttpPost("portal/confirm")]
     [EndpointSummary("Confirm portal identity")]
@@ -32,7 +51,7 @@ public sealed class PublicPortalController(PortalService portal, IConfiguration 
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound, ProblemResponses.ContentType)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status423Locked, ProblemResponses.ContentType)]
     public async Task<IActionResult> Confirm(PortalConfirmBody request, CancellationToken cancellationToken) =>
-        Respond(await portal.ConfirmAsync(request.Token, request.LastDigits, cancellationToken), Ok);
+        Respond(await sender.Send(new ConfirmPortalIdentityCommand(request.Token, request.LastDigits), cancellationToken), Ok);
 
     [HttpGet("portal/order")]
     [EndpointSummary("Portal order")]
@@ -40,7 +59,16 @@ public sealed class PublicPortalController(PortalService portal, IConfiguration 
     [ProducesResponseType<PortalOrderDto>(StatusCodes.Status200OK)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status401Unauthorized, ProblemResponses.ContentType)]
     public async Task<IActionResult> Order([FromHeader(Name = SessionHeader)] string? session, CancellationToken cancellationToken) =>
-        Respond(await portal.OrderAsync(session, cancellationToken), Ok);
+        Respond(await sender.Send(new GetPortalOrderQuery(session), cancellationToken), Ok);
+
+    [HttpGet("portal/photos/{photoId:guid}")]
+    [EndpointSummary("Get portal photo")]
+    [EndpointDescription("Returns one photo of the service order linked to the portal session (header X-Portal-Session). The order view only carries the photo path.")]
+    [ProducesResponseType<ServiceOrderPhotoContentDto>(StatusCodes.Status200OK)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status401Unauthorized, ProblemResponses.ContentType)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound, ProblemResponses.ContentType)]
+    public async Task<IActionResult> Photo([FromHeader(Name = SessionHeader)] string? session, Guid photoId, CancellationToken cancellationToken) =>
+        Respond(await sender.Send(new GetPortalPhotoQuery(session, photoId), cancellationToken), Ok);
 
     [HttpPost("portal/quote/approve")]
     [EndpointSummary("Approve quote in portal")]
@@ -51,7 +79,7 @@ public sealed class PublicPortalController(PortalService portal, IConfiguration 
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status409Conflict, ProblemResponses.ContentType)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status422UnprocessableEntity, ProblemResponses.ContentType)]
     public async Task<IActionResult> Approve([FromHeader(Name = SessionHeader)] string? session, PortalApproveBody request, CancellationToken cancellationToken) =>
-        Respond(await portal.ApproveAsync(session, request.ItemIds ?? [], cancellationToken), Ok);
+        Respond(await sender.Send(new ApproveQuoteFromPortalCommand(session, request.ItemIds ?? []), cancellationToken), Ok);
 
     [HttpPost("portal/quote/reject")]
     [EndpointSummary("Reject quote in portal")]
@@ -62,7 +90,7 @@ public sealed class PublicPortalController(PortalService portal, IConfiguration 
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status409Conflict, ProblemResponses.ContentType)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status422UnprocessableEntity, ProblemResponses.ContentType)]
     public async Task<IActionResult> Reject([FromHeader(Name = SessionHeader)] string? session, PortalRejectBody request, CancellationToken cancellationToken) =>
-        Respond(await portal.RejectAsync(session, request.Reason, cancellationToken), Ok);
+        Respond(await sender.Send(new RejectQuoteFromPortalCommand(session, request.Reason), cancellationToken), Ok);
 
     [HttpPost("portal/payments/pix")]
     [EndpointSummary("Create Pix charge")]
@@ -71,7 +99,7 @@ public sealed class PublicPortalController(PortalService portal, IConfiguration 
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status401Unauthorized, ProblemResponses.ContentType)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status422UnprocessableEntity, ProblemResponses.ContentType)]
     public async Task<IActionResult> Pix([FromHeader(Name = SessionHeader)] string? session, CancellationToken cancellationToken) =>
-        Respond(await portal.PixAsync(session, cancellationToken), Ok);
+        Respond(await sender.Send(new CreatePixChargeCommand(session), cancellationToken), Ok);
 
     [HttpGet("portal/payments/{id:guid}")]
     [EndpointSummary("Charge status")]
@@ -80,7 +108,7 @@ public sealed class PublicPortalController(PortalService portal, IConfiguration 
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status401Unauthorized, ProblemResponses.ContentType)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound, ProblemResponses.ContentType)]
     public async Task<IActionResult> Charge([FromHeader(Name = SessionHeader)] string? session, Guid id, CancellationToken cancellationToken) =>
-        Respond(await portal.ChargeAsync(session, id, cancellationToken), Ok);
+        Respond(await sender.Send(new RefreshChargeStatusCommand(session, id), cancellationToken), Ok);
 
     [HttpPost("portal/payments/card")]
     [EndpointSummary("Card checkout")]
@@ -89,7 +117,7 @@ public sealed class PublicPortalController(PortalService portal, IConfiguration 
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status401Unauthorized, ProblemResponses.ContentType)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status422UnprocessableEntity, ProblemResponses.ContentType)]
     public async Task<IActionResult> Card([FromHeader(Name = SessionHeader)] string? session, CancellationToken cancellationToken) =>
-        Respond(await portal.CardAsync(session, cancellationToken), Ok);
+        Respond(await sender.Send(new RequestCardPaymentCommand(session), cancellationToken), Ok);
 
     [HttpGet("portal/documents/{code}")]
     [EndpointSummary("Portal document")]
@@ -97,10 +125,11 @@ public sealed class PublicPortalController(PortalService portal, IConfiguration 
     [ProducesResponseType<DocumentDto>(StatusCodes.Status200OK)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status401Unauthorized, ProblemResponses.ContentType)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound, ProblemResponses.ContentType)]
-    public async Task<IActionResult> Document([FromHeader(Name = SessionHeader)] string? session, string code, CancellationToken cancellationToken) =>
-        await portal.SessionOrderAsync(session, cancellationToken) is { } order
-            ? Respond(await portal.DocumentAsync(code, order, cancellationToken), Ok)
-            : ProblemFor(PortalErrors.SessionExpired);
+    public async Task<IActionResult> Document([FromHeader(Name = SessionHeader)] string? session, string code, CancellationToken cancellationToken)
+    {
+        var order = await sender.Send(new GetPortalSessionOrderQuery(session), cancellationToken);
+        return order.Error is { } error ? ProblemFor(error) : Respond(await sender.Send(new GetDocumentQuery(code, order.Value), cancellationToken), Ok);
+    }
 
     [HttpGet("portal/documents/{code}/pdf")]
     [EndpointSummary("Portal document PDF")]
@@ -108,17 +137,18 @@ public sealed class PublicPortalController(PortalService portal, IConfiguration 
     [ProducesResponseType<DocumentDownloadDto>(StatusCodes.Status200OK)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status401Unauthorized, ProblemResponses.ContentType)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound, ProblemResponses.ContentType)]
-    public async Task<IActionResult> DocumentPdf([FromHeader(Name = SessionHeader)] string? session, string code, CancellationToken cancellationToken) =>
-        await portal.SessionOrderAsync(session, cancellationToken) is { } order
-            ? Respond(await portal.PdfAsync(code, order, cancellationToken), Ok)
-            : ProblemFor(PortalErrors.SessionExpired);
+    public async Task<IActionResult> DocumentPdf([FromHeader(Name = SessionHeader)] string? session, string code, CancellationToken cancellationToken)
+    {
+        var order = await sender.Send(new GetPortalSessionOrderQuery(session), cancellationToken);
+        return order.Error is { } error ? ProblemFor(error) : Respond(await sender.Send(new GetDocumentPdfQuery(code, order.Value), cancellationToken), Ok);
+    }
 
     [HttpGet("documents/{code}/verification")]
     [EndpointSummary("Verify document")]
     [EndpointDescription("Tells whether a document code was issued by the shop, with kind, number, date and total. Anonymous.")]
     [ProducesResponseType<DocumentVerificationDto>(StatusCodes.Status200OK)]
     public async Task<IActionResult> Verify(string code, CancellationToken cancellationToken) =>
-        Respond(await portal.VerifyAsync(code, cancellationToken), Ok);
+        Respond(await sender.Send(new VerifyDocumentQuery(code), cancellationToken), Ok);
 
     [HttpPost("payments/pix/webhook")]
     [EndpointSummary("Pix webhook")]
@@ -127,5 +157,5 @@ public sealed class PublicPortalController(PortalService portal, IConfiguration 
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status401Unauthorized, ProblemResponses.ContentType)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound, ProblemResponses.ContentType)]
     public async Task<IActionResult> PixWebhook([FromHeader(Name = SignatureHeader)] string? signature, PixWebhookBody request, CancellationToken cancellationToken) =>
-        Respond(await portal.ConfirmPixAsync(request.TxId ?? string.Empty, signature ?? string.Empty, configuration["Payments:PixWebhookSecret"] ?? string.Empty, cancellationToken));
+        Respond(await sender.Send(new ConfirmPixPaymentCommand(request.TxId, signature), cancellationToken));
 }

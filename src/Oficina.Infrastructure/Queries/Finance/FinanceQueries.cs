@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Oficina.Application.Common.Pagination;
 using Oficina.Application.Finance;
+using Oficina.Application.Finance.Dtos;
 using Oficina.Domain.ServiceOrders.Enums;
 using Oficina.Infrastructure.Persistence;
 

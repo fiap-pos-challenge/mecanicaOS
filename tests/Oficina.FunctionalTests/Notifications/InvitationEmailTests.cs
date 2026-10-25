@@ -1,4 +1,5 @@
 using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.Extensions.Logging.Testing;
 using Microsoft.Extensions.Options;
 using Oficina.Application.Abstractions.Notifications;
 using Oficina.Infrastructure.Notifications;
@@ -26,17 +27,23 @@ public sealed class InvitationEmailTests
     [Fact]
     public async Task Send_WithoutSmtpHost_SkipsTheDelivery()
     {
-        var sender = new SmtpEmailSender(Options.Create(new EmailOptions()), NullLogger<SmtpEmailSender>.Instance);
+        var logger = new FakeLogger<SmtpEmailSender>();
+        var sender = new SmtpEmailSender(Options.Create(new EmailOptions()), logger);
 
         await sender.SendInvitationAsync(Message, TestContext.Current.CancellationToken);
+
+        Assert.Equal("Invitation e-mail not sent: SMTP is not configured", logger.LatestRecord.Message);
     }
 
     [Fact]
     public async Task Send_UnreachableServer_DoesNotThrow()
     {
-        var sender = new SmtpEmailSender(Options.Create(new EmailOptions { SmtpHost = "127.0.0.1", SmtpPort = 1 }), NullLogger<SmtpEmailSender>.Instance);
+        var logger = new FakeLogger<SmtpEmailSender>();
+        var sender = new SmtpEmailSender(Options.Create(new EmailOptions { SmtpHost = "127.0.0.1", SmtpPort = 1 }), logger);
 
         await sender.SendInvitationAsync(Message, TestContext.Current.CancellationToken);
+
+        Assert.StartsWith("Invitation e-mail delivery failed with SMTP status", logger.LatestRecord.Message, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -85,9 +92,12 @@ public sealed class InvitationEmailTests
         var blocker = Path.GetTempFileName();
         try
         {
-            var sender = new SmtpEmailSender(Options.Create(new EmailOptions { PickupDirectory = blocker }), NullLogger<SmtpEmailSender>.Instance);
+            var logger = new FakeLogger<SmtpEmailSender>();
+            var sender = new SmtpEmailSender(Options.Create(new EmailOptions { PickupDirectory = blocker }), logger);
 
             await sender.SendInvitationAsync(Message, TestContext.Current.CancellationToken);
+
+            Assert.Equal("Invitation e-mail not written: the pickup directory is not available", logger.LatestRecord.Message);
         }
         finally
         {

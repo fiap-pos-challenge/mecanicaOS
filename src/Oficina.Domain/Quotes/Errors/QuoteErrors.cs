@@ -28,6 +28,11 @@ public static class QuoteErrors
 
     public static readonly Error ZeroTotal = new("quotes.zeroTotal", "O total do orçamento precisa ser maior que zero.", ErrorType.BusinessRule);
 
+    public static readonly Error NoItemsAccepted = new("quotes.noItemsAccepted", "Escolha pelo menos um item para aprovar.", ErrorType.Validation,
+        [new FieldError("itemIds", "quotes.noItemsAccepted", "Escolha pelo menos um item para aprovar.")]);
+
+    public static readonly Error NotAwaitingApproval = new("quotes.notAwaitingApproval", "A OS não está aguardando a resposta do orçamento.", ErrorType.Conflict);
+
     public static readonly Error NoDelivery = new("quotes.noDelivery", "O orçamento ainda não foi enviado.", ErrorType.NotFound);
 
     public static readonly Error InvalidItem = new("quotes.invalidItem", "Escolha itens ativos do catálogo.", ErrorType.Validation,

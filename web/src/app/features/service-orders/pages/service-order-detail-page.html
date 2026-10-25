@@ -164,7 +164,7 @@
             <div class="photos">
               @for (photo of current.photos; track photo.id) {
                 <figure>
-                  <img [src]="photo.url" [alt]="photo.caption" width="120" height="90" />
+                  <ui-photo [path]="photo.url" [alt]="photo.caption" [width]="120" [height]="90" />
                   <figcaption class="muted">{{ photo.caption }}</figcaption>
                 </figure>
               } @empty {

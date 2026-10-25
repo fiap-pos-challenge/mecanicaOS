@@ -1,7 +1,8 @@
 using System.IO.Compression;
 using System.Security;
 using System.Text;
-using Oficina.Application.Portal.Documents;
+using Oficina.Application.Documents;
+using Oficina.Application.Reports.Dtos;
 
 namespace Oficina.Application.Reports;
 

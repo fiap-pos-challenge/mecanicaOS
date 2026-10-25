@@ -119,7 +119,7 @@ describe('automation rules', () => {
     });
     expect(conditionFor('amount')).toEqual({ field: 'amount', operator: 'equals', value: '' });
     expect(ruleSummary(rule())).toBe(
-      `${text.summary.when(text.triggers.QuoteSent)}, ${text.summary.wait(2, text.units.days)}. ${text.summary.then(text.actions.SendWhatsApp)}`,
+      `${text.summary.when(text.triggers.QuoteSent)}, ${text.summary.wait(2, text.units.days)}. ${text.summary.actions(text.actions.SendWhatsApp)}`,
     );
   });
 

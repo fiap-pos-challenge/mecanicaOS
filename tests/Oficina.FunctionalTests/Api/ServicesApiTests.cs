@@ -202,4 +202,18 @@ public sealed class ServicesApiTests(SqlServerFixture database) : ApiTestBase(da
         Assert.Equal(service.Id, item.ServiceId);
         Assert.Equal(120m, item.UnitPrice.Amount);
     }
+
+    [Fact]
+    public async Task Delete_IsALogicalDelete_WithTheSameRuleAsDeactivate()
+    {
+        using var admin = await ClientAsync(Role.Admin);
+        var service = await ReadJsonAsync(await admin.PostAsJsonAsync("/api/admin/services", new { name = "Troca de óleo", basePrice = 90m, estimatedMinutes = 30, commissionPercent = 10m, warrantyDays = 30 }, CancellationToken));
+        var id = service.GetProperty("id").GetGuid();
+
+        Assert.Equal(HttpStatusCode.NoContent, (await admin.DeleteAsync($"/api/admin/services/{id}", CancellationToken)).StatusCode);
+
+        Assert.False((await ReadJsonAsync(await admin.GetAsync($"/api/admin/services/{id}", CancellationToken))).GetProperty("isActive").GetBoolean());
+        await AssertProblemAsync(await admin.DeleteAsync($"/api/admin/services/{id}", CancellationToken), HttpStatusCode.Conflict, "catalog.alreadyInactive");
+        Assert.Equal(HttpStatusCode.NoContent, (await admin.PostAsync($"/api/admin/services/{id}/reactivate", null, CancellationToken)).StatusCode);
+    }
 }

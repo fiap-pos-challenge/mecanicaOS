@@ -2,6 +2,7 @@ using MediatR;
 using Oficina.Application.Abstractions.Persistence;
 using Oficina.Application.Abstractions.Security;
 using Oficina.Application.Identity.Invitations;
+using Oficina.Application.Quotes.Decisions;
 using Oficina.Application.ServiceOrders.Dtos;
 using Oficina.Application.ServiceOrders.Queries;
 using Oficina.Domain.Common.Results;
@@ -9,14 +10,13 @@ using Oficina.Domain.ServiceOrders.Entities;
 using Oficina.Domain.ServiceOrders.Enums;
 using Oficina.Domain.ServiceOrders.Errors;
 using Oficina.Domain.ServiceOrders.Repositories;
-using Oficina.Domain.ServiceOrders.Services;
 using Oficina.Domain.ServiceOrders.ValueObjects;
 
 namespace Oficina.Application.ServiceOrders.Commands.TransitionServiceOrder;
 
 public sealed class TransitionServiceOrderCommandHandler(
     IServiceOrderRepository serviceOrders,
-    QuoteApprovalPolicy approvalPolicy,
+    QuoteDecider decider,
     IServiceOrderQueries queries,
     ICurrentUser currentUser,
     IUnitOfWork unitOfWork,
@@ -58,11 +58,11 @@ public sealed class TransitionServiceOrderCommandHandler(
             (ServiceOrderStatus.Received, ServiceOrderStatus.InDiagnosis) => order.StartDiagnosis(userId, now),
             (ServiceOrderStatus.InDiagnosis, ServiceOrderStatus.WaitingApproval) =>
                 order.SendQuote(ApprovalToken.FromRawToken(InvitationToken.Generate()).Value, userId, now),
-            (ServiceOrderStatus.WaitingApproval, ServiceOrderStatus.InProgress) => await approvalPolicy.ApproveAsync(order, userId, now, cancellationToken),
+            (ServiceOrderStatus.WaitingApproval, ServiceOrderStatus.InProgress) => await decider.ApproveServiceOrderAsync(order, userId, cancellationToken),
             (ServiceOrderStatus.WaitingApproval, ServiceOrderStatus.InDiagnosis) =>
                 (command.Reason?.Trim().Length ?? 0) < MinRejectionReasonLength
                     ? ServiceOrderErrors.RejectionReasonRequired
-                    : order.RejectQuote(command.Reason!, userId, now),
+                    : await decider.RejectServiceOrderAsync(order, command.Reason!, cancellationToken),
             (ServiceOrderStatus.InProgress, ServiceOrderStatus.Completed) => order.Complete(userId, now),
             (ServiceOrderStatus.Completed, ServiceOrderStatus.Delivered) => order.Deliver(userId, now),
             _ => ServiceOrderErrors.InvalidTransition,

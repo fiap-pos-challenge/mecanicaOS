@@ -97,11 +97,11 @@
             <h2>{{ text.photos }}</h2>
             <div class="photos">
               @for (photo of order.photos; track photo.id; let index = $index) {
-                <img
-                  [src]="photo.url"
+                <ui-photo
+                  [path]="photo.url"
                   [alt]="photo.caption || text.photo(index + 1)"
-                  width="96"
-                  height="96"
+                  [width]="96"
+                  [height]="96"
                 />
               }
             </div>

@@ -5,8 +5,23 @@ using Oficina.Api.Authorization;
 using Oficina.Api.Contracts.Quotes;
 using Oficina.Api.ExceptionHandling;
 using Oficina.Application.Common.Pagination;
+using Oficina.Application.Quotes.Commands.ApproveQuoteAtDesk;
+using Oficina.Application.Quotes.Commands.CreateQuote;
+using Oficina.Application.Quotes.Commands.CreateQuoteVersion;
+using Oficina.Application.Quotes.Commands.DecideDiscountApproval;
+using Oficina.Application.Quotes.Commands.RejectQuoteAtDesk;
+using Oficina.Application.Quotes.Commands.RequestDiscountApproval;
+using Oficina.Application.Quotes.Commands.RetryQuoteDelivery;
+using Oficina.Application.Quotes.Commands.SaveQuoteDraft;
+using Oficina.Application.Quotes.Commands.SendQuote;
 using Oficina.Application.Quotes.Dtos;
-using Oficina.Application.Quotes.Requests;
+using Oficina.Application.Quotes.Queries.DraftQuoteMessage;
+using Oficina.Application.Quotes.Queries.GetQuote;
+using Oficina.Application.Quotes.Queries.GetQuoteDelivery;
+using Oficina.Application.Quotes.Queries.GetQuoteOptions;
+using Oficina.Application.Quotes.Queries.ListQuotes;
+using Oficina.Application.Quotes.Queries.ListQuoteServiceOrders;
+using Oficina.Application.Quotes.Queries.ListQuoteVersions;
 
 namespace Oficina.Api.Controllers.Admin;
 
@@ -21,7 +36,7 @@ public sealed class QuotesController(ISender sender) : ApiControllerBase
     [EndpointDescription("Returns the latest version of each quote from the newest, with total, delivery and pending approval. Filter by status (Pending, Approved, Rejected). Roles: Admin, Manager, Attendant.")]
     [ProducesResponseType<PagedResult<QuoteSummaryDto>>(StatusCodes.Status200OK)]
     public async Task<IActionResult> List([FromQuery] int page = PageRequest.FirstPage, [FromQuery] int pageSize = PageRequest.DefaultPageSize, [FromQuery] string? status = null, CancellationToken cancellationToken = default) =>
-        Respond(await sender.Send(new ListQuotesRequest(page, pageSize, status), cancellationToken), Ok);
+        Respond(await sender.Send(new ListQuotesQuery(page, pageSize, status), cancellationToken), Ok);
 
     [HttpGet("service-orders")]
     [Authorize(Policy = Policies.Staff)]
@@ -29,7 +44,7 @@ public sealed class QuotesController(ISender sender) : ApiControllerBase
     [EndpointDescription("Returns the open service orders that do not have a quote yet. Roles: Admin, Manager, Attendant.")]
     [ProducesResponseType<OpenServiceOrderListDto>(StatusCodes.Status200OK)]
     public async Task<IActionResult> ServiceOrders(CancellationToken cancellationToken) =>
-        Respond(await sender.Send(new ListQuoteServiceOrdersRequest(), cancellationToken), Ok);
+        Respond(await sender.Send(new ListQuoteServiceOrdersQuery(), cancellationToken), Ok);
 
     [HttpPost]
     [Authorize(Policy = Policies.Staff)]
@@ -39,7 +54,7 @@ public sealed class QuotesController(ISender sender) : ApiControllerBase
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound, ProblemResponses.ContentType)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status409Conflict, ProblemResponses.ContentType)]
     public async Task<IActionResult> Create(CreateQuoteBody request, CancellationToken cancellationToken) =>
-        Respond(await sender.Send(new CreateQuoteRequest(request.ServiceOrderId), cancellationToken), result => StatusCode(StatusCodes.Status201Created, result));
+        Respond(await sender.Send(new CreateQuoteCommand(request.ServiceOrderId), cancellationToken), result => StatusCode(StatusCodes.Status201Created, result));
 
     [HttpGet("{id:guid}")]
     [Authorize(Policy = Policies.Staff)]
@@ -48,7 +63,7 @@ public sealed class QuotesController(ISender sender) : ApiControllerBase
     [ProducesResponseType<QuoteDto>(StatusCodes.Status200OK)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound, ProblemResponses.ContentType)]
     public async Task<IActionResult> Get(Guid id, CancellationToken cancellationToken) =>
-        Respond(await sender.Send(new GetQuoteRequest(id), cancellationToken), Ok);
+        Respond(await sender.Send(new GetQuoteQuery(id), cancellationToken), Ok);
 
     [HttpGet("{id:guid}/options")]
     [Authorize(Policy = Policies.Staff)]
@@ -57,7 +72,7 @@ public sealed class QuotesController(ISender sender) : ApiControllerBase
     [ProducesResponseType<QuoteOptionsDto>(StatusCodes.Status200OK)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound, ProblemResponses.ContentType)]
     public async Task<IActionResult> Options(Guid id, CancellationToken cancellationToken) =>
-        Respond(await sender.Send(new GetQuoteOptionsRequest(id), cancellationToken), Ok);
+        Respond(await sender.Send(new GetQuoteOptionsQuery(id), cancellationToken), Ok);
 
     [HttpPut("{id:guid}/draft")]
     [Authorize(Policy = Policies.Staff)]
@@ -68,7 +83,7 @@ public sealed class QuotesController(ISender sender) : ApiControllerBase
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound, ProblemResponses.ContentType)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status409Conflict, ProblemResponses.ContentType)]
     public async Task<IActionResult> Draft(Guid id, QuoteDraftInput request, CancellationToken cancellationToken) =>
-        Respond(await sender.Send(new SaveQuoteDraftRequest(id, request), cancellationToken), Ok);
+        Respond(await sender.Send(new SaveQuoteDraftCommand(id, request), cancellationToken), Ok);
 
     [HttpPost("{id:guid}/discount-approvals")]
     [Authorize(Policy = Policies.Staff)]
@@ -80,7 +95,7 @@ public sealed class QuotesController(ISender sender) : ApiControllerBase
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status409Conflict, ProblemResponses.ContentType)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status422UnprocessableEntity, ProblemResponses.ContentType)]
     public async Task<IActionResult> RequestApproval(Guid id, DiscountApprovalBody request, CancellationToken cancellationToken) =>
-        Respond(await sender.Send(new RequestDiscountApprovalRequest(id, request.Type ?? string.Empty, request.Value, request.Reason ?? string.Empty), cancellationToken), result => StatusCode(StatusCodes.Status201Created, result));
+        Respond(await sender.Send(new RequestDiscountApprovalCommand(id, request.Type ?? string.Empty, request.Value, request.Reason ?? string.Empty), cancellationToken), result => StatusCode(StatusCodes.Status201Created, result));
 
     [HttpPost("{id:guid}/discount-approvals/{approvalId:guid}/approve")]
     [Authorize(Policy = Policies.AdminOrManager)]
@@ -90,7 +105,7 @@ public sealed class QuotesController(ISender sender) : ApiControllerBase
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound, ProblemResponses.ContentType)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status409Conflict, ProblemResponses.ContentType)]
     public async Task<IActionResult> ApproveDiscount(Guid id, Guid approvalId, CancellationToken cancellationToken) =>
-        Respond(await sender.Send(new DecideDiscountApprovalRequest(id, approvalId, true), cancellationToken), Ok);
+        Respond(await sender.Send(new DecideDiscountApprovalCommand(id, approvalId, true), cancellationToken), Ok);
 
     [HttpPost("{id:guid}/discount-approvals/{approvalId:guid}/reject")]
     [Authorize(Policy = Policies.AdminOrManager)]
@@ -100,7 +115,7 @@ public sealed class QuotesController(ISender sender) : ApiControllerBase
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound, ProblemResponses.ContentType)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status409Conflict, ProblemResponses.ContentType)]
     public async Task<IActionResult> RejectDiscount(Guid id, Guid approvalId, CancellationToken cancellationToken) =>
-        Respond(await sender.Send(new DecideDiscountApprovalRequest(id, approvalId, false), cancellationToken), Ok);
+        Respond(await sender.Send(new DecideDiscountApprovalCommand(id, approvalId, false), cancellationToken), Ok);
 
     [HttpPost("{id:guid}/message-draft")]
     [Authorize(Policy = Policies.Staff)]
@@ -109,7 +124,7 @@ public sealed class QuotesController(ISender sender) : ApiControllerBase
     [ProducesResponseType<MessageDraftDto>(StatusCodes.Status200OK)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound, ProblemResponses.ContentType)]
     public async Task<IActionResult> MessageDraft(Guid id, MessageDraftBody request, CancellationToken cancellationToken) =>
-        Respond(await sender.Send(new DraftQuoteMessageRequest(id), cancellationToken), Ok);
+        Respond(await sender.Send(new DraftQuoteMessageQuery(id), cancellationToken), Ok);
 
     [HttpPost("{id:guid}/send")]
     [Authorize(Policy = Policies.Staff)]
@@ -121,7 +136,7 @@ public sealed class QuotesController(ISender sender) : ApiControllerBase
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status409Conflict, ProblemResponses.ContentType)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status422UnprocessableEntity, ProblemResponses.ContentType)]
     public async Task<IActionResult> Send(Guid id, SendQuoteBody request, CancellationToken cancellationToken) =>
-        Respond(await sender.Send(new SendQuoteRequest(id, request.Channel ?? string.Empty, request.ExpiresInDays, request.Message ?? string.Empty), cancellationToken), result => Accepted(result));
+        Respond(await sender.Send(new SendQuoteCommand(id, request.Channel ?? string.Empty, request.ExpiresInDays, request.Message ?? string.Empty), cancellationToken), result => Accepted(result));
 
     [HttpGet("{id:guid}/delivery")]
     [Authorize(Policy = Policies.Staff)]
@@ -130,7 +145,7 @@ public sealed class QuotesController(ISender sender) : ApiControllerBase
     [ProducesResponseType<QuoteDeliveryDto>(StatusCodes.Status200OK)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound, ProblemResponses.ContentType)]
     public async Task<IActionResult> Delivery(Guid id, CancellationToken cancellationToken) =>
-        Respond(await sender.Send(new GetQuoteDeliveryRequest(id), cancellationToken), Ok);
+        Respond(await sender.Send(new GetQuoteDeliveryQuery(id), cancellationToken), Ok);
 
     [HttpPost("{id:guid}/delivery/retry")]
     [Authorize(Policy = Policies.Staff)]
@@ -140,7 +155,7 @@ public sealed class QuotesController(ISender sender) : ApiControllerBase
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound, ProblemResponses.ContentType)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status409Conflict, ProblemResponses.ContentType)]
     public async Task<IActionResult> Retry(Guid id, CancellationToken cancellationToken) =>
-        Respond(await sender.Send(new RetryQuoteDeliveryRequest(id), cancellationToken), result => Accepted(result));
+        Respond(await sender.Send(new RetryQuoteDeliveryCommand(id), cancellationToken), result => Accepted(result));
 
     [HttpPost("{id:guid}/approve")]
     [Authorize(Policy = Policies.Staff)]
@@ -151,7 +166,7 @@ public sealed class QuotesController(ISender sender) : ApiControllerBase
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status409Conflict, ProblemResponses.ContentType)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status422UnprocessableEntity, ProblemResponses.ContentType)]
     public async Task<IActionResult> Approve(Guid id, CancellationToken cancellationToken) =>
-        Respond(await sender.Send(new ApproveQuoteAtDeskRequest(id), cancellationToken), Ok);
+        Respond(await sender.Send(new ApproveQuoteAtDeskCommand(id), cancellationToken), Ok);
 
     [HttpPost("{id:guid}/reject")]
     [Authorize(Policy = Policies.Staff)]
@@ -162,7 +177,7 @@ public sealed class QuotesController(ISender sender) : ApiControllerBase
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound, ProblemResponses.ContentType)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status409Conflict, ProblemResponses.ContentType)]
     public async Task<IActionResult> Reject(Guid id, RejectQuoteBody request, CancellationToken cancellationToken) =>
-        Respond(await sender.Send(new RejectQuoteAtDeskRequest(id, request.Reason ?? string.Empty), cancellationToken), Ok);
+        Respond(await sender.Send(new RejectQuoteAtDeskCommand(id, request.Reason ?? string.Empty), cancellationToken), Ok);
 
     [HttpPost("{id:guid}/versions")]
     [Authorize(Policy = Policies.Staff)]
@@ -172,7 +187,7 @@ public sealed class QuotesController(ISender sender) : ApiControllerBase
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound, ProblemResponses.ContentType)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status409Conflict, ProblemResponses.ContentType)]
     public async Task<IActionResult> NewVersion(Guid id, CancellationToken cancellationToken) =>
-        Respond(await sender.Send(new CreateQuoteVersionRequest(id), cancellationToken), result => StatusCode(StatusCodes.Status201Created, result));
+        Respond(await sender.Send(new CreateQuoteVersionCommand(id), cancellationToken), result => StatusCode(StatusCodes.Status201Created, result));
 
     [HttpGet("{id:guid}/versions")]
     [Authorize(Policy = Policies.Staff)]
@@ -181,5 +196,5 @@ public sealed class QuotesController(ISender sender) : ApiControllerBase
     [ProducesResponseType<QuoteVersionListDto>(StatusCodes.Status200OK)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound, ProblemResponses.ContentType)]
     public async Task<IActionResult> Versions(Guid id, CancellationToken cancellationToken) =>
-        Respond(await sender.Send(new ListQuoteVersionsRequest(id), cancellationToken), Ok);
+        Respond(await sender.Send(new ListQuoteVersionsQuery(id), cancellationToken), Ok);
 }

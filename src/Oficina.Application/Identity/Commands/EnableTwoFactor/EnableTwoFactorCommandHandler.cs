@@ -9,7 +9,7 @@ using Oficina.Domain.Identity.Repositories;
 
 namespace Oficina.Application.Identity.Commands.EnableTwoFactor;
 
-public sealed class EnableTwoFactorCommandHandler(IUserRepository users, ICurrentUser currentUser, IUnitOfWork unitOfWork, TimeProvider timeProvider)
+public sealed class EnableTwoFactorCommandHandler(IUserRepository users, ICurrentUser currentUser, ISecretProtector protector, IUnitOfWork unitOfWork, TimeProvider timeProvider)
     : IRequestHandler<EnableTwoFactorCommand, Result>
 {
     public async Task<Result> Handle(EnableTwoFactorCommand command, CancellationToken cancellationToken)
@@ -19,7 +19,7 @@ public sealed class EnableTwoFactorCommandHandler(IUserRepository users, ICurren
             return CommonErrors.Unauthorized;
         }
 
-        if (user.TwoFactorSecret is not { } secret)
+        if (user.TwoFactorSecret is not { } stored || protector.Unprotect(stored) is not { } secret)
         {
             return IdentityErrors.TwoFactorNotSetUp;
         }

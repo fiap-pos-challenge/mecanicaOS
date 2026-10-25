@@ -12,19 +12,17 @@ public sealed class SettingsStore(ISettingsRepository repository, ICurrentUser c
     public async Task<T> GetAsync<T>(string key, T fallback, CancellationToken cancellationToken)
     {
         var document = await repository.GetAsync(key, cancellationToken);
-        if (document is null)
-        {
-            return fallback;
-        }
+        return document is null ? fallback : Read(document.Json, fallback);
+    }
 
-        try
-        {
-            return JsonSerializer.Deserialize<T>(document.Json, Options) ?? fallback;
-        }
-        catch (JsonException)
-        {
-            return fallback;
-        }
+    public async Task<IReadOnlyDictionary<string, T>> GetManyAsync<T>(IReadOnlyCollection<string> keys, CancellationToken cancellationToken)
+        where T : class
+    {
+        var documents = await repository.ListAsync(keys, cancellationToken);
+        return documents
+            .Select(document => (document.Key, Value: Read<T?>(document.Json, null)))
+            .Where(item => item.Value is not null)
+            .ToDictionary(item => item.Key, item => item.Value!, StringComparer.Ordinal);
     }
 
     public async Task SaveAsync<T>(string key, T value, CancellationToken cancellationToken)
@@ -38,6 +36,18 @@ public sealed class SettingsStore(ISettingsRepository repository, ICurrentUser c
         else
         {
             repository.Add(SettingsDocument.Create(key, json, currentUser.UserId, now));
+        }
+    }
+
+    private static T Read<T>(string json, T fallback)
+    {
+        try
+        {
+            return JsonSerializer.Deserialize<T>(json, Options) ?? fallback;
+        }
+        catch (JsonException)
+        {
+            return fallback;
         }
     }
 }

@@ -1,16 +1,21 @@
+using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Oficina.Api.Authorization;
 using Oficina.Api.Contracts.Dashboard;
 using Oficina.Api.ExceptionHandling;
-using Oficina.Application.Dashboard;
+using Oficina.Application.Dashboard.Commands.HandleAttentionItem;
+using Oficina.Application.Dashboard.Commands.SaveDashboardLayout;
+using Oficina.Application.Dashboard.Dtos;
+using Oficina.Application.Dashboard.Queries.GetDashboardLayout;
+using Oficina.Application.Dashboard.Queries.GetDashboardSnapshot;
 
 namespace Oficina.Api.Controllers.Admin;
 
 [Route("api/admin/dashboard")]
 [Tags("Dashboard")]
 [ProducesResponseType<ProblemDetails>(StatusCodes.Status403Forbidden, ProblemResponses.ContentType)]
-public sealed class DashboardController(DashboardService dashboard) : ApiControllerBase
+public sealed class DashboardController(ISender sender) : ApiControllerBase
 {
     [HttpGet]
     [Authorize(Policy = Policies.Staff)]
@@ -19,7 +24,7 @@ public sealed class DashboardController(DashboardService dashboard) : ApiControl
     [ProducesResponseType<DashboardSnapshotDto>(StatusCodes.Status200OK)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status400BadRequest, ProblemResponses.ContentType)]
     public async Task<IActionResult> Snapshot([FromQuery] string? period, CancellationToken cancellationToken) =>
-        Respond(await dashboard.SnapshotAsync(period, cancellationToken), Ok);
+        Respond(await sender.Send(new GetDashboardSnapshotQuery(period), cancellationToken), Ok);
 
     [HttpGet("layout")]
     [Authorize(Policy = Policies.Staff)]
@@ -27,7 +32,7 @@ public sealed class DashboardController(DashboardService dashboard) : ApiControl
     [EndpointDescription("Returns the card order and visibility saved by the signed-in user. Roles: Admin, Manager, Attendant.")]
     [ProducesResponseType<DashboardLayoutDto>(StatusCodes.Status200OK)]
     public async Task<IActionResult> Layout(CancellationToken cancellationToken) =>
-        Respond(await dashboard.LayoutAsync(cancellationToken), Ok);
+        Respond(await sender.Send(new GetDashboardLayoutQuery(), cancellationToken), Ok);
 
     [HttpPut("layout")]
     [Authorize(Policy = Policies.Staff)]
@@ -36,7 +41,7 @@ public sealed class DashboardController(DashboardService dashboard) : ApiControl
     [ProducesResponseType<DashboardLayoutDto>(StatusCodes.Status200OK)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status400BadRequest, ProblemResponses.ContentType)]
     public async Task<IActionResult> SaveLayout(DashboardLayoutBody request, CancellationToken cancellationToken) =>
-        Respond(await dashboard.SaveLayoutAsync(request.Cards, cancellationToken), Ok);
+        Respond(await sender.Send(new SaveDashboardLayoutCommand(request.Cards), cancellationToken), Ok);
 
     [HttpPost("attention/{id}/actions")]
     [Authorize(Policy = Policies.Staff)]
@@ -46,5 +51,5 @@ public sealed class DashboardController(DashboardService dashboard) : ApiControl
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound, ProblemResponses.ContentType)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status422UnprocessableEntity, ProblemResponses.ContentType)]
     public async Task<IActionResult> Act(string id, DashboardActionBody request, CancellationToken cancellationToken) =>
-        Respond(await dashboard.ActAsync(id, request.Action, cancellationToken));
+        Respond(await sender.Send(new HandleAttentionItemCommand(id, request.Action), cancellationToken));
 }

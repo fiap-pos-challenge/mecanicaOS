@@ -1,8 +1,8 @@
 using Microsoft.EntityFrameworkCore;
-using Oficina.Application.Common.Numbers;
 using Oficina.Application.Common.Pagination;
 using Oficina.Application.Inventory.Dtos;
 using Oficina.Application.Inventory.Queries;
+using Oficina.Domain.Common.ValueObjects;
 using Oficina.Domain.Inventory.Entities;
 using Oficina.Domain.Inventory.Enums;
 using Oficina.Infrastructure.Persistence;
@@ -37,14 +37,14 @@ public sealed class InventoryQueries(OficinaDbContext context, TimeProvider time
         var monthlyCost = parts.Sum(part => flows.GetValueOrDefault(part.Id)?.Outflow30d * part.Cost.Amount ?? 0);
         var kpis = new StockKpisDto(
             below.Count,
-            Rounding.HalfUp(below.Sum(part => Suggested(part, flows.GetValueOrDefault(part.Id)) * part.Cost.Amount), 2),
+            Measure.Round(below.Sum(part => Suggested(part, flows.GetValueOrDefault(part.Id)) * part.Cost.Amount), 2),
             outflow,
-            previous == 0 ? null : Rounding.HalfUp((outflow - previous) / previous * 100, 0),
-            monthlyCost == 0 ? null : Rounding.HalfUp(stockValue / monthlyCost * 30, 0),
+            previous == 0 ? null : Measure.Round((outflow - previous) / previous * 100, 0),
+            monthlyCost == 0 ? null : Measure.Round(stockValue / monthlyCost * 30, 0),
             TurnoverGoalDays,
             idle.Count,
-            Rounding.HalfUp(idle.Sum(item => item.StockQuantity * item.UnitCost), 2),
-            Rounding.HalfUp(stockValue, 2),
+            Measure.Round(idle.Sum(item => item.StockQuantity * item.UnitCost), 2),
+            Measure.Round(stockValue, 2),
             parts.Count);
         return new StockOverviewDto(
             kpis,
@@ -232,7 +232,7 @@ public sealed class InventoryQueries(OficinaDbContext context, TimeProvider time
             order.SupplierId,
             suppliers.GetValueOrDefault(order.SupplierId) ?? string.Empty,
             order.Status.ToString(),
-            Rounding.HalfUp(order.Total, 2),
+            Measure.Round(order.Total, 2),
             order.CreatedAt,
             order.SentAt,
             order.Lines.Select(line => new PurchaseOrderLineDto(line.PartId, parts.GetValueOrDefault(line.PartId)?.Code.Value ?? string.Empty, parts.GetValueOrDefault(line.PartId)?.Name ?? string.Empty, line.Quantity, line.UnitCost)).ToList())).ToList();

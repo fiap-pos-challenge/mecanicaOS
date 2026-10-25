@@ -80,7 +80,7 @@ public sealed class ReportsApiTests(SqlServerFixture database) : ApiTestBase(dat
         Assert.Equal("dono@oficina.com", scheduled.GetProperty("schedule").GetProperty("recipients")[0].GetString());
         await using (var scope = Factory.Services.CreateAsyncScope())
         {
-            var service = scope.ServiceProvider.GetRequiredService<ReportService>();
+            var service = scope.ServiceProvider.GetRequiredService<ScheduledReportSender>();
             Assert.Equal(1, await service.SendDueAsync(CancellationToken));
             Assert.Equal(0, await service.SendDueAsync(CancellationToken));
         }

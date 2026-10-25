@@ -10,6 +10,8 @@ public static class PortalErrors
 
     public static readonly Error SessionExpired = new("portal.sessionExpired", "Sua sessão expirou. Abra o link de novo.", ErrorType.Unauthorized);
 
+    public static readonly Error TryAgain = new("portal.tryAgain", "Outra tentativa está em andamento. Tente de novo em instantes.", ErrorType.Conflict);
+
     public static readonly Error AlreadyAnswered = new("portal.alreadyAnswered", "Este orçamento já foi respondido.", ErrorType.Conflict);
 
     public static readonly Error NoItems = new("portal.noItems", "Escolha pelo menos um item para aprovar.", ErrorType.Validation,

@@ -4,15 +4,6 @@ using Oficina.Domain.Inventory.Errors;
 
 namespace Oficina.Domain.Inventory.Entities;
 
-public sealed record PurchaseOrderLine(Guid PartId, decimal Quantity, decimal UnitCost);
-
-public enum PurchaseOrderStatus
-{
-    Draft,
-    Queued,
-    Sent,
-}
-
 public sealed class PurchaseOrder : AggregateRoot
 {
     private PurchaseOrder(Guid id, long number, Guid supplierId)

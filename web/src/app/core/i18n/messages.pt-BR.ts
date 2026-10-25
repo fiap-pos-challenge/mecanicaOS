@@ -1742,7 +1742,7 @@ export const messages = {
     summary: {
       when: (trigger: string): string => `Quando: ${trigger}`,
       wait: (amount: number, unit: string): string => `espera ${amount} ${unit}`,
-      then: (actions: string): string => `Faça: ${actions}`,
+      actions: (actions: string): string => `Faça: ${actions}`,
     },
     templates: {
       title: 'Modelos prontos',

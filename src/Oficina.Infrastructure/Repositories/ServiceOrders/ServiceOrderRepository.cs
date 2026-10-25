@@ -38,6 +38,5 @@ public sealed class ServiceOrderRepository(OficinaDbContext context) : IServiceO
             .Include(order => order.Quotes)
             .Include(order => order.StatusHistory)
             .Include(order => order.TimeEntries)
-            .Include(order => order.Photos)
             .AsSplitQuery();
 }

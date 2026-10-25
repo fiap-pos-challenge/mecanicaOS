@@ -1,7 +1,7 @@
 using MediatR;
 using Oficina.Application.Catalog.Dtos;
-using Oficina.Domain.Inventory.Errors;
 using Oficina.Domain.Common.Results;
+using Oficina.Domain.Inventory.Errors;
 
 namespace Oficina.Application.Catalog.Queries.GetPartById;
 

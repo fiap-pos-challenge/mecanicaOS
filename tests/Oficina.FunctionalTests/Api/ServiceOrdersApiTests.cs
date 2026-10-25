@@ -1,4 +1,5 @@
 using System.Net;
+using System.Net.Http.Json;
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using Oficina.Domain.Catalog.Entities;
@@ -46,8 +47,8 @@ public sealed class ServiceOrdersApiTests(SqlServerFixture database) : ApiTestBa
         using var client = await ClientAsync(Role.Attendant);
 
         var byStatus = await NumbersAsync(client, "/api/admin/service-orders?status=Received");
-        var byPlate = await NumbersAsync(client, "/api/admin/service-orders?plate=BRA2E19");
-        var combined = await NumbersAsync(client, "/api/admin/service-orders?status=Received&plate=BRA2E19");
+        var byPlate = await SearchNumbersAsync(client, new { licensePlate = "BRA2E19" });
+        var combined = await SearchNumbersAsync(client, new { licensePlate = "BRA2E19", status = "Received" });
         var none = await NumbersAsync(client, "/api/admin/service-orders?status=InProgress");
 
         Assert.Equal(new long[] { 3, 2 }, byStatus);
@@ -250,6 +251,13 @@ public sealed class ServiceOrdersApiTests(SqlServerFixture database) : ApiTestBa
 
         context.ServiceOrders.Add(order);
         await CommitAsync(context);
+    }
+
+    private static async Task<long[]> SearchNumbersAsync(HttpClient client, object body)
+    {
+        using var response = await client.PostAsJsonAsync("/api/admin/service-orders/search", body, CancellationToken);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        return (await ReadJsonAsync(response)).GetProperty("items").EnumerateArray().Select(item => item.GetProperty("number").GetInt64()).ToArray();
     }
 
     private static async Task<long[]> NumbersAsync(HttpClient client, string path)

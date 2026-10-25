@@ -131,4 +131,18 @@ public sealed class PartsApiTests(SqlServerFixture database) : ApiTestBase(datab
         await AssertProblemAsync(await admin.PostAsync($"/api/admin/parts/{id}/deactivate", null, CancellationToken), HttpStatusCode.NotFound, "inventory.partNotFound");
         await AssertProblemAsync(await admin.PostAsync($"/api/admin/parts/{id}/reactivate", null, CancellationToken), HttpStatusCode.NotFound, "inventory.partNotFound");
     }
+
+    [Fact]
+    public async Task Delete_IsALogicalDelete_WithTheSameRuleAsDeactivate()
+    {
+        using var admin = await ClientAsync(Role.Admin);
+        var part = await ReadJsonAsync(await admin.PostAsJsonAsync("/api/admin/parts", NewPart("pec-9100", 150m, 90m, null), CancellationToken));
+        var id = part.GetProperty("id").GetGuid();
+
+        Assert.Equal(HttpStatusCode.NoContent, (await admin.DeleteAsync($"/api/admin/parts/{id}", CancellationToken)).StatusCode);
+
+        Assert.False((await ReadJsonAsync(await admin.GetAsync($"/api/admin/parts/{id}", CancellationToken))).GetProperty("isActive").GetBoolean());
+        await AssertProblemAsync(await admin.DeleteAsync($"/api/admin/parts/{id}", CancellationToken), HttpStatusCode.Conflict, "inventory.alreadyInactive");
+        await AssertProblemAsync(await admin.DeleteAsync($"/api/admin/parts/{Guid.CreateVersion7()}", CancellationToken), HttpStatusCode.NotFound, "inventory.partNotFound");
+    }
 }

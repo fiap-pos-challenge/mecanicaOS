@@ -62,6 +62,34 @@ test.describe('customer portal with the contract API intercepted', () => {
     await expect(page.getByTestId('portal-locked')).toBeVisible();
   });
 
+  test('keeps the link usable when the confirmation is rate limited', async ({ page }) => {
+    const detail = 'Muitas requisições. Aguarde um minuto e tente de novo.';
+    await page.route(
+      '**/api/public/portal/confirm',
+      (route) =>
+        route.fulfill({
+          status: 429,
+          contentType: 'application/problem+json',
+          headers: { 'retry-after': '60' },
+          body: JSON.stringify({
+            title: 'Muitas requisições',
+            status: 429,
+            detail,
+            code: 'common.tooManyRequests',
+            traceId: '00-e2e-portal-throttle-00',
+          }),
+        }),
+      { times: 1 },
+    );
+    await page.goto(`/o/${PORTAL_TOKEN}`);
+    await confirm(page, '000');
+    await expect(page.getByText(detail)).toBeVisible();
+    await expect(page.getByTestId('portal-locked')).toHaveCount(0);
+
+    await confirm(page);
+    await expect(page.getByRole('heading', { name: text.hello('Joana') })).toBeVisible();
+  });
+
   test('approves part of the quote and pays with Pix', async ({ page }) => {
     await page.goto(`/o/${PORTAL_TOKEN}`);
     await confirm(page);

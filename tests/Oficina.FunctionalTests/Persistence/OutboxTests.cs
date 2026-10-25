@@ -198,7 +198,7 @@ public sealed class OutboxTests(SqlServerFixture database) : IAsyncLifetime
         await using var scope = provider.CreateAsyncScope();
         await using var context = database.CreateContext(TimeProvider.System);
         var options = Options.Create(new OutboxOptions { BatchSize = batchSize, MaxAttempts = maxAttempts, PollingIntervalSeconds = 1 });
-        var processor = new OutboxBatchProcessor(context, scope.ServiceProvider, _clock, options, NullLogger<OutboxBatchProcessor>.Instance);
+        var processor = new OutboxBatchProcessor(context, provider.GetRequiredService<IServiceScopeFactory>(), _clock, options, NullLogger<OutboxBatchProcessor>.Instance);
         return await processor.ProcessPendingAsync(TestContext.Current.CancellationToken);
     }
 

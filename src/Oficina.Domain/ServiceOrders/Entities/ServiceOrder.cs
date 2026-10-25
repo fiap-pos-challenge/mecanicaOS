@@ -5,6 +5,7 @@ using Oficina.Domain.Common.Results;
 using Oficina.Domain.Common.ValueObjects;
 using Oficina.Domain.Inventory.Entities;
 using Oficina.Domain.Inventory.Errors;
+using Oficina.Domain.Quotes.Errors;
 using Oficina.Domain.ServiceOrders.Enums;
 using Oficina.Domain.ServiceOrders.Errors;
 using Oficina.Domain.ServiceOrders.Events;
@@ -16,13 +17,13 @@ namespace Oficina.Domain.ServiceOrders.Entities;
 public sealed class ServiceOrder : AggregateRoot
 {
     public const int ProblemDescriptionMinLength = 3;
+    public const int MaxPhotos = 12;
 
     private readonly List<ServiceItem> _serviceItems;
     private readonly List<PartItem> _partItems;
     private readonly List<Quote> _quotes;
     private readonly List<StatusHistoryEntry> _statusHistory;
     private readonly List<TimeEntry> _timeEntries;
-    private readonly List<ServiceOrderPhoto> _photos;
 
     private ServiceOrder(
         Guid id,
@@ -45,7 +46,6 @@ public sealed class ServiceOrder : AggregateRoot
         _quotes = new List<Quote>();
         _statusHistory = new List<StatusHistoryEntry>();
         _timeEntries = new List<TimeEntry>();
-        _photos = new List<ServiceOrderPhoto>();
         Checklist = ChecklistItem.DefaultLabels.Select((label, index) => new ChecklistItem($"item-{index + 1}", label, null)).ToList();
         Diagnosis = string.Empty;
     }
@@ -84,9 +84,9 @@ public sealed class ServiceOrder : AggregateRoot
 
     public List<ChecklistItem> Checklist { get; private set; }
 
-    public IReadOnlyCollection<TimeEntry> TimeEntries => _timeEntries.AsReadOnly();
+    public int PhotoCount { get; private set; }
 
-    public IReadOnlyCollection<ServiceOrderPhoto> Photos => _photos.AsReadOnly();
+    public IReadOnlyCollection<TimeEntry> TimeEntries => _timeEntries.AsReadOnly();
 
     public bool TimerRunning => _timeEntries.Exists(entry => entry.IsRunning);
 
@@ -257,6 +257,62 @@ public sealed class ServiceOrder : AggregateRoot
         return Result.Success();
     }
 
+    public Result ApproveQuote(QuoteScope acceptedScope, ApprovalToken approvalToken, Guid? changedByUserId, DateTimeOffset now)
+    {
+        if (Status is ServiceOrderStatus.Received or ServiceOrderStatus.InDiagnosis)
+        {
+            var submitted = SubmitQuote(acceptedScope, approvalToken, changedByUserId, now);
+            if (submitted.IsFailure)
+            {
+                return submitted;
+            }
+        }
+
+        if (Status != ServiceOrderStatus.WaitingApproval)
+        {
+            return QuoteErrors.NotAwaitingApproval;
+        }
+
+        Replace(acceptedScope);
+        TotalAmount = acceptedScope.Total;
+        return ApproveQuote(changedByUserId, now);
+    }
+
+    public Result SubmitQuote(QuoteScope scope, ApprovalToken approvalToken, Guid? changedByUserId, DateTimeOffset now)
+    {
+        if (Status == ServiceOrderStatus.Received)
+        {
+            MoveTo(ServiceOrderStatus.InDiagnosis, changedByUserId, null, now);
+        }
+
+        if (Status == ServiceOrderStatus.WaitingApproval)
+        {
+            return Result.Success();
+        }
+
+        if (Status != ServiceOrderStatus.InDiagnosis)
+        {
+            return QuoteErrors.NotAwaitingApproval;
+        }
+
+        Replace(scope);
+        var sent = SendQuote(approvalToken, changedByUserId, now);
+        if (sent.IsFailure)
+        {
+            return sent;
+        }
+
+        TotalAmount = scope.Total;
+        return Result.Success();
+    }
+
+    public Result RejectQuoteAnswer(string reason, Guid? changedByUserId, DateTimeOffset now) => Status switch
+    {
+        ServiceOrderStatus.WaitingApproval => RejectQuote(reason, changedByUserId, now),
+        ServiceOrderStatus.Received or ServiceOrderStatus.InDiagnosis => Result.Success(),
+        _ => QuoteErrors.NotAwaitingApproval,
+    };
+
     public Result RejectQuote(string reason, Guid? changedByUserId, DateTimeOffset now)
     {
         if (Status != ServiceOrderStatus.WaitingApproval || CurrentQuote is not { } quote)
@@ -358,24 +414,15 @@ public sealed class ServiceOrder : AggregateRoot
         return Result.Success();
     }
 
-    public Result AddPhoto(string? clientId, string contentType, string dataUrl, string caption, DateTimeOffset now)
+    public Result RegisterPhoto()
     {
-        if (!ServiceOrderPhoto.AllowedContentTypes.Contains(contentType) || !dataUrl.StartsWith($"data:{contentType}", StringComparison.Ordinal))
+        if (PhotoCount >= MaxPhotos)
         {
-            return ServiceOrderErrors.InvalidPhotoType;
+            return ServiceOrderErrors.TooManyPhotos;
         }
 
-        if (dataUrl.Length > ServiceOrderPhoto.MaxDataUrlLength)
-        {
-            return ServiceOrderErrors.PhotoTooLarge;
-        }
-
-        if (clientId is null || !_photos.Exists(photo => photo.ClientId == clientId))
-        {
-            _photos.Add(ServiceOrderPhoto.Create(Id, clientId, contentType, dataUrl, caption.Trim(), now));
-            Touch();
-        }
-
+        PhotoCount++;
+        Touch();
         return Result.Success();
     }
 
@@ -405,32 +452,20 @@ public sealed class ServiceOrder : AggregateRoot
     public bool HasItem(Guid catalogItemId) =>
         _serviceItems.Exists(item => item.ServiceId == catalogItemId) || _partItems.Exists(item => item.PartId == catalogItemId);
 
-    public Result ReplaceItems(IReadOnlyCollection<(Service Service, int Quantity)> services, IReadOnlyCollection<(Part Part, Quantity Quantity)> parts)
+    private void Replace(QuoteScope scope)
     {
-        if (Status != ServiceOrderStatus.InDiagnosis)
-        {
-            return ServiceOrderErrors.ItemsOnlyInDiagnosis;
-        }
-
         _serviceItems.Clear();
         _partItems.Clear();
-        foreach (var (service, quantity) in services)
+        foreach (var (service, quantity) in scope.Services)
         {
             _serviceItems.Add(ServiceItem.Create(Id, service.Id, service.Name, service.BasePrice, quantity));
         }
 
-        foreach (var (part, quantity) in parts)
+        foreach (var (part, quantity) in scope.Parts)
         {
             _partItems.Add(PartItem.Create(Id, part.Id, part.Name, part.UnitPrice, quantity));
         }
 
-        Touch();
-        return Result.Success();
-    }
-
-    public void SetQuotedTotal(Money total)
-    {
-        TotalAmount = total;
         Touch();
     }
 

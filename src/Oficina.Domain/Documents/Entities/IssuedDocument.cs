@@ -1,21 +1,5 @@
 namespace Oficina.Domain.Documents.Entities;
 
-public sealed record DocumentLine(string Name, decimal Quantity, decimal UnitPrice, decimal Total);
-
-public sealed record DocumentSnapshot(
-    long Number,
-    int? Version,
-    string ShopName,
-    string CustomerName,
-    string Vehicle,
-    IReadOnlyList<DocumentLine> Lines,
-    decimal ServicesTotal,
-    decimal PartsTotal,
-    decimal DiscountTotal,
-    decimal Total,
-    DateTimeOffset? PaidAt,
-    IReadOnlyList<string> PaymentMethods);
-
 public sealed class IssuedDocument
 {
     public const int CodeMaxLength = 30;

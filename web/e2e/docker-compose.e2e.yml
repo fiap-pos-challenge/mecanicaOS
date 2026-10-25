@@ -2,7 +2,7 @@ name: oficina-e2e
 
 # Stack descartavel para o E2E: API real, SQL Server sem volume e a imagem nginx de producao do front.
 # Os convites viram arquivos .eml em web/e2e/.mail, lidos pelo teste da equipe.
-# Somente desenvolvimento e teste. O limite de login por IP sobe para os testes nao se bloquearem entre si;
+# Os segredos vêm do .env da raiz (copie de .env.example). Somente desenvolvimento e teste. O limite de login por IP sobe para os testes nao se bloquearem entre si;
 # o 429 do limite por IP e simulado no proprio teste.
 services:
   sqlserver:
@@ -10,7 +10,7 @@ services:
     environment:
       ACCEPT_EULA: 'Y'
       MSSQL_PID: Developer
-      MSSQL_SA_PASSWORD: Oficina@Dev123
+      MSSQL_SA_PASSWORD: ${MSSQL_SA_PASSWORD:?defina MSSQL_SA_PASSWORD no .env}
     healthcheck:
       test:
         [
@@ -32,8 +32,13 @@ services:
         condition: service_healthy
     environment:
       ASPNETCORE_ENVIRONMENT: Development
-      ConnectionStrings__Oficina: Server=sqlserver,1433;Database=oficina;User Id=sa;Password=Oficina@Dev123;Encrypt=True;TrustServerCertificate=True
+      ConnectionStrings__Oficina: Server=sqlserver,1433;Database=oficina;User Id=sa;Password=${MSSQL_SA_PASSWORD:?defina MSSQL_SA_PASSWORD no .env};Encrypt=True;TrustServerCertificate=True
+      Jwt__Secret: ${JWT_SECRET:?defina JWT_SECRET no .env}
+      DevelopmentAdmin__Email: ${DEV_ADMIN_EMAIL:?defina DEV_ADMIN_EMAIL no .env}
+      DevelopmentAdmin__Password: ${DEV_ADMIN_PASSWORD:?defina DEV_ADMIN_PASSWORD no .env}
+      Payments__PixWebhookSecret: ${PIX_WEBHOOK_SECRET:?defina PIX_WEBHOOK_SECRET no .env}
       Security__LoginRateLimit__PermitLimit: '1000'
+      Security__PublicRateLimit__PermitLimit: '1000'
       Email__PickupDirectory: /mail
       Email__InvitationUrl: http://localhost:4300/invite
     volumes:

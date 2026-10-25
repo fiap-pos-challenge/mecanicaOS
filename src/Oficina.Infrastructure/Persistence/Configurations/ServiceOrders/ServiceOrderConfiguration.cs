@@ -29,13 +29,12 @@ public sealed class ServiceOrderConfiguration : IEntityTypeConfiguration<Service
         builder.Property(order => order.Diagnosis).IsRequired();
         builder.Property(order => order.SentToQuote).IsRequired();
         builder.Property(order => order.Reopened).IsRequired();
+        builder.Property(order => order.PhotoCount).IsRequired();
         builder.Ignore(order => order.TimerRunning);
         builder.Property(order => order.Checklist).HasJsonConversion().IsRequired();
         builder.HasOne<User>().WithMany().HasForeignKey(order => order.MechanicId).OnDelete(DeleteBehavior.Restrict);
         builder.HasMany(order => order.TimeEntries).WithOne().HasForeignKey(entry => entry.ServiceOrderId).OnDelete(DeleteBehavior.ClientCascade);
-        builder.HasMany(order => order.Photos).WithOne().HasForeignKey(photo => photo.ServiceOrderId).OnDelete(DeleteBehavior.ClientCascade);
         builder.Navigation(order => order.TimeEntries).UsePropertyAccessMode(PropertyAccessMode.Field);
-        builder.Navigation(order => order.Photos).UsePropertyAccessMode(PropertyAccessMode.Field);
 
         builder.HasOne<Customer>().WithMany().HasForeignKey(order => order.CustomerId).OnDelete(DeleteBehavior.Restrict);
         builder.HasOne<Vehicle>().WithMany().HasForeignKey(order => order.VehicleId).OnDelete(DeleteBehavior.Restrict);

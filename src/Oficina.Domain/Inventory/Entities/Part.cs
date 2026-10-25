@@ -4,6 +4,7 @@ using Oficina.Domain.Common.Results;
 using Oficina.Domain.Common.ValueObjects;
 using Oficina.Domain.Inventory.Enums;
 using Oficina.Domain.Inventory.Errors;
+using Oficina.Domain.Inventory.Events;
 using Oficina.Domain.Inventory.ValueObjects;
 
 namespace Oficina.Domain.Inventory.Entities;
@@ -169,16 +170,19 @@ public sealed class Part : AggregateRoot
 
     public bool HasAvailable(Quantity quantity) => StockQuantity >= quantity.Value;
 
-    public Result DeductForServiceOrder(Quantity quantity, Guid serviceOrderId, long serviceOrderNumber, Guid? userId)
+    public Result DeductForServiceOrder(Quantity quantity, Guid serviceOrderId, long serviceOrderNumber, Guid? userId, DateTimeOffset now)
     {
         if (!HasAvailable(quantity))
         {
             return InventoryErrors.InsufficientStock;
         }
 
+        var wasBelowMinimum = IsBelowMinimum;
         StockQuantity -= quantity.Value;
         var reason = ServiceOrderReasonPrefix + serviceOrderNumber.ToString(CultureInfo.InvariantCulture);
         _stockMovements.Add(StockMovement.Record(Id, StockMovementType.Deduction, quantity, StockQuantity, reason, serviceOrderId, userId, serviceOrderNumber));
+        Raise(new StockDeducted(Id, quantity.Value, StockQuantity, serviceOrderId, serviceOrderNumber, now));
+        RaiseIfFellBelowMinimum(wasBelowMinimum, now);
         return Result.Success();
     }
 
@@ -200,7 +204,7 @@ public sealed class Part : AggregateRoot
         return RegisterEntry(quantity, reason, userId);
     }
 
-    public Result RegisterExit(Quantity quantity, string reason, long? serviceOrderNumber, Guid? userId)
+    public Result RegisterExit(Quantity quantity, string reason, long? serviceOrderNumber, Guid? userId, DateTimeOffset now)
     {
         if (EnsureQuantityUnit(quantity).Error is { } unitError)
         {
@@ -217,12 +221,14 @@ public sealed class Part : AggregateRoot
             return InventoryErrors.InsufficientStock;
         }
 
+        var wasBelowMinimum = IsBelowMinimum;
         StockQuantity -= quantity.Value;
         _stockMovements.Add(StockMovement.Record(Id, StockMovementType.Exit, quantity, StockQuantity, reason.Trim(), null, userId, serviceOrderNumber));
+        RaiseIfFellBelowMinimum(wasBelowMinimum, now);
         return Result.Success();
     }
 
-    public void Adjust(decimal countedQuantity, string reason, Guid? userId)
+    public void Adjust(decimal countedQuantity, string reason, Guid? userId, DateTimeOffset now)
     {
         var delta = countedQuantity - StockQuantity;
         if (delta == 0)
@@ -230,8 +236,10 @@ public sealed class Part : AggregateRoot
             return;
         }
 
+        var wasBelowMinimum = IsBelowMinimum;
         StockQuantity = countedQuantity;
         _stockMovements.Add(StockMovement.RecordAdjustment(Id, delta, StockQuantity, reason, userId));
+        RaiseIfFellBelowMinimum(wasBelowMinimum, now);
     }
 
     public Result Deactivate()
@@ -285,6 +293,14 @@ public sealed class Part : AggregateRoot
         }
 
         return null;
+    }
+
+    private void RaiseIfFellBelowMinimum(bool wasBelowMinimum, DateTimeOffset now)
+    {
+        if (IsActive && !wasBelowMinimum && IsBelowMinimum)
+        {
+            Raise(new StockBelowMinimum(Id, Name, StockQuantity, MinimumStock, now));
+        }
     }
 
     private static string? NormalizeText(string? value) =>

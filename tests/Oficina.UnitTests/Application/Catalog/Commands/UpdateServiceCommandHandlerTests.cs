@@ -1,16 +1,16 @@
-using NSubstitute;
 using Microsoft.Extensions.Time.Testing;
+using NSubstitute;
 using Oficina.Application.Abstractions.Persistence;
 using Oficina.Application.Abstractions.Security;
 using Oficina.Application.Catalog.Commands.UpdateService;
+using Oficina.Application.Catalog.Dtos;
 using Oficina.Domain.Catalog.Entities;
-using Oficina.Domain.Inventory.Entities;
-using Oficina.Domain.Inventory.Repositories;
 using Oficina.Domain.Catalog.Errors;
 using Oficina.Domain.Catalog.Repositories;
 using Oficina.Domain.Common.Errors;
 using Oficina.Domain.Common.Results;
-using Oficina.Application.Catalog.Dtos;
+using Oficina.Domain.Inventory.Entities;
+using Oficina.Domain.Inventory.Repositories;
 using Oficina.UnitTests.Builders;
 
 namespace Oficina.UnitTests.Application.Catalog.Commands;

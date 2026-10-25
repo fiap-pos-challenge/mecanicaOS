@@ -80,11 +80,11 @@
             <div class="photos">
               @for (photo of current.photos; track photo.id; let index = $index) {
                 <figure class="photo">
-                  <img
-                    [src]="photo.url"
+                  <ui-photo
+                    [path]="photo.url"
                     [alt]="text.photos.alt(current.number, index + 1)"
-                    width="96"
-                    height="96"
+                    [width]="96"
+                    [height]="96"
                   />
                   @if (photo.pending) {
                     <figcaption class="pending">{{ text.photos.pending }}</figcaption>

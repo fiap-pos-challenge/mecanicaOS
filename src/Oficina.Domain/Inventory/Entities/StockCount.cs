@@ -4,8 +4,6 @@ using Oficina.Domain.Inventory.Errors;
 
 namespace Oficina.Domain.Inventory.Entities;
 
-public sealed record CountLine(Guid PartId, decimal SystemQuantity, decimal? CountedQuantity);
-
 public sealed class StockCount : AggregateRoot
 {
     private StockCount(Guid id, string location, Guid? openedBy, DateTimeOffset openedAt)
@@ -98,7 +96,7 @@ public sealed class StockCount : AggregateRoot
 
         foreach (var line in Lines)
         {
-            partOf(line.PartId)?.Adjust(line.CountedQuantity ?? line.SystemQuantity, $"Inventário {Location}", userId);
+            partOf(line.PartId)?.Adjust(line.CountedQuantity ?? line.SystemQuantity, $"Inventário {Location}", userId, now);
         }
 
         Status = CountStatus.Approved;
@@ -125,12 +123,4 @@ public sealed class StockCount : AggregateRoot
         DecidedAt = now;
         return Result.Success();
     }
-}
-
-public enum CountStatus
-{
-    Open,
-    PendingApproval,
-    Approved,
-    Rejected,
 }

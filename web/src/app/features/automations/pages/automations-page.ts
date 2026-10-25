@@ -33,7 +33,7 @@ export function ruleSummary(definition: RuleDefinition): string {
     ? `, ${text.summary.wait(definition.wait.amount, text.units[definition.wait.unit])}`
     : '';
   const actions = definition.actions.map((action) => text.actions[action.kind]).join(', ');
-  return `${text.summary.when(text.triggers[definition.trigger])}${wait}. ${text.summary.then(actions)}`;
+  return `${text.summary.when(text.triggers[definition.trigger])}${wait}. ${text.summary.actions(actions)}`;
 }
 
 @Component({

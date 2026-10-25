@@ -18,6 +18,7 @@ using Oficina.Application.ServiceOrders.Commands.TransitionServiceOrder;
 using Oficina.Application.ServiceOrders.Commands.UpdateChecklist;
 using Oficina.Application.ServiceOrders.Dtos;
 using Oficina.Application.ServiceOrders.Queries.GetServiceOrderById;
+using Oficina.Application.ServiceOrders.Queries.GetServiceOrderPhoto;
 using Oficina.Application.ServiceOrders.Queries.GetWork;
 using Oficina.Application.ServiceOrders.Queries.ListMyWork;
 using Oficina.Application.ServiceOrders.Queries.ListServiceOrders;
@@ -33,16 +34,24 @@ public sealed class ServiceOrdersController(ISender sender) : ApiControllerBase
     [HttpGet]
     [Authorize(Policy = Policies.Authenticated)]
     [EndpointSummary("List service orders")]
-    [EndpointDescription("Returns a page of service orders from the newest to the oldest, optionally filtered by status and by exact license plate. Roles: Admin, Manager, Attendant, Mechanic.")]
+    [EndpointDescription("Returns a page of service orders from the newest to the oldest, optionally filtered by status. To filter by license plate use POST /api/admin/service-orders/search (the plate never goes in the URL). Roles: Admin, Manager, Attendant, Mechanic.")]
     [ProducesResponseType<PagedResult<ServiceOrderSummaryDto>>(StatusCodes.Status200OK)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status400BadRequest, ProblemResponses.ContentType)]
     public async Task<IActionResult> List(
         [FromQuery] int page = PageRequest.FirstPage,
         [FromQuery] int pageSize = PageRequest.DefaultPageSize,
         [FromQuery] string? status = null,
-        [FromQuery] string? plate = null,
         CancellationToken cancellationToken = default) =>
-        Respond(await sender.Send(new ListServiceOrdersQuery(page, pageSize, status, plate), cancellationToken), Ok);
+        Respond(await sender.Send(new ListServiceOrdersQuery(page, pageSize, status, null), cancellationToken), Ok);
+
+    [HttpPost("search")]
+    [Authorize(Policy = Policies.Authenticated)]
+    [EndpointSummary("Search service orders")]
+    [EndpointDescription("Same page as the list, filtered by exact license plate and optional status. The plate goes in the body because personal data never goes in the URL. Roles: Admin, Manager, Attendant, Mechanic.")]
+    [ProducesResponseType<PagedResult<ServiceOrderSummaryDto>>(StatusCodes.Status200OK)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status400BadRequest, ProblemResponses.ContentType)]
+    public async Task<IActionResult> Search([FromBody] SearchServiceOrdersRequest request, CancellationToken cancellationToken) =>
+        Respond(await sender.Send(new ListServiceOrdersQuery(request.Page ?? PageRequest.FirstPage, request.PageSize ?? PageRequest.DefaultPageSize, request.Status, request.LicensePlate), cancellationToken), Ok);
 
     [HttpGet("{id:guid}")]
     [Authorize(Policy = Policies.Authenticated)]
@@ -52,6 +61,15 @@ public sealed class ServiceOrdersController(ISender sender) : ApiControllerBase
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound, ProblemResponses.ContentType)]
     public async Task<IActionResult> GetById([FromRoute] Guid id, CancellationToken cancellationToken) =>
         Respond(await sender.Send(new GetServiceOrderByIdQuery(id), cancellationToken), Ok);
+
+    [HttpGet("{id:guid}/photos/{photoId:guid}")]
+    [Authorize(Policy = Policies.Authenticated)]
+    [EndpointSummary("Get service order photo")]
+    [EndpointDescription("Returns one photo of the service order (content type and data URL). Lists and details only carry the photo path, so each photo loads on demand. Roles: Admin, Manager, Attendant, Mechanic.")]
+    [ProducesResponseType<ServiceOrderPhotoContentDto>(StatusCodes.Status200OK)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound, ProblemResponses.ContentType)]
+    public async Task<IActionResult> GetPhoto([FromRoute] Guid id, [FromRoute] Guid photoId, CancellationToken cancellationToken) =>
+        Respond(await sender.Send(new GetServiceOrderPhotoQuery(id, photoId), cancellationToken), Ok);
 
     [HttpPost("{id:guid}/quote/approve")]
     [Authorize(Policy = Policies.Staff)]

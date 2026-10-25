@@ -8,6 +8,8 @@ namespace Oficina.Domain.Identity.Entities;
 
 public sealed class User : AggregateRoot
 {
+    public const int TwoFactorSecretMaxLength = 512;
+
     public const int NameMinLength = 2;
     public const int NameMaxLength = 120;
     public const int PasswordHashMaxLength = 255;
@@ -138,6 +140,8 @@ public sealed class User : AggregateRoot
         TwoFactorSecret = secret;
         TwoFactorEnabled = false;
     }
+
+    public void ProtectTwoFactorSecret(string protectedSecret) => TwoFactorSecret = protectedSecret;
 
     public Result EnableTwoFactor()
     {

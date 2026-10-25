@@ -1,6 +1,6 @@
 using Oficina.Application.Common.Pagination;
-using Oficina.Domain.Common.ValueObjects;
 using Oficina.Application.Users.Dtos;
+using Oficina.Domain.Common.ValueObjects;
 using Oficina.Domain.Identity.Entities;
 using Oficina.Domain.Identity.Enums;
 using Oficina.FunctionalTests.Fixtures;

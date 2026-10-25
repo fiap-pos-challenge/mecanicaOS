@@ -37,6 +37,7 @@ public sealed class SessionApiTests(SqlServerFixture database) : ApiTestBase(dat
         var cookie = Assert.Single(login.Headers.GetValues("Set-Cookie"));
         Assert.Contains("oficina_refresh=", cookie, StringComparison.Ordinal);
         Assert.Contains("httponly", cookie, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("secure", cookie, StringComparison.OrdinalIgnoreCase);
         Assert.Contains("samesite=strict", cookie, StringComparison.OrdinalIgnoreCase);
         Assert.Contains("path=/api/auth", cookie, StringComparison.OrdinalIgnoreCase);
         Assert.False((await ReadJsonAsync(login)).GetProperty("requiresTwoFactor").GetBoolean());

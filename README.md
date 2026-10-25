@@ -3,129 +3,127 @@
 [![CI](https://github.com/fiap-pos-challenge/mecanicaOS/actions/workflows/ci.yml/badge.svg)](https://github.com/fiap-pos-challenge/mecanicaOS/actions/workflows/ci.yml)
 [![CD](https://github.com/fiap-pos-challenge/mecanicaOS/actions/workflows/cd.yml/badge.svg)](https://github.com/fiap-pos-challenge/mecanicaOS/actions/workflows/cd.yml)
 
-Sistema de gestão para oficinas mecânicas, feito no Tech Challenge da Pós Tech SOAT (Software Architecture) da FIAP. Back-end em .NET 10 e front-end em Angular 22, integrados de ponta a ponta.
+Tech Challenge da Pós Tech SOAT (Software Architecture) da FIAP, Fase 1. Back-end monolítico em .NET 10 com DDD e front-end em Angular 22, integrados de ponta a ponta.
 
-- **Glossário do negócio (para todos, inclusive leigos):** [docs/ddd/linguagem-ubiqua.md](docs/ddd/linguagem-ubiqua.md)
-- **Roteiro para testar tudo pelo navegador:** [docs/roteiro-de-testes.md](docs/roteiro-de-testes.md)
-- **Convenções do grupo:** [instructions/arquitetura.md](instructions/arquitetura.md) e [instructions/padrao-desenvolvimento.md](instructions/padrao-desenvolvimento.md)
+| Link | O que é |
+|---|---|
+| [docs/ddd/](docs/ddd/) ([no GitHub](https://github.com/fiap-pos-challenge/mecanicaOS/tree/main/docs/ddd)) | Documentação DDD: Event Storming, diagramas, linguagem ubíqua e rastreabilidade com o código |
+| [docs/arquitetura/](docs/arquitetura/) | Fontes `.drawio` do C4, do Event Storming, do DDD e do Domain Storytelling |
+| [docs/seguranca/](docs/seguranca/) | Relatório do SonarQube e análise de vulnerabilidades das dependências |
+| [docs/qualidade/cobertura.md](docs/qualidade/cobertura.md) | Relatório de cobertura dos testes |
+| [docs/entrega/checklist-fiap.md](docs/entrega/checklist-fiap.md) | Cada item do enunciado e onde ele está no repositório |
+| [docs/roteiro-de-testes.md](docs/roteiro-de-testes.md) | Roteiro para testar tudo pelo navegador |
+| [tests/Oficina.ContractTests/OpenApi/Snapshots/openapi.json](tests/Oficina.ContractTests/OpenApi/Snapshots/openapi.json) | Contrato OpenAPI completo (abre em qualquer visualizador OpenAPI) |
+| [Vídeo da entrega](#) | `[link do vídeo]` (YouTube, público) |
 
 ---
 
 ## Sumário
 
-1. [O que o sistema entrega](#1-o-que-o-sistema-entrega)
-2. [Perfis de acesso](#2-perfis-de-acesso)
-3. [Tecnologias](#3-tecnologias)
-4. [Arquitetura](#4-arquitetura)
-5. [Como baixar e rodar](#5-como-baixar-e-rodar)
-6. [Dados de demonstração](#6-dados-de-demonstração)
-7. [Como testar cada funcionalidade](#7-como-testar-cada-funcionalidade)
-8. [Comandos de qualidade (sem erros e sem warnings)](#8-comandos-de-qualidade-sem-erros-e-sem-warnings)
-9. [Testes automatizados](#9-testes-automatizados)
-10. [Rodar pela IDE, migrations, Swagger e banco](#10-rodar-pela-ide-migrations-swagger-e-banco)
-11. [Configuração](#11-configuração)
-12. [Segurança e LGPD](#12-segurança-e-lgpd)
+1. [Objetivo](#1-objetivo)
+2. [Solução](#2-solução)
+3. [Arquitetura](#3-arquitetura)
+4. [Tecnologias](#4-tecnologias)
+5. [Pré-requisitos](#5-pré-requisitos)
+6. [Como executar](#6-como-executar)
+7. [Usuários e autenticação](#7-usuários-e-autenticação)
+8. [Swagger e documentação da API](#8-swagger-e-documentação-da-api)
+9. [Build e testes](#9-build-e-testes)
+10. [Qualidade e vulnerabilidades (SonarQube)](#10-qualidade-e-vulnerabilidades-sonarqube)
+11. [Banco de dados: decisão e justificativa](#11-banco-de-dados-decisão-e-justificativa)
+12. [Requisitos do enunciado e onde estão](#12-requisitos-do-enunciado-e-onde-estão)
+13. [Decisões de domínio e limitações](#13-decisões-de-domínio-e-limitações)
+14. [Estrutura de diretórios](#14-estrutura-de-diretórios)
+15. [Desenvolvimento local (IDE, migrations, User Secrets)](#15-desenvolvimento-local-ide-migrations-user-secrets)
+16. [Configuração](#16-configuração)
+17. [Segurança e LGPD](#17-segurança-e-lgpd)
+18. [Funcionalidades e perfis](#18-funcionalidades-e-perfis)
 
 ---
 
-## 1. O que o sistema entrega
+## 1. Objetivo
 
-Todas as telas abaixo usam a API real; nenhuma tela está "em construção".
+Uma oficina mecânica de médio porte faz o atendimento, o diagnóstico, a execução e a entrega dos veículos com anotações e planilhas. Isso gera erro na priorização, falha no controle de peças, dificuldade para acompanhar o status, perda de histórico e um fluxo de orçamento lento.
 
-| Módulo | O que faz | Tela |
-|---|---|---|
-| **Acesso** | Login com e-mail e senha, sessão que sobrevive à recarga (cookie `HttpOnly`), verificação em duas etapas (TOTP), bloqueio após 5 erros, inatividade com aviso e saída automática, convite de funcionário por e-mail | `/login` |
-| **Painel** | Faturamento, OS abertas, taxa de aprovação, valores a receber, faturamento diário (serviços e peças), serviços mais vendidos, pátio por situação e avisos de atenção com ação direta. Cada usuário personaliza seus cartões | `/dashboard` |
-| **Clientes e veículos** | Cadastro de pessoa física e jurídica com CPF/CNPJ validado e mascarado, endereço pelo CEP (ViaCEP), consentimento de mensagens, revelar dado com motivo (auditado), veículos com placa e quilometragem, transferência de dono, situação (ativo, OS aberta, sem retorno), frota, histórico e gasto, importação CSV e exportação LGPD | `/customers` |
-| **Catálogo** | Serviços (preço, tempo, comissão, garantia, peças usuais), peças e insumos (custo, venda, margem, estoque mínimo, fornecedor, EAN-13) e pacotes (preço fechado e economia), com histórico de preço | `/catalog` |
-| **Estoque** | Visão geral com alertas de mínimo, entradas (manual, código de barras e XML da NF-e), baixas, movimentações, inventário com aprovação, fornecedores e pedidos de compra com sugestão automática | `/inventory` |
-| **Ordens de serviço** | Abrir OS (Nova OS), quadro com arrastar e soltar, lista, agenda, detalhe com histórico, fotos, tempos e documentos, controle de versão contra edição simultânea e atualização em tempo real | `/service-orders` |
-| **Modo mecânico** | Celular/PWA: minhas OS, checklist, fotos, diagnóstico com sugestões de itens, enviar para orçamento, cronômetro e finalizar; funciona sem internet e sincroniza na volta | `/mechanic` |
-| **Orçamentos** | Montador com pacotes, serviços e peças, desconto automático e manual, aprovação de desconto acima do limite, plano de pagamento, envio por WhatsApp, e-mail ou link com validade, reenvio, aprovação no balcão, recusa com motivo e versões | `/quotes` |
-| **Portal do cliente** | Link sem login: confirmação pelos 3 últimos dígitos do telefone (bloqueia após 3 erros), andamento, fotos, aprovação parcial ou recusa do orçamento, pagamento Pix (copia-e-cola e QR code) e documentos | `/o/{link}` |
-| **Consulta pública** | Situação da OS pelo número e CPF/CNPJ | `/portal` |
-| **Documentos** | OS, orçamento e recibo congelados com código de verificação, PDF, envio por e-mail e página pública de autenticidade | `/documents` e `/v/{código}` |
-| **Financeiro** | Recebido, a receber, comissões por mecânico, totais por forma de pagamento e últimos recebimentos | `/finance` |
-| **Relatórios** | Construtor (indicador × agrupamento × período × gráfico), relatórios salvos, envio semanal por e-mail, exportação Excel/PDF e "Pergunte aos seus dados" (pergunta em português vira relatório) | `/reports` |
-| **Automações** | Regras com gatilho, condições, espera e ações (WhatsApp, e-mail, avisar a equipe, pedido de compra), saúde das filas e reprocessamento de falhas | `/automations` |
-| **Notificações** | Sino com avisos da equipe em tempo real, marcar como lidas e preferências por canal | sino no topo |
-| **Equipe** | Usuários, convites, ativar/desativar, perfil profissional (especialidades, comissão, horário), produtividade e permissões por perfil | `/team` |
-| **Configurações** | Dados da oficina e logo, regras de desconto, pagamentos e chave Pix, modelos de mensagem, segurança, sessões ativas, auditoria e situação fiscal. Mudanças pedem a senha de novo | `/settings` |
-| **Plataforma** | Plano, usuários em uso contra o limite, uso do mês e módulos | `/platform` |
+O objetivo é entregar o MVP do **Sistema Integrado de Atendimento e Execução de Serviços**: gestão de ordens de serviço (OS), clientes, veículos, serviços, peças e estoque, com orçamento enviado ao cliente para aprovação, acompanhamento pelo cliente via API, autenticação JWT nas rotas administrativas e boas práticas de qualidade e segurança.
 
-Fora do escopo desta entrega (aparecem como "Em breve" ou ficam na fila): emissão de nota fiscal, envio real por WhatsApp (precisa de um provedor) e pagamento com cartão no portal (precisa de um provedor).
+## 2. Solução
 
-## 2. Perfis de acesso
+- O atendente identifica o cliente pelo **CPF ou CNPJ** (validados), cadastra o **veículo** (placa antiga ou Mercosul, marca, modelo e ano) e abre a **OS**.
+- O mecânico faz o diagnóstico e inclui **serviços, peças e insumos**. O **orçamento é calculado automaticamente** a partir do catálogo, com descontos e limites.
+- O orçamento é **enviado ao cliente** por link (portal) ou e-mail. O cliente **aprova** (total ou parcialmente) ou **recusa** no portal, ou o atendente registra a decisão no balcão.
+- A aprovação muda a OS para **Em execução** e **baixa o estoque** das peças na **mesma transação**. Se faltar saldo, nada é gravado.
+- A OS segue os status **Recebida → Em diagnóstico → Aguardando aprovação → Em execução → Finalizada → Entregue**, com regras de transição no domínio e mudança automática conforme as ações.
+- O cliente **acompanha a OS pela API pública** (número da OS e CPF/CNPJ no corpo da requisição, ou link do portal).
+- A gestão tem **CRUD de clientes, veículos, serviços e peças**, **controle de estoque** (entradas, baixas, inventário e alerta de mínimo), **listagem e detalhe de OS** e o **tempo médio de execução** dos serviços.
 
-| Perfil | Principais permissões |
-|---|---|
-| **Administrador** | Tudo, inclusive equipe, configurações, plataforma, exclusões e reprocessar falhas |
-| **Gerente** | Operação completa, custos, financeiro, relatórios, automações, aprovação de desconto |
-| **Atendente** | Clientes, veículos, OS, orçamentos, documentos e painel (desconto até o seu limite) |
-| **Mecânico** | Modo mecânico, suas OS, catálogo sem custos e contagem de estoque |
-| **Cliente** | Sem login: portal pelo link e consulta pública |
+## 3. Arquitetura
 
-A API recusa (403) qualquer rota fora do perfil, mesmo que alguém tente chamá-la direto.
-
-## 3. Tecnologias
-
-**Back-end:** .NET 10 (SDK 10.0.100), ASP.NET Core com Controllers, SQL Server 2022, EF Core 10 (migrations), MediatR 12.5, FluentValidation 12, Mapperly, JWT + BCrypt, SignalR (tempo real), Swagger (Swashbuckle), QRCoder (QR do Pix), serviços em segundo plano (outbox, automações e relatórios agendados).
-
-**Testes do back-end:** xUnit v3 com Microsoft Testing Platform, NSubstitute, Testcontainers (SQL Server real em contêiner), Respawn, coverlet e ReportGenerator.
-
-**Front-end:** Angular 22.2 (standalone, signals, zoneless, `OnPush`), TypeScript 6 estrito, Angular CDK, NgRx Signals, ECharts 6, Lucide (ícones), cliente SignalR, PWA (service worker e IndexedDB), nginx.
-
-**Testes do front-end:** Vitest + Angular Testing Library, MSW (API simulada só nos testes), axe (acessibilidade), Playwright (E2E em desktop e celular) e Lighthouse.
-
-**Infraestrutura:** Docker e Docker Compose, GitHub Actions (CI e CD).
-
-## 4. Arquitetura
-
-Back-end em Clean Architecture com DDD:
+**Monólito em camadas** (Clean Architecture) com **DDD**, **CQRS** (MediatR) e **Outbox** para os efeitos depois do commit.
 
 ```text
-src/
-  Oficina.Domain/          entidades, value objects, regras, eventos e interfaces de repositório
-  Oficina.Application/     casos de uso (MediatR e serviços de aplicação), validações, DTOs
-  Oficina.Infrastructure/  EF Core, migrations, repositórios, consultas, JWT, e-mail, Pix, outbox e serviços em segundo plano
-  Oficina.Api/             controllers, autenticação, autorização, ProblemDetails, Swagger e hub SignalR
-tests/
-  Oficina.UnitTests/        domínio e aplicação
-  Oficina.ContractTests/    contrato da API (OpenAPI, autorização, erros, dados pessoais fora da URL)
-  Oficina.FunctionalTests/  API e banco de ponta a ponta com SQL Server em contêiner
-web/                        front-end Angular (features por pasta, gateways HTTP, design system próprio)
-scripts/seed/               carga de demonstração (oficina em uso)
-docs/                       linguagem ubíqua, roteiro de testes, arquitetura e enunciado
+Oficina.Api ──► Oficina.Application ──► Oficina.Domain
+     │                                        ▲
+     └──► Oficina.Infrastructure ─────────────┘ (também implementa as interfaces da Application)
 ```
 
-- A API conversa só com a Application; a Application usa o domínio e interfaces; a Infrastructure implementa as interfaces; o domínio não depende de ninguém.
-- Erros esperados voltam como `Result` com código estável (ex.: `quotes.notPending`) e viram ProblemDetails em português.
-- Eventos de domínio são gravados na mesma transação (outbox) e processados em segundo plano: notificações, tempo real e automações.
-- No navegador, o nginx serve o front e repassa `/api` (inclusive o WebSocket do SignalR) para a API: o navegador fala só com a própria origem.
+| Camada | Responsabilidade |
+|---|---|
+| `Oficina.Domain` | Agregados (`ServiceOrder`, `Estimate`, `Customer`, `Vehicle`, `Service`, `Part`…), value objects (`Document`, `LicensePlate`, `Money`, `Quantity`…), eventos de domínio, políticas (`QuoteApprovalPolicy`, `EstimatePricing`) e interfaces de repositório. Não depende de nenhum pacote |
+| `Oficina.Application` | Um command ou query por caso de uso (MediatR), cada um com handler e validator (FluentValidation), DTOs e handlers de eventos de domínio |
+| `Oficina.Infrastructure` | EF Core (SQL Server), migrations, repositórios, consultas, JWT, BCrypt, e-mail, Pix simulado, Outbox e serviços em segundo plano |
+| `Oficina.Api` | Controllers (só enviam commands e queries pelo `ISender`), autenticação, policies por perfil, rate limiting, ProblemDetails, Swagger e hub SignalR |
 
-## 5. Como baixar e rodar
+- **Erros esperados** voltam como `Result` com um código estável (por exemplo, `serviceOrders.invalidTransition`) e viram ProblemDetails em português. Exceção só para o inesperado.
+- **Transações:** cada command termina em um único `CommitAsync`. A aprovação do orçamento substitui os itens da OS, muda o status e baixa o estoque no mesmo commit. Concorrência otimista com `rowversion` em `ServiceOrder`, `Part` e `Estimate`.
+- **Eventos de domínio** (`QuoteApproved`, `StockDeducted`, `StockBelowMinimum`, `PaymentConfirmed`…) são gravados no **Outbox** na mesma transação e processados em segundo plano: notificações, tempo real, recibos e automações.
+- **Testes de arquitetura** garantem as dependências entre camadas, controllers só com `ISender`, um tipo por arquivo e zero comentários.
+- No navegador, o nginx serve o front e repassa `/api` (inclusive o WebSocket do SignalR) para a API.
 
-### Pré-requisitos
+Diagramas: [C4 (contexto, containers e componentes)](docs/arquitetura/C4_Oficina.drawio), [Event Storming](docs/ddd/event-storming.pdf), [subdomínios, mapa de contextos, modelo de domínio e Domain Storytelling](docs/ddd/diagramas.pdf). Índice completo em [docs/ddd/README.md](docs/ddd/README.md).
 
-- [Git](https://git-scm.com/)
-- [Docker Desktop](https://www.docker.com/products/docker-desktop/) (obrigatório para rodar tudo e para os testes funcionais e E2E)
-- [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0) (para desenvolver e testar o back-end)
-- [Node.js 24.15 ou mais novo](https://nodejs.org/) (para desenvolver e testar o front-end)
+## 4. Tecnologias
 
-### Passo a passo
+| Área | Tecnologias |
+|---|---|
+| Linguagem e back-end | C# 14, .NET 10 (SDK 10.0.100), ASP.NET Core com Controllers, MediatR 12.5, FluentValidation 12, Mapperly, JWT Bearer + BCrypt, Data Protection, SignalR, Swashbuckle, QRCoder |
+| Banco | SQL Server 2022, EF Core 10 com migrations |
+| Testes do back-end | xUnit v3 (Microsoft Testing Platform), NSubstitute, Testcontainers (SQL Server real), Respawn, coverlet e ReportGenerator |
+| Front-end | Angular 22.2 (standalone, signals, zoneless, `OnPush`), TypeScript 6 estrito, NgRx Signals, Angular CDK, ECharts, PWA, nginx |
+| Testes do front-end | Vitest + Angular Testing Library, MSW (só nos testes), axe, Playwright e Lighthouse |
+| Qualidade e segurança | SonarQube Community (Docker), `dotnet list package --vulnerable`, `npm audit`, varredura de segredos |
+| Infraestrutura | Docker (Dockerfile multi-stage), Docker Compose, GitHub Actions (CI e CD) |
+
+## 5. Pré-requisitos
+
+| Ferramenta | Para quê |
+|---|---|
+| [Git](https://git-scm.com/) | Baixar o repositório |
+| [Docker Desktop](https://www.docker.com/products/docker-desktop/) **aberto e rodando** | Executar tudo, os testes funcionais, o E2E e o SonarQube |
+| [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0) | Só para desenvolver e testar o back-end fora do Docker |
+| [Node.js 24.15 ou mais novo](https://nodejs.org/) | Só para desenvolver e testar o front-end, gerar diagramas e rodar a análise do SonarQube |
+
+Para só executar o sistema, bastam Git e Docker Desktop.
+
+## 6. Como executar
 
 ```bash
 git clone https://github.com/fiap-pos-challenge/mecanicaOS.git
 cd mecanicaOS
-docker compose up -d --build
+cp .env.example .env
+docker compose up -d --build --wait
 ```
 
-Aguarde os contêineres ficarem saudáveis (`docker compose ps`) e abra:
+No Windows (cmd ou PowerShell), troque `cp` por `copy .env.example .env`.
+
+O `.env` guarda as senhas e chaves **só de desenvolvimento** e nunca vai para o Git. Os valores do `.env.example` já funcionam; troque-os se a máquina for compartilhada. Sem o `.env`, o `docker compose` para com a mensagem `defina ... no .env`.
+
+Quando os contêineres ficarem saudáveis, abra:
 
 | Endereço | O que é |
 |---|---|
 | http://localhost:4200 | Sistema (front-end) |
-| http://localhost:8080/swagger | Documentação e teste da API |
+| http://localhost:8080/swagger | Swagger da API |
 | http://localhost:8080/health | Saúde da API |
 
 O compose sobe quatro serviços:
@@ -135,210 +133,382 @@ O compose sobe quatro serviços:
 | `sqlserver` | SQL Server 2022 na porta 1433 (dados no volume `oficina-sqlserver-data`) |
 | `api` | API em Development na porta 8080. Na subida cria o banco, aplica as migrations e cria o Admin de teste |
 | `web` | Front-end de produção servido pelo nginx na porta 4200 |
-| `seed` | Roda uma única vez e preenche o banco vazio como uma oficina em uso (seção 6) |
+| `seed` | Roda uma vez e preenche o banco vazio como uma oficina em uso (seção 7) |
 
-Comandos úteis:
+### 6.1 Comandos do dia a dia (na raiz do repositório)
 
 ```bash
 docker compose ps              # situação dos serviços
 docker compose logs seed       # usuários criados e link do portal do cliente
 docker compose logs -f api     # logs da API
-docker compose down            # para tudo e mantém os dados
-docker compose down -v         # para tudo e APAGA o banco (a próxima subida recria e recarrega)
+docker compose restart api     # reinicia só a API
+docker compose stop            # para tudo sem apagar nada
+docker compose down            # remove os contêineres e mantém os dados
 ```
 
-E-mails em desenvolvimento não saem da máquina: cada mensagem (convite, orçamento, recibo, relatório agendado, notificação) vira um arquivo `.eml` na pasta `.mail/` da raiz. Abra num cliente de e-mail ou num editor de texto.
+E-mails em desenvolvimento não saem da máquina: cada mensagem vira um arquivo `.eml` na pasta `.mail/` da raiz.
 
-## 6. Dados de demonstração
+### 6.2 Apagar e recriar contêineres e imagens
 
-Na primeira subida, o serviço `seed` executa `scripts/seed/seed-oficina.mjs`, que usa **somente a API pública** do sistema (como um usuário faria) para montar a oficina **Auto Center Paulista**:
+Todas as imagens e contêineres do projeto começam com `oficina`. Rode na raiz do repositório.
 
-- **Equipe de todos os perfis** (senha `Oficina@2026`): gerente, 2 atendentes e 3 mecânicos, com especialidades, comissão e horário.
-- **Configurações:** dados da oficina, chave Pix, formas de pagamento, taxas e regras de desconto (cliente fiel e frota).
-- **Catálogo:** 11 serviços, 14 peças e insumos com estoque inicial (dois abaixo do mínimo) e 3 pacotes.
-- **Estoque:** 3 fornecedores, entradas com nota, uma contagem aberta e um pedido de compra.
-- **Clientes:** 10 clientes (pessoas e empresas, uma frota com 3 veículos) e 12 veículos.
-- **Ordens de serviço em todas as etapas:** recebidas, em diagnóstico (com checklist, foto e diagnóstico), aguardando aprovação (orçamento enviado por link e por WhatsApp), em execução, finalizada (a receber) e entregues (com recibo; uma paga por Pix pelo portal).
-- **Documentos, notificações, 4 automações e 3 relatórios salvos** (um agendado).
+| O que apagar | Comando |
+|---|---|
+| Aplicação: contêineres, rede, **banco** (volumes) e imagens `oficina-api:local` e `oficina-web:local` | `docker compose down -v --rmi local` |
+| Modo demonstração (`oficina-web-demo` e a imagem `oficina-web:demo`) | `docker compose --profile demo down --rmi local` |
+| SonarQube: contêiner e volumes (análises guardadas) | `docker compose --profile quality down -v` |
+| Stack descartável do E2E, se uma execução foi interrompida | `docker compose --env-file .env -f web/e2e/docker-compose.e2e.yml down -v --rmi local` |
+| Imagens reaproveitadas pelo E2E e pelo Lighthouse | `docker image rm oficina-web:e2e oficina-web:e2e-demo oficina-api:e2e oficina-web:lighthouse` |
+| Imagem do SonarQube (cerca de 2,5 GB; só se quiser baixar de novo) | `docker image rm sonarqube:26.9.0.129388-community` |
+| Contêineres que sobraram dos testes funcionais (Testcontainers) | `docker ps -a --filter label=org.testcontainers=true -q` e depois `docker rm -f <ids>` |
+| Cache de build do Docker | `docker builder prune -f` |
 
-O banco só é preenchido se não tiver clientes. Para recarregar do zero: `docker compose down -v` e `docker compose up -d --build`. Para rodar a carga contra uma API fora do Docker: `node scripts/seed/seed-oficina.mjs` (variáveis `API_URL`, `ADMIN_EMAIL`, `ADMIN_PASSWORD` e `PIX_WEBHOOK_SECRET`).
+O `-v` apaga o banco de desenvolvimento. Não há como desfazer, mas a próxima subida recria o banco e a carga de demonstração.
+
+Para recriar do zero, sem reaproveitar nada do build anterior:
+
+```bash
+docker compose down -v --rmi local
+docker compose build --no-cache
+docker compose up -d --wait
+docker compose ps
+```
+
+Para reconstruir só uma imagem depois de mudar o código: `docker compose up -d --build --wait api` (ou `web`).
+
+As imagens dos testes não precisam ser criadas à mão: o `npm run e2e` e o `npm run lighthouse` constroem as suas, e os testes funcionais sobem e removem o próprio SQL Server (seção 9).
+
+## 7. Usuários e autenticação
+
+As senhas ficam no seu `.env` (valores iniciais no [.env.example](.env.example)):
 
 | Perfil | E-mail | Senha |
 |---|---|---|
-| Administrador | `admin@oficina.local` | `Admin@123` |
-| Gerente | `gerente@oficina.local` | `Oficina@2026` |
-| Atendentes | `ana.atendente@oficina.local`, `bruno.atendente@oficina.local` | `Oficina@2026` |
-| Mecânicos | `marcos.mecanico@oficina.local`, `paula.mecanica@oficina.local`, `rafael.mecanico@oficina.local` | `Oficina@2026` |
+| Administrador (criado pela API na subida em Development) | `DEV_ADMIN_EMAIL` (`admin@oficina.local`) | `DEV_ADMIN_PASSWORD` |
+| Gerente | `gerente@oficina.local` | `SEED_USERS_PASSWORD` |
+| Atendentes | `ana.atendente@oficina.local`, `bruno.atendente@oficina.local` | `SEED_USERS_PASSWORD` |
+| Mecânicos | `marcos.mecanico@oficina.local`, `paula.mecanica@oficina.local`, `rafael.mecanico@oficina.local` | `SEED_USERS_PASSWORD` |
+| Cliente | Sem login: link do portal (`docker compose logs seed`) ou consulta pública pelo número da OS e CPF/CNPJ | — |
 
-Credenciais e segredos acima valem **só para desenvolvimento** e não servem para produção.
+**Como autenticar nas APIs administrativas:**
 
-## 7. Como testar cada funcionalidade
+1. Chame `POST /api/auth/login` com `{ "email": "admin@oficina.local", "password": "<DEV_ADMIN_PASSWORD do .env>" }`.
+2. A resposta traz o `accessToken` (JWT HS256, validade curta).
+3. Envie o token em toda chamada a `/api/admin/**` no cabeçalho `Authorization: Bearer <accessToken>`.
+4. Sem token, a API responde 401. Com perfil sem permissão, 403. O login aceita 5 tentativas por minuto por IP (429 depois disso), e 5 senhas erradas seguidas bloqueiam a conta por 15 minutos.
 
-O passo a passo completo, com caixas para marcar, está em [docs/roteiro-de-testes.md](docs/roteiro-de-testes.md). Resumo por módulo:
+A carga de demonstração (`scripts/seed/seed-oficina.mjs`) usa só a API, como um usuário faria, e monta a oficina **Auto Center Paulista**: equipe de todos os perfis, configurações, 11 serviços, 14 peças (duas abaixo do mínimo), 3 pacotes, fornecedores, 10 clientes, 12 veículos, OS em todas as etapas, documentos, notificações, automações e relatórios. O banco só é preenchido se não tiver clientes.
 
-| Módulo | Como testar | Com quem entrar |
+## 8. Swagger e documentação da API
+
+- **Swagger UI:** http://localhost:8080/swagger (só em Development, que é o modo do `docker compose`). Clique em **Authorize**, cole o `accessToken` do login e chame qualquer rota.
+- **Contrato estático:** [openapi.json](tests/Oficina.ContractTests/OpenApi/Snapshots/openapi.json), versionado e conferido por teste de contrato. Toda operação declara resumo, tipos de resposta e status possíveis.
+- **Formato:** JSON em camelCase, enums como string, datas ISO 8601 UTC, paginação `{ items, page, pageSize, totalItems }` e erros em ProblemDetails com `code`, `traceId` e `errors`.
+
+## 9. Build e testes
+
+Os comandos do back-end rodam na **raiz do repositório**. Os do front-end rodam dentro da pasta **`web/`**. Funcionam no Git Bash, no PowerShell e no terminal do macOS/Linux, exceto onde está indicado.
+
+### 9.1 Back-end (raiz do repositório)
+
+```bash
+dotnet tool restore                                   # ferramentas locais (dotnet-ef, reportgenerator, sonarscanner)
+dotnet restore Oficina.slnx
+dotnet build Oficina.slnx -c Release -warnaserror     # mesmo build do CI: nenhum aviso é aceito
+dotnet test --solution Oficina.slnx -c Release --no-build
+```
+
+Para rodar um projeto de teste por vez:
+
+```bash
+dotnet test --project tests/Oficina.UnitTests -c Release --no-build
+dotnet test --project tests/Oficina.ContractTests -c Release --no-build
+dotnet test --project tests/Oficina.FunctionalTests -c Release --no-build
+```
+
+**Os testes funcionais precisam do Docker Desktop aberto.** O Testcontainers sobe um SQL Server descartável (imagem `mcr.microsoft.com/mssql/server:2022-latest`), aplica as migrations e remove o contêiner no fim. Sem Docker, os testes falham na inicialização com a mensagem "Os testes funcionais precisam do Docker em execução". A primeira execução demora mais, porque baixa a imagem do SQL Server (cerca de 2,3 GB). Os testes unitários e de contrato não usam Docker.
+
+| Camada | Projeto | O que cobre |
 |---|---|---|
-| Acesso | Entrar, recarregar (continua logado), sair, errar a senha 5 vezes (bloqueio), abrir `/settings` como mecânico (acesso negado) | Todos |
-| Painel | Trocar o período, clicar **Gerar pedido** num aviso de estoque, personalizar os cartões | Gerente |
-| Clientes | Buscar, abrir a ficha, revelar o telefone, criar cliente com CEP `01310-100`, cadastrar e transferir veículo, importar CSV, exportar dados LGPD | Atendente / Gerente |
-| Catálogo | Alterar preço e ver o histórico, criar pacote, desativar peça usada em pacote (bloqueado) | Gerente |
-| Estoque | Registrar entrada, baixa e contagem; ver sugestões e enviar pedido de compra | Gerente |
-| Ordens de serviço | **Nova OS**, arrastar no quadro, abrir o detalhe, ver fotos e tempos | Atendente |
-| Modo mecânico | Iniciar atendimento, checklist, foto, diagnóstico, enviar para orçamento, cronômetro, finalizar | Mecânico |
-| Orçamentos | Montar, aplicar desconto, pedir aprovação acima do limite, enviar por link, aprovar no balcão, recusar e criar nova versão | Atendente / Gerente |
-| Portal | Abrir o link de `docker compose logs seed`, confirmar com `321`, aprovar parte dos itens, gerar Pix, ver documentos, recusar | Sem login |
-| Consulta pública | `/portal` com o número da OS e o CPF do cliente | Sem login |
-| Documentos | Filtrar, abrir, baixar PDF, enviar por e-mail e verificar a autenticidade | Atendente |
-| Financeiro | Conferir recebido, a receber, comissões e formas de pagamento | Gerente |
-| Relatórios | Montar, salvar, agendar, exportar Excel/PDF e perguntar em português | Gerente |
-| Automações | Pausar regra, criar a partir de modelo, ver filas e falhas | Gerente / Admin |
-| Notificações | Abrir o sino, marcar como lidas, mudar preferências | Todos |
-| Equipe | Convidar (link no `.eml`), editar perfil profissional, ver produtividade, desativar | Admin |
-| Configurações | Alterar dados da oficina (pede senha), encerrar sessão, filtrar auditoria | Admin |
-| Plataforma | Ver plano, usuários em uso e módulos | Admin |
+| Unidade | `tests/Oficina.UnitTests` | Agregados, value objects, políticas e regras do domínio; handlers e validators; regras de arquitetura |
+| Contrato | `tests/Oficina.ContractTests` | Snapshot OpenAPI, autorização por rota, rotas anônimas permitidas, nenhum dado pessoal na URL, dependências entre camadas |
+| Funcional | `tests/Oficina.FunctionalTests` | API e banco de ponta a ponta (fluxo da OS, orçamento, portal, Pix, estoque, permissões, migrations, outbox e concorrência) |
+| Front-end | `web/src/**/*.spec.ts` | Componentes, páginas, stores, gateways, validadores e acessibilidade |
+| E2E | `web/e2e/*.spec.ts` | Navegador real (desktop e celular) contra a imagem de produção e a API real |
 
-## 8. Comandos de qualidade (sem erros e sem warnings)
+### 9.2 Cobertura do back-end
 
-Rode na raiz do repositório. O build trata qualquer warning como erro.
-
-### Back-end
+Mesmo gate do CI: mínimo de **85% de linhas** sobre `src/` (o enunciado pede 80% nos domínios críticos). Apague os resultados anteriores para não somar execuções antigas:
 
 ```bash
-dotnet clean                                   # limpa bin/obj
-dotnet restore                                 # restaura pacotes NuGet
-dotnet tool restore                            # dotnet-ef e ReportGenerator
-dotnet build -warnaserror                      # compila tudo; 0 warnings e 0 erros
-dotnet build --configuration Release -warnaserror
-dotnet test                                    # unidade, contrato e funcionais (Docker aberto)
-dotnet test --project tests/Oficina.UnitTests          # só unidade
-dotnet test --project tests/Oficina.ContractTests      # só contrato
-dotnet test --project tests/Oficina.FunctionalTests    # só funcionais (sobe SQL Server em contêiner)
+rm -rf TestResults coveragereport
 ```
 
-Cobertura (mínimo de 85% de linhas, igual ao CI):
+No PowerShell: `Remove-Item -Recurse -Force TestResults, coveragereport -ErrorAction SilentlyContinue`.
 
 ```bash
-dotnet build --configuration Release -warnaserror
-dotnet test --project tests/Oficina.UnitTests --configuration Release --no-build --results-directory TestResults/Unit --coverlet --coverlet-output-format cobertura
-dotnet test --project tests/Oficina.ContractTests --configuration Release --no-build --results-directory TestResults/Contract --coverlet --coverlet-output-format cobertura
-dotnet test --project tests/Oficina.FunctionalTests --configuration Release --no-build --results-directory TestResults/Functional --coverlet --coverlet-output-format cobertura
-dotnet reportgenerator "-reports:TestResults/**/*.cobertura.*.xml" "-targetdir:coveragereport" "-reporttypes:Html;TextSummary" "-assemblyfilters:+Oficina.Api;+Oficina.Application;+Oficina.Domain;+Oficina.Infrastructure" "-filefilters:-**/Program.cs;-**/Migrations/**"
+dotnet test --project tests/Oficina.UnitTests -c Release --no-build --results-directory TestResults/Unit --coverlet --coverlet-output-format cobertura
+dotnet test --project tests/Oficina.ContractTests -c Release --no-build --results-directory TestResults/Contract --coverlet --coverlet-output-format cobertura
+dotnet test --project tests/Oficina.FunctionalTests -c Release --no-build --results-directory TestResults/Functional --coverlet --coverlet-output-format cobertura
+dotnet reportgenerator "-reports:TestResults/**/*.cobertura.*.xml" "-targetdir:coveragereport" "-reporttypes:Html;TextSummary;JsonSummary" "-assemblyfilters:+Oficina.Api;+Oficina.Application;+Oficina.Domain;+Oficina.Infrastructure" "-filefilters:-**/Program.cs;-**/Migrations/**"
 ```
 
-O resumo fica em `coveragereport/Summary.txt` e o relatório navegável em `coveragereport/index.html`.
+O relatório abre em `coveragereport/index.html`. Depois de rodar também o `npm test` do front-end (9.3), `node scripts/docs/coverage-report.mjs` (na raiz) grava o resumo em [docs/qualidade/cobertura.md](docs/qualidade/cobertura.md) (total, por projeto, domínios críticos e front-end) e falha se algum mínimo não for atingido.
 
-Depois de mudar uma rota ou um DTO, atualize o snapshot do contrato (no PowerShell use `$env:UPDATE_OPENAPI_SNAPSHOT=1`):
+### 9.3 Front-end (pasta `web/`)
+
+```bash
+cd web
+npm ci                 # instala as dependências exatamente como no package-lock.json
+npm run lint           # ESLint, zero comentários, cores dos tokens e Prettier
+npm test               # Vitest com cobertura (mínimo de 85% de linhas)
+npm run build          # build de produção em web/dist/
+npm run check:bundle   # garante que a API simulada não entrou no build de produção
+npm run check:secrets  # procura segredos nos arquivos versionados
+npm audit              # vulnerabilidades das dependências npm
+```
+
+Testes no navegador (precisam do Docker Desktop aberto e do `.env` na raiz):
+
+```bash
+cd web
+npx playwright install chromium   # só na primeira vez
+npm run e2e                       # Playwright (desktop e celular) + axe
+npm run lighthouse                # acessibilidade do login e da tela de nova versão (mínimo 95)
+```
+
+O `npm run e2e` constrói as imagens `oficina-api:e2e`, `oficina-web:e2e` e `oficina-web:e2e-demo` e sobe a stack descartável `oficina-e2e` (`web/e2e/docker-compose.e2e.yml`, portas 4300 e 4301, SQL Server sem volume). No fim, remove os contêineres; as imagens ficam para acelerar a próxima execução. O banco de desenvolvimento não é tocado. O `npm run lighthouse` usa a imagem `oficina-web:lighthouse`. Como apagar essas imagens: seção 6.2.
+
+### 9.4 Contrato da API
+
+Depois de mudar uma rota ou um DTO, atualize o snapshot do contrato (na raiz) e os tipos do front:
 
 ```bash
 UPDATE_OPENAPI_SNAPSHOT=1 dotnet test --project tests/Oficina.ContractTests
 cd web && npm run api:generate
 ```
 
-### Front-end
+No PowerShell, rode `$env:UPDATE_OPENAPI_SNAPSHOT=1` antes do `dotnet test` e `Remove-Item Env:UPDATE_OPENAPI_SNAPSHOT` depois.
+
+### 9.5 Validação completa antes de entregar
+
+Na ordem, com o Docker Desktop aberto e o `.env` criado:
+
+1. Back-end: `dotnet build Oficina.slnx -c Release -warnaserror` e `dotnet test --solution Oficina.slnx -c Release --no-build`.
+2. Dependências do back-end: `dotnet list Oficina.slnx package --vulnerable --include-transitive`.
+3. Front-end, em `web/`: `npm ci`, `npm run lint`, `npm test`, `npm run build`, `npm run check:bundle`, `npm run check:secrets`, `npm audit`, `npm run e2e` e `npm run lighthouse`.
+4. SonarQube (seção 10): `node scripts/sonar/run-analysis.mjs --stop`, com o quality gate **Passed** nos dois projetos.
+5. Subida do zero (seção 6.2): `docker compose down -v --rmi local` e `docker compose up -d --build --wait`; depois o [roteiro de testes](docs/roteiro-de-testes.md) no navegador.
+
+O CI ([.github/workflows/ci.yml](.github/workflows/ci.yml)) roda os passos 1 e 3 (com o gate de cobertura de 85% nos dois lados) em todo push e pull request.
+
+## 10. Qualidade e vulnerabilidades (SonarQube)
+
+O SonarQube Community roda em Docker, no profile `quality` do `docker-compose.yml`, fora do ambiente da aplicação. Um único comando sobe o servidor, gera o token, roda os testes com cobertura, analisa o back-end (`dotnet-sonarscanner`, ferramenta local do repositório) e o front-end (`@sonar/scan` via `npx`) e grava o relatório. Os scanners rodam na sua máquina e baixam o Java do próprio SonarQube, então a única imagem extra é a do SonarQube. Pré-requisitos: Docker Desktop, .NET 10 SDK e Node.js.
 
 ```bash
-cd web
-npm ci                # instala exatamente o package-lock.json
-npm run lint          # ESLint, sem comentários, cores só por tokens e Prettier
-npm test              # Vitest com cobertura (mínimo 85%) e testes dos scripts
-npm run build         # build de produção
-npm run check:bundle  # garante que nada de teste entrou no pacote de produção
-npm run check:secrets # varredura de segredos
-npm audit --audit-level=high
-npm run e2e           # Playwright desktop e celular numa stack Docker própria (porta 4300)
+node scripts/sonar/run-analysis.mjs          # analisa e mantém o SonarQube em http://localhost:9000
+node scripts/sonar/run-analysis.mjs --stop   # analisa e para o SonarQube no fim
 ```
 
-### Docker do zero
+- Projetos: `mecanicaos-api` (back-end .NET) e `mecanicaos-web` (front-end Angular).
+- Usuário `admin`, senha `SONAR_ADMIN_PASSWORD` do `.env`. O token de análise é gravado no `.env` sem aparecer na saída.
+- A primeira execução baixa a imagem do SonarQube (cerca de 2,5 GB) e o Java dos scanners. A análise completa leva de 10 a 20 minutos, porque inclui os testes funcionais (Docker aberto).
+- Como validar: abra http://localhost:9000, entre em cada projeto e confira o quality gate **Passed**, 0 bugs, 0 vulnerabilidades, notas A em confiabilidade, segurança e manutenibilidade, e os hotspots revisados. O script também falha se o quality gate não passar.
+- Para parar sem apagar as análises: `docker compose --profile quality stop`. Para subir de novo só o painel: `docker compose --profile quality up -d --wait sonarqube`.
+- Para remover tudo do SonarQube (contêiner e volumes): `docker compose --profile quality down -v`. A imagem `sonarqube` sai com `docker image rm sonarqube:26.9.0.129388-community`.
 
-```bash
-docker compose down --rmi local --remove-orphans
-docker image prune -f
-docker builder prune -f
-docker compose up -d --build
-docker compose ps
+Resultados: [docs/seguranca/sonarqube-relatorio.md](docs/seguranca/sonarqube-relatorio.md) (quality gate, bugs, vulnerabilidades, hotspots, cobertura e duplicação) e [docs/seguranca/dependencias.md](docs/seguranca/dependencias.md) (dependências NuGet e npm sem vulnerabilidades conhecidas).
+
+## 11. Banco de dados: decisão e justificativa
+
+**SQL Server 2022**, relacional, acessado pelo EF Core 10 com migrations.
+
+| Necessidade do domínio | Como o SQL Server atende |
+|---|---|
+| Aprovar o orçamento, mudar o status da OS e baixar o estoque juntos | Transação ACID: tudo ou nada em um único commit |
+| Dois atendentes alterando a mesma OS ou o mesmo estoque | Concorrência otimista com `rowversion` (`ServiceOrder`, `Part` e `Estimate`), com resposta 409 |
+| Número sequencial da OS que o cliente vê | `SEQUENCE` nativa |
+| CPF/CNPJ, placa e código de peça únicos só entre registros ativos | Índices únicos filtrados (`WHERE deletedAt IS NULL`) com soft delete |
+| Relatórios, painel e tempo médio de execução | Consultas SQL com agregação e paginação (`OFFSET/FETCH`) |
+| Testes com banco real e ambiente simples | Imagem oficial em Docker, módulo do Testcontainers e provider oficial do EF Core |
+
+Os dados do domínio são fortemente relacionais (cliente → veículo → OS → itens → orçamento → estoque), com integridade referencial e transações entre agregados. Por isso um banco relacional é a escolha natural, e um banco de documentos exigiria reimplementar essas garantias na aplicação.
+
+O PostgreSQL também atenderia. O grupo escolheu o SQL Server pelo `rowversion` sem configuração extra, pela edição Developer gratuita com a mesma engine da produção, pela integração com as ferramentas .NET (EF Core, SSMS, Visual Studio) e pela familiaridade do grupo.
+
+## 12. Requisitos do enunciado e onde estão
+
+| Requisito | Onde está |
+|---|---|
+| Identificação do cliente por CPF/CNPJ | `POST /api/admin/customers/search` (documento no corpo), value object `Document` |
+| Cadastro de veículo (placa, marca, modelo, ano) | `POST /api/admin/vehicles`, value object `LicensePlate` |
+| Abrir OS com serviços, peças e insumos | `POST /api/admin/service-orders`, `PUT /api/admin/service-orders/{id}/diagnosis`, `POST /api/admin/service-orders/{id}/send-to-quote` |
+| Orçamento gerado automaticamente | `EstimatePricing` (domínio), `POST /api/admin/quotes` e `GET /api/admin/quotes/{id}` |
+| Envio do orçamento ao cliente | `POST /api/admin/quotes/{id}/send` (link do portal ou e-mail) |
+| Aprovação ou recusa do orçamento | Cliente: `POST /api/public/portal/quote/approve` e `/reject`; balcão: `POST /api/admin/quotes/{id}/approve` e `/reject` |
+| Status da OS e regras de transição | `ServiceOrder` (domínio), `POST /api/admin/service-orders/{id}/transitions`, `start-service`, `finish-service`; status `Received`, `InDiagnosis`, `WaitingApproval`, `InProgress`, `Completed`, `Delivered` |
+| Consulta do cliente via API | `POST /api/public/service-orders/lookup` (número e CPF/CNPJ no corpo) e `GET /api/public/portal/order` |
+| CRUD de clientes | `/api/admin/customers` (GET, POST, PUT, DELETE) |
+| CRUD de veículos | `/api/admin/vehicles` (GET, POST, PUT, DELETE) |
+| CRUD de serviços | `/api/admin/services` (GET, POST, PUT, DELETE = desativar) |
+| CRUD de peças e insumos com estoque | `/api/admin/parts` (GET, POST, PUT, DELETE = desativar) e `/api/admin/inventory/*` (entradas, baixas, inventário, saldo e movimentações) |
+| Listagem e detalhe de OS | `GET /api/admin/service-orders`, `POST /api/admin/service-orders/search`, `GET /api/admin/service-orders/{id}` |
+| Tempo médio de execução | `GET /api/admin/metrics/average-execution-time` |
+| JWT nas APIs administrativas | `FallbackPolicy` autenticada e uma policy por endpoint em `/api/admin/**` |
+| Validação de CPF/CNPJ e placa | Value objects `Document` e `LicensePlate` (dígitos verificadores, placa antiga e Mercosul), com testes |
+| Testes unitários e de integração | Seção 9 |
+| Swagger | Seção 8 |
+| Dockerfile e docker-compose | [Dockerfile](Dockerfile) e [docker-compose.yml](docker-compose.yml) |
+| Análise de vulnerabilidades | Seção 10 |
+
+A lista completa, com a evidência de cada item, está em [docs/entrega/checklist-fiap.md](docs/entrega/checklist-fiap.md).
+
+## 13. Decisões de domínio e limitações
+
+- **Transação com mais de um agregado:** a aprovação do orçamento altera `Estimate`, `ServiceOrder` e `Part` no mesmo commit. É uma exceção consciente à regra "um agregado por transação": o enunciado exige que a aprovação e a baixa de estoque sejam consistentes, e a política de domínio `QuoteApprovalPolicy` concentra essa regra. Efeitos externos (e-mail, recibo, tempo real) saem depois, pelo Outbox.
+- **Baixa de estoque na aprovação:** as peças saem do estoque quando o orçamento é aprovado, não na abertura da OS. Se faltar saldo, a aprovação é recusada (409) e nada é gravado.
+- **Tempo médio de execução:** média, em minutos, entre o início da execução (**Em execução**) e a finalização (**Finalizada**), nas OS finalizadas ou entregues cuja finalização caiu no período pedido (`from` e `to`). A resposta traz também quantas OS entraram na conta.
+- **Aprovação parcial:** o cliente pode aceitar só parte dos itens. A OS passa a ter só os itens aceitos, e o total é recalculado.
+- **Excluir serviço ou peça é desativar:** `DELETE` em `/services/{id}` e `/parts/{id}` desativa o registro (soft delete lógico). Ele continua nos orçamentos e OS antigos e pode ser reativado.
+- **O que fica no domínio:** conceitos técnicos, como os jobs em segundo plano (`BackgroundJob`), ficam na Application. Configurações da oficina (`SettingsDocument`), ações do painel e trilha de auditoria ficam no Domain, porque guardam regras do negócio: condições de orçamento e pagamento e o registro de quem aprovou cada desconto.
+- **Pix simulado:** o QR code e o copia-e-cola são gerados, mas a confirmação vem de um webhook próprio com assinatura HMAC. A integração com um PSP real fica fora do escopo.
+- **Fora do escopo:** pagamento com cartão (precisa de provedor), envio real por WhatsApp (precisa de provedor) e emissão de nota fiscal.
+
+## 14. Estrutura de diretórios
+
+```text
+src/
+  Oficina.Domain/          agregados, entidades, value objects, eventos, políticas e interfaces de repositório
+  Oficina.Application/     commands, queries, handlers, validators, DTOs e handlers de eventos
+  Oficina.Infrastructure/  EF Core, migrations, repositórios, consultas, JWT, e-mail, Pix, Outbox e serviços em segundo plano
+  Oficina.Api/             controllers, autenticação, policies, rate limiting, ProblemDetails, Swagger e hub SignalR
+tests/
+  Oficina.UnitTests/        domínio, aplicação e regras de arquitetura
+  Oficina.ContractTests/    contrato da API e dependências entre camadas
+  Oficina.FunctionalTests/  API e banco de ponta a ponta com SQL Server em contêiner
+web/                        front-end Angular (features por pasta, gateways HTTP, design system próprio)
+scripts/
+  seed/                     carga de demonstração
+  sonar/                    análise do SonarQube em Docker
+  docs/                     geração e exportação dos diagramas DDD
+  ci/                       .env descartável do CI
+docs/
+  ddd/                      Event Storming, diagramas, linguagem ubíqua e rastreabilidade
+  arquitetura/              fontes .drawio (C4, Event Storming, DDD e Domain Storytelling)
+  seguranca/                SonarQube e dependências
+  qualidade/                cobertura
+  entrega/                  checklist do enunciado
+  enunciado/                enunciado do Tech Challenge
+instructions/               convenções do grupo
 ```
 
-## 9. Testes automatizados
+## 15. Desenvolvimento local (IDE, migrations, User Secrets)
 
-| Camada | Projeto | O que cobre |
-|---|---|---|
-| Unidade | `tests/Oficina.UnitTests` | Entidades, value objects e regras do domínio; casos de uso; motor de relatórios, PDF e planilha; regras de arquitetura |
-| Contrato | `tests/Oficina.ContractTests` | Snapshot OpenAPI, toda operação com resumo e respostas de erro, autorização por rota, rotas anônimas permitidas, nenhum dado pessoal na URL |
-| Funcional | `tests/Oficina.FunctionalTests` | Cada API de ponta a ponta com SQL Server real: fluxos completos (OS, orçamento, portal com Pix, documentos, painel, relatórios, automações, configurações, financeiro), matriz de permissões, migrations, persistência, outbox, e-mail e Pix |
-| Front-end | `web/src/**/*.spec.ts` | Componentes, páginas, gateways, stores, regras e acessibilidade (axe) com a API simulada |
-| Scripts | `web/scripts/*.test.mjs` | Geração de tipos, checagens de bundle, comentários, cores e segredos |
-| E2E | `web/e2e/*.spec.ts` | Navegador real (desktop e celular) contra a imagem de produção e a API real |
-
-Números da última execução: back-end **1.116 testes** (cobertura de linhas acima de 94%), front-end **862 testes** (96% de linhas) e E2E **128 cenários**, todos verdes.
-
-## 10. Rodar pela IDE, migrations, Swagger e banco
-
-### API pelo Visual Studio ou `dotnet run`
+Fora do Docker, a API lê os segredos de **User Secrets** (nunca do `appsettings`). Configure uma vez, com os mesmos valores do seu `.env`:
 
 ```bash
-docker compose up -d sqlserver
+dotnet user-secrets set "ConnectionStrings:Oficina" "Server=localhost,1433;Database=oficina;User Id=sa;Password=<MSSQL_SA_PASSWORD>;TrustServerCertificate=True" --project src/Oficina.Api
+dotnet user-secrets set "Jwt:Secret" "<JWT_SECRET>" --project src/Oficina.Api
+dotnet user-secrets set "DevelopmentAdmin:Email" "admin@oficina.local" --project src/Oficina.Api
+dotnet user-secrets set "DevelopmentAdmin:Password" "<DEV_ADMIN_PASSWORD>" --project src/Oficina.Api
+dotnet user-secrets set "Payments:PixWebhookSecret" "<PIX_WEBHOOK_SECRET>" --project src/Oficina.Api
+```
+
+Depois:
+
+```bash
+docker compose up -d --wait sqlserver
 dotnet run --project src/Oficina.Api
 ```
 
-A API sobe em `http://localhost:5080` (Swagger em `/swagger`). No Visual Studio (2026 ou 2022 17.14+), abra `Oficina.slnx`, defina `Oficina.Api` como projeto de inicialização e aperte **F5**. Se o Visual Studio mostrar erros que o `dotnet build` não mostra, feche a solution e apague `.vs`, `bin` e `obj`.
+A API sobe em `http://localhost:5080` (Swagger em `/swagger`). No Visual Studio, abra `Oficina.slnx`, defina `Oficina.Api` como projeto de inicialização e aperte **F5**. Para SQL Server local com autenticação do Windows, use `Server=.\SQLEXPRESS;Database=oficina;Trusted_Connection=True;TrustServerCertificate=True` na `ConnectionStrings:Oficina`.
 
-Para SQL Server local com autenticação do Windows, troque a `ConnectionStrings:Oficina` de `src/Oficina.Api/appsettings.Development.json` por `Server=.\SQLEXPRESS;Database=oficina;Trusted_Connection=True;TrustServerCertificate=True`.
+Front-end em desenvolvimento (hot reload). O `npm start` repassa `/api` para `http://localhost:8080`, então a API precisa responder nessa porta. Use a API do Docker ou rode o `dotnet run` na porta 8080:
 
-### Front-end em desenvolvimento
+```bash
+docker compose up -d --wait sqlserver api                       # opção 1: API no Docker
+dotnet run --project src/Oficina.Api --urls http://localhost:8080  # opção 2: API pela IDE ou terminal
+```
+
+Depois, em outro terminal:
 
 ```bash
 cd web
 npm ci
-npm start             # http://localhost:4200, com proxy de /api para http://localhost:8080
+npm start             # http://localhost:4200
 ```
 
-### Migrations
+Pare o `web` do Docker antes (`docker compose stop web`), porque ele também usa a porta 4200.
 
-Em Development, as migrations rodam sozinhas na subida da API. Manualmente:
+Migrations (em Development rodam sozinhas na subida da API):
 
 ```bash
-dotnet ef database update --project src/Oficina.Infrastructure --startup-project src/Oficina.Api
-dotnet ef migrations add NomeDaMigration --project src/Oficina.Infrastructure --startup-project src/Oficina.Api --output-dir Persistence/Migrations
+dotnet dotnet-ef database update --project src/Oficina.Infrastructure --startup-project src/Oficina.Api
+dotnet dotnet-ef migrations add NomeDaMigration --project src/Oficina.Infrastructure --startup-project src/Oficina.Api --output-dir Persistence/Migrations
 ```
 
-### Swagger
+SSMS ou Azure Data Studio: servidor `localhost,1433`, autenticação SQL Server, usuário `sa`, senha `MSSQL_SA_PASSWORD` do `.env`, "Confiar no certificado do servidor", banco `oficina`.
 
-1. Em `POST /api/auth/login`, envie `{ "email": "admin@oficina.local", "password": "Admin@123" }`.
-2. Copie o `accessToken`, clique em **Authorize** e cole.
-3. Chame qualquer rota.
+## 16. Configuração
 
-### SSMS
-
-Servidor `localhost,1433`, autenticação SQL Server, usuário `sa`, senha `Oficina@Dev123`, marque "Confiar no certificado do servidor", banco `oficina`.
-
-## 11. Configuração
-
-| Chave | Para que serve | Valor em desenvolvimento |
+| Chave | Para que serve | Origem em desenvolvimento |
 |---|---|---|
-| `ConnectionStrings__Oficina` | Conexão com o SQL Server | definida no `docker-compose.yml` |
-| `Jwt__Secret` | Chave do token de acesso (mínimo de 32 caracteres) | fixa em `appsettings.Development.json`, só para desenvolvimento |
+| `ConnectionStrings__Oficina` | Conexão com o SQL Server | `docker-compose.yml`, com a senha `MSSQL_SA_PASSWORD` do `.env` |
+| `Jwt__Secret` | Chave do token de acesso (mínimo de 32 caracteres) | `JWT_SECRET` do `.env` |
+| `DevelopmentAdmin__Email`, `DevelopmentAdmin__Password` | Admin criado na subida em Development (sem senha, nenhum usuário é criado) | `DEV_ADMIN_EMAIL` e `DEV_ADMIN_PASSWORD` do `.env` |
+| `Payments__PixWebhookSecret` | Segredo da assinatura HMAC do webhook Pix simulado | `PIX_WEBHOOK_SECRET` do `.env` |
+| `DataProtection__KeysPath` | Pasta das chaves que cifram o segredo do 2FA | `/keys` (volume `api-keys`) |
 | `Email__PickupDirectory` | Grava e-mails como `.eml` em vez de enviar | `/mail` (pasta `.mail/`) |
-| `Email__SmtpHost`, `Email__SmtpPort` | SMTP real fora do desenvolvimento | — |
+| `Email__SmtpHost`, `Email__SmtpPort` | SMTP real fora do desenvolvimento (sempre com TLS) | — |
 | `PublicLinks__BaseUrl` | Endereço usado nos links do portal e da verificação | `http://localhost:4200` |
-| `Payments__PixWebhookSecret` | Segredo da assinatura do webhook Pix | `segredo-pix-desenvolvimento` |
 | `Cors__AllowedOrigins__0` | Origem do front fora do mesmo domínio | — |
 | `Security__LoginRateLimit__PermitLimit` | Tentativas de login por minuto por IP | 5 |
+| `Security__PublicRateLimit__PermitLimit` | Requisições por minuto por IP em `/api/public/**` | 60 |
 
-A chave Pix da oficina é configurada pela tela **Configurações > Pagamentos**.
+Fora de Development, a API não cria o Admin de teste e não publica o Swagger, e todos os segredos vêm de variáveis de ambiente. A chave Pix da oficina é configurada pela tela **Configurações > Pagamentos**.
 
-## 12. Segurança e LGPD
+## 17. Segurança e LGPD
 
+- Nenhum segredo no repositório: tudo no `.env` local (modelo em `.env.example`) ou em User Secrets. O CI gera um `.env` descartável com valores aleatórios, e `npm run check:secrets` procura segredos nos arquivos versionados.
 - CPF, CNPJ, e-mail, telefone e placa nunca vão na URL (um teste de contrato garante) e saem mascarados; abrir o dado exige motivo e fica auditado.
 - Nada sigiloso vai para o log (senha, token, documento, e-mail, telefone, placa, corpo de requisição).
-- Senhas com BCrypt; token de acesso só em memória no navegador; renovação por cookie `HttpOnly`, `SameSite=Strict`.
+- Senhas com BCrypt; token de acesso só em memória no navegador; renovação por cookie `HttpOnly`, `SameSite=Strict`; segredo do 2FA cifrado com Data Protection.
+- Rate limiting no login (5 por minuto por IP) e em todo `/api/public/**` (60 por minuto por IP), com 429 em ProblemDetails. O portal bloqueia o link após 3 erros de confirmação.
 - Mudanças sensíveis pedem a senha de novo; 2FA opcional ou obrigatório; sessões podem ser encerradas.
-- nginx com CSP estrita, Trusted Types e cabeçalhos de segurança; links do portal e do hub fora do log de acesso.
+- nginx com CSP estrita, Trusted Types e cabeçalhos de segurança.
 - Webhook Pix aceito só com assinatura HMAC-SHA256.
 - Exportação dos dados do titular (LGPD) pela ficha do cliente.
+- O `Directory.Packages.props` fixa `System.Security.Cryptography.Pkcs` em 10.0.13, porque a versão trazida pelo `Microsoft.Data.SqlClient` tem vulnerabilidade conhecida (detalhes em [docs/seguranca/dependencias.md](docs/seguranca/dependencias.md)).
 
-### Pacote fixado por segurança
+## 18. Funcionalidades e perfis
 
-O `Directory.Packages.props` fixa `System.Security.Cryptography.Pkcs` na versão 10.0.13. A versão trazida pelo `Microsoft.Data.SqlClient` tem uma vulnerabilidade conhecida (aviso `NU1903`), e o build trata avisos como erro.
+Além do escopo obrigatório, o sistema tem as telas abaixo, todas usando a API real.
+
+| Módulo | O que faz | Tela |
+|---|---|---|
+| **Acesso** | Login, sessão que sobrevive à recarga, verificação em duas etapas (TOTP), bloqueio após 5 erros, inatividade com saída automática, convite de funcionário por e-mail | `/login` |
+| **Painel** | Faturamento, OS abertas, taxa de aprovação, valores a receber, serviços mais vendidos, pátio por situação e avisos com ação direta | `/dashboard` |
+| **Clientes e veículos** | CPF/CNPJ validado e mascarado, endereço pelo CEP, consentimento de mensagens, revelar dado com motivo, veículos com placa e quilometragem, transferência de dono, histórico, importação CSV e exportação LGPD | `/customers` |
+| **Catálogo** | Serviços, peças e insumos (custo, venda, margem, estoque mínimo, EAN-13) e pacotes, com histórico de preço | `/catalog` |
+| **Estoque** | Alertas de mínimo, entradas (manual, código de barras e XML da NF-e), baixas, movimentações, inventário com aprovação, fornecedores e pedidos de compra | `/inventory` |
+| **Ordens de serviço** | Nova OS, quadro com arrastar e soltar, lista, agenda, detalhe com histórico, fotos, tempos e documentos, controle de versão e tempo real | `/service-orders` |
+| **Modo mecânico** | Celular/PWA: minhas OS, checklist, fotos, diagnóstico, enviar para orçamento, cronômetro e finalizar; funciona sem internet | `/mechanic` |
+| **Orçamentos** | Montador com pacotes, serviços e peças, descontos com aprovação, plano de pagamento, envio, aprovação no balcão, recusa com motivo e versões | `/quotes` |
+| **Portal do cliente** | Link sem login, confirmação pelos 3 últimos dígitos do telefone, andamento, fotos, aprovação parcial ou recusa, Pix e documentos | `/o/{link}` |
+| **Consulta pública** | Situação da OS pelo número e CPF/CNPJ | `/portal` |
+| **Documentos** | OS, orçamento e recibo com código de verificação, PDF e página pública de autenticidade | `/documents` e `/v/{código}` |
+| **Financeiro, relatórios, automações, notificações, equipe, configurações e plataforma** | Gestão da oficina | `/finance`, `/reports`, `/automations`, `/team`, `/settings`, `/platform` |
+
+| Perfil | Principais permissões |
+|---|---|
+| **Administrador** | Tudo, inclusive equipe, configurações, plataforma, exclusões e reprocessar falhas |
+| **Gerente** | Operação completa, custos, financeiro, relatórios, automações, aprovação de desconto |
+| **Atendente** | Clientes, veículos, OS, orçamentos, documentos e painel (desconto até o seu limite) |
+| **Mecânico** | Modo mecânico, suas OS, catálogo sem custos e contagem de estoque |
+| **Cliente** | Sem login: portal pelo link e consulta pública |
+
+A API recusa (403) qualquer rota fora do perfil. O passo a passo de teste de cada módulo está em [docs/roteiro-de-testes.md](docs/roteiro-de-testes.md).
 
 ---
 
@@ -363,7 +533,7 @@ npm run lighthouse   # Lighthouse de acessibilidade (mínimo 95) do login e da t
 npm run api:generate # regenera os tipos do contrato a partir do snapshot OpenAPI do back-end
 ```
 
-O `npm start` precisa da API rodando (pelo Docker ou pelo `dotnet run`). O `npm run e2e` e o `npm run lighthouse` precisam do Docker aberto: eles constroem a imagem `web` e testam nela, com os mesmos cabeçalhos de segurança da produção. O E2E também sobe a API e um SQL Server descartáveis (veja "E2E com a API real").
+O `npm start` precisa da API respondendo em `http://localhost:8080` (pelo Docker ou pelo `dotnet run --urls http://localhost:8080`, seção 15). O `npm run e2e` e o `npm run lighthouse` precisam do Docker aberto: eles constroem a imagem `web` e testam nela, com os mesmos cabeçalhos de segurança da produção. O E2E também sobe a API e um SQL Server descartáveis (veja "E2E com a API real").
 
 ### Como rodar o front-end
 
@@ -376,7 +546,7 @@ O `npm start` precisa da API rodando (pelo Docker ou pelo `dotnet run`). O `npm 
 | Testes unitários com cobertura | `cd web` e `npm test` | |
 | Lint, comentários, cores e formatação | `cd web` e `npm run lint` | |
 | E2E (sobe a stack descartável `oficina-e2e`) | `cd web` e `npm run e2e` | `:4300` (produção) e `:4301` (demo) |
-| E2E reaproveitando uma stack já de pé | `docker compose -f web/e2e/docker-compose.e2e.yml up --build --wait` e depois `E2E_KEEP_STACK=1 npx playwright test` | |
+| E2E reaproveitando uma stack já de pé | na raiz, `docker compose --env-file .env -f web/e2e/docker-compose.e2e.yml up --build --wait`; depois, em `web/`, `E2E_KEEP_STACK=1 npx playwright test` | |
 | Acessibilidade do login (CI) | `cd web` e `npm run lighthouse` | |
 | Desempenho e acessibilidade das telas autenticadas (stack do E2E de pé) | `cd web` e `npm run lighthouse:screens` | |
 | Pacote de produção sem a API simulada | `cd web`, `npm run build` e `npm run check:bundle` | |
@@ -392,7 +562,7 @@ No site normal todas as telas usam a API real. Para navegar com dados fictícios
 docker compose --profile demo up -d --build
 ```
 
-Abre em `http://localhost:4300` (o `web` normal continua em `http://localhost:4200`). Entre com `admin@oficina.local` / `Admin@123`. Para desligar: `docker compose --profile demo down`. Sem Docker, com a API rodando em `http://localhost:8080`: `cd web` e `npm run start:demo`.
+Abre em `http://localhost:4300` (o `web` normal continua em `http://localhost:4200`). Entre com um usuário fictício da API simulada (`admin@oficina.local`; senha em `web/src/testing/`). Para desligar: `docker compose --profile demo down`. Sem Docker, com a API rodando em `http://localhost:8080`: `cd web` e `npm run start:demo`.
 
 | Tela | Dados no modo demonstração |
 |---|---|
@@ -902,7 +1072,7 @@ Também estão ligados à API real: veículos, catálogo (serviços, peças e pa
 
 O `npm run e2e` sobe uma stack descartável (`web/e2e/docker-compose.e2e.yml`, projeto `oficina-e2e`, porta 4300): imagem nginx de produção, API real e SQL Server sem volume. O banco de desenvolvimento não é tocado.
 
-- Na preparação, o teste entra como `admin@oficina.local` e cria pela API um atendente, um mecânico e um usuário desativado (senha `Oficina@2026`, somente teste).
+- Na preparação, o teste entra como `admin@oficina.local` e cria pela API um atendente, um mecânico e um usuário desativado (senha de teste definida em `web/e2e/accounts.ts`).
 - Cobre: login, senha errada, conta desativada, bloqueio após 5 erros, menu por perfil, rota proibida por URL, volta ao endereço pedido, logout, recarga da página e inatividade (relógio simulado).
 - Clientes, contra a API real: criar, revelar, editar, buscar, excluir, documento inválido e duplicado (409), envio desabilitado sem consentimento. Veículos contra a API real: cadastrar e editar, com a quilometragem menor recusada no campo. Resumo e histórico vêm da API real. Tudo em desktop e celular.
 - Equipe, contra a API real: convidar, ler o link no arquivo `.eml` que a API grava em `web/e2e/.mail/` (pasta montada no container e apagada no fim), criar a senha, entrar com o convidado, link já usado, e-mail repetido, desativar e reativar e o Admin sem poder se desativar. Perfil profissional salvo na API real e permissões fixas exibidas como somente leitura.
@@ -987,18 +1157,19 @@ web/
 
 ## Credenciais (somente desenvolvimento)
 
-Estes valores estão no `docker-compose.yml` e no `appsettings.Development.json` só para facilitar o desenvolvimento local. **Não use em produção.**
+Nenhuma senha ou chave fica no repositório. Os valores de desenvolvimento ficam no `.env` local, criado a partir do [.env.example](.env.example) (seção 6), e os usuários estão na seção 7.
 
-| O quê | Valor |
+| O quê | Onde |
 |---|---|
-| SQL Server (`sa`) | `Oficina@Dev123` |
-| Admin de teste (criado na subida em Development, se ainda não existir) | `admin@oficina.local` / `Admin@123` |
-| Chave do JWT | `Jwt:Secret` no `appsettings.Development.json` |
-| Usuários da carga de demonstração | ver a seção 6 (senha `Oficina@2026`) |
-| Segredo do webhook Pix | `segredo-pix-desenvolvimento` (`Payments__PixWebhookSecret`) |
-| API simulada dos testes do front (só `npm test`) | `admin@oficina.local`, `ana@oficina.local`, `marcos@oficina.local` e `gestor@oficina.local`, todos com `Admin@123` |
+| SQL Server (`sa`) | `MSSQL_SA_PASSWORD` do `.env` |
+| Admin de teste (criado na subida em Development, se ainda não existir) | `DEV_ADMIN_EMAIL` e `DEV_ADMIN_PASSWORD` do `.env` |
+| Chave do JWT | `JWT_SECRET` do `.env` |
+| Usuários da carga de demonstração | `SEED_USERS_PASSWORD` do `.env` |
+| Segredo do webhook Pix | `PIX_WEBHOOK_SECRET` do `.env` |
+| SonarQube local | usuário `admin`, senha `SONAR_ADMIN_PASSWORD` do `.env` |
+| API simulada dos testes do front (só `npm test` e modo demonstração, sem servidor) | usuários fictícios definidos em `web/src/testing/` |
 
-Fora de Development, a API não cria o Admin de teste e não publica o Swagger. A chave do JWT deve vir da variável de ambiente `Jwt__Secret`, com no mínimo 32 caracteres.
+Fora de Development, a API não cria o Admin de teste e não publica o Swagger. Todos os segredos vêm de variáveis de ambiente.
 
 ---
 
@@ -1031,13 +1202,13 @@ Fora de Development, a API não cria o Admin de teste e não publica o Swagger. 
 | `GET /api/admin/services/{id}` | Admin, Manager, Attendant, Mechanic | 200 (ativo ou inativo, indicado em `isActive`) |
 | `GET /api/admin/services/{id}/price-history` | Admin, Manager, Attendant, Mechanic | 200 com `{ items }` do mais novo para o mais antigo (`field`, `oldValue`, `newValue`, `changedBy`, `changedAt`) |
 | `PUT /api/admin/services/{id}` | Admin, Manager | 200 (serviço inativo recebe 409; reative antes de alterar); preço novo vai para o histórico |
-| `POST /api/admin/services/{id}/deactivate` | Admin, Manager | 204 |
+| `POST /api/admin/services/{id}/deactivate` ou `DELETE /api/admin/services/{id}` | Admin, Manager | 204 (o `DELETE` desativa; o histórico continua) |
 | `POST /api/admin/services/{id}/reactivate` | Admin, Manager | 204 |
 | `GET /api/admin/parts?page=1&pageSize=20&term=&status=&includeInactive=false` | Admin, Manager, Attendant, Mechanic | 200 paginado; `cost` só para Admin e Manager |
 | `POST /api/admin/parts` | Admin, Manager | 201; `code` único (409 `inventory.duplicatePartCode`), `barcode` EAN-13 opcional; grava custo e venda no histórico |
 | `GET /api/admin/parts/{id}` e `/price-history` | Admin, Manager, Attendant, Mechanic | 200; custo e mudanças de custo só para Admin e Manager |
 | `PUT /api/admin/parts/{id}` | Admin, Manager | 200; o estoque não muda aqui |
-| `POST /api/admin/parts/{id}/deactivate` e `/reactivate` | Admin, Manager | 204; peça em pacote ativo recebe 409 `catalog.usedByActivePackage` |
+| `POST /api/admin/parts/{id}/deactivate` e `/reactivate`, `DELETE /api/admin/parts/{id}` | Admin, Manager | 204 (o `DELETE` desativa); peça em pacote ativo recebe 409 `catalog.usedByActivePackage` |
 | `GET /api/admin/packages?page=1&pageSize=20&term=&status=&includeInactive=false` | Admin, Manager, Attendant, Mechanic | 200 paginado com `itemsTotal` e `savings` |
 | `POST /api/admin/packages` e `PUT /api/admin/packages/{id}` | Admin, Manager | 201/200; 1 a 50 serviços ou peças ativos, sem repetir; `suggestion { minMileage, maxMileage }` opcional |
 | `GET /api/admin/packages/{id}` e `/price-history` | Admin, Manager, Attendant, Mechanic | 200 |
@@ -1059,9 +1230,10 @@ Fora de Development, a API não cria o Admin de teste e não publica o Swagger. 
 | `POST /api/addresses/lookup` | Admin, Manager, Attendant | 200 com o endereço do CEP (ViaCEP); 404 `address.zipCodeNotFound` |
 | `/api/admin/team/*` e `/api/admin/roles` | Admin, Manager | perfil profissional, produtividade e permissões fixas |
 | `/api/admin/inventory/*` | Admin, Manager (Mechanic: contagem) | estoque, entradas (NF-e), saídas, contagens, fornecedores e pedidos de compra |
-| `/api/admin/service-orders/*` | Admin, Manager, Attendant (Mechanic: ficha, timer, checklist, fotos, diagnóstico) | abrir OS, quadro, transições com versão, modo mecânico |
+| `/api/admin/service-orders/*` | Admin, Manager, Attendant (Mechanic: ficha, timer, checklist, fotos, diagnóstico) | abrir OS, quadro, transições com versão, modo mecânico; busca por placa em `POST /search` (placa no corpo); foto sob demanda em `GET /{id}/photos/{photoId}` |
+| `GET /api/admin/metrics/average-execution-time?from=&to=` | Admin | 200 com `averageMinutes` e `totalServiceOrders` |
 | `/api/admin/quotes/*` | Admin, Manager, Attendant | orçamento, descontos com aprovação, envio, versões |
-| `/api/public/portal/*`, `GET /api/public/documents/{code}/verification`, `POST /api/public/payments/pix/webhook` | Anônimo (sessão do portal no cabeçalho `X-Portal-Session`) | portal do cliente, Pix com QR e verificação de documento |
+| `/api/public/portal/*`, `POST /api/public/service-orders/lookup`, `GET /api/public/documents/{code}/verification`, `POST /api/public/payments/pix/webhook` | Anônimo (sessão do portal no cabeçalho `X-Portal-Session`; 60 requisições por minuto por IP) | portal do cliente, fotos sob demanda, consulta pública da OS, Pix com QR e verificação de documento |
 | `GET /api/admin/documents`, `/{code}`, `/{code}/pdf`, `POST /{code}/send` | Admin, Manager, Attendant | documentos emitidos (OS, orçamento, recibo) |
 | `/api/admin/customers/summaries`, `/{id}/service-history`, `/{id}/data-export`, `/api/admin/imports/customers`, `/api/admin/jobs/{id}` | Admin, Manager, Attendant (exportação LGPD: Admin, Manager) | resumo, histórico, exportação LGPD e importação CSV |
 | `/api/admin/dashboard`, `/layout`, `/attention/{id}/actions` | Admin, Manager, Attendant | painel com indicadores reais |

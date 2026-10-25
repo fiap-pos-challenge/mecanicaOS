@@ -24,6 +24,57 @@ namespace Oficina.Infrastructure.Persistence.Migrations
 
             modelBuilder.HasSequence("serviceOrderNumbers");
 
+            modelBuilder.Entity("Oficina.Application.Jobs.Models.BackgroundJob", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("id");
+
+                    b.Property<DateTimeOffset?>("CompletedAt")
+                        .HasColumnType("datetimeoffset")
+                        .HasColumnName("completedAt");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetimeoffset")
+                        .HasColumnName("createdAt");
+
+                    b.Property<Guid?>("CustomerId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("customerId");
+
+                    b.Property<string>("FileName")
+                        .HasMaxLength(120)
+                        .HasColumnType("nvarchar(120)")
+                        .HasColumnName("fileName");
+
+                    b.Property<string>("Kind")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(30)")
+                        .HasColumnName("kind");
+
+                    b.Property<Guid>("RequestedBy")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("requestedBy");
+
+                    b.Property<string>("ResultJson")
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("resultJson");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(12)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(12)")
+                        .HasColumnName("status");
+
+                    b.HasKey("Id")
+                        .HasName("pk_backgroundJobs");
+
+                    b.ToTable("backgroundJobs", (string)null);
+                });
+
             modelBuilder.Entity("Oficina.Domain.Audit.Entities.AuditEntry", b =>
                 {
                     b.Property<Guid>("Id")
@@ -689,9 +740,9 @@ namespace Oficina.Infrastructure.Persistence.Migrations
                         .HasColumnName("twoFactorEnabled");
 
                     b.Property<string>("TwoFactorSecret")
-                        .HasMaxLength(64)
+                        .HasMaxLength(512)
                         .IsUnicode(false)
-                        .HasColumnType("varchar(64)")
+                        .HasColumnType("varchar(512)")
                         .HasColumnName("twoFactorSecret");
 
                     b.Property<DateTimeOffset?>("UpdatedAt")
@@ -1184,57 +1235,6 @@ namespace Oficina.Infrastructure.Persistence.Migrations
                     b.ToTable("suppliers", (string)null);
                 });
 
-            modelBuilder.Entity("Oficina.Domain.Jobs.Entities.BackgroundJob", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("id");
-
-                    b.Property<DateTimeOffset?>("CompletedAt")
-                        .HasColumnType("datetimeoffset")
-                        .HasColumnName("completedAt");
-
-                    b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("datetimeoffset")
-                        .HasColumnName("createdAt");
-
-                    b.Property<Guid?>("CustomerId")
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("customerId");
-
-                    b.Property<string>("FileName")
-                        .HasMaxLength(120)
-                        .HasColumnType("nvarchar(120)")
-                        .HasColumnName("fileName");
-
-                    b.Property<string>("Kind")
-                        .IsRequired()
-                        .HasMaxLength(30)
-                        .IsUnicode(false)
-                        .HasColumnType("varchar(30)")
-                        .HasColumnName("kind");
-
-                    b.Property<Guid>("RequestedBy")
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("requestedBy");
-
-                    b.Property<string>("ResultJson")
-                        .HasColumnType("nvarchar(max)")
-                        .HasColumnName("resultJson");
-
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .HasMaxLength(12)
-                        .IsUnicode(false)
-                        .HasColumnType("varchar(12)")
-                        .HasColumnName("status");
-
-                    b.HasKey("Id")
-                        .HasName("pk_backgroundJobs");
-
-                    b.ToTable("backgroundJobs", (string)null);
-                });
-
             modelBuilder.Entity("Oficina.Domain.Notifications.Notification", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1464,11 +1464,6 @@ namespace Oficina.Infrastructure.Persistence.Migrations
                         .HasColumnType("uniqueidentifier")
                         .HasColumnName("id");
 
-                    b.Property<string>("AcceptedLineIds")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)")
-                        .HasColumnName("acceptedLineIds");
-
                     b.Property<string>("Approval")
                         .HasColumnType("nvarchar(max)")
                         .HasColumnName("approval");
@@ -1499,11 +1494,6 @@ namespace Oficina.Infrastructure.Persistence.Migrations
                         .HasColumnType("varchar(10)")
                         .HasColumnName("discountMode");
 
-                    b.Property<string>("Lines")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)")
-                        .HasColumnName("lines");
-
                     b.Property<string>("ManualDiscount")
                         .HasColumnType("nvarchar(max)")
                         .HasColumnName("manualDiscount");
@@ -1515,11 +1505,6 @@ namespace Oficina.Infrastructure.Persistence.Migrations
                     b.Property<long>("Number")
                         .HasColumnType("bigint")
                         .HasColumnName("number");
-
-                    b.Property<string>("PaymentMethods")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)")
-                        .HasColumnName("paymentMethods");
 
                     b.Property<int>("PortalFailures")
                         .HasColumnType("int")
@@ -1548,6 +1533,28 @@ namespace Oficina.Infrastructure.Persistence.Migrations
                     b.Property<int>("Version")
                         .HasColumnType("int")
                         .HasColumnName("version");
+
+                    b.Property<string>("_acceptedLineIds")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("acceptedLineIds");
+
+                    b.Property<string>("_lines")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("lines");
+
+                    b.Property<string>("_paymentMethods")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("paymentMethods");
+
+                    b.Property<byte[]>("rowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion")
+                        .HasColumnName("rowVersion");
 
                     b.HasKey("Id")
                         .HasName("pk_estimates");
@@ -1845,6 +1852,10 @@ namespace Oficina.Infrastructure.Persistence.Migrations
                     b.Property<long>("Number")
                         .HasColumnType("bigint")
                         .HasColumnName("number");
+
+                    b.Property<int>("PhotoCount")
+                        .HasColumnType("int")
+                        .HasColumnName("photoCount");
 
                     b.Property<string>("ProblemDescription")
                         .IsRequired()
@@ -2579,7 +2590,7 @@ namespace Oficina.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("Oficina.Domain.ServiceOrders.Entities.ServiceOrderPhoto", b =>
                 {
                     b.HasOne("Oficina.Domain.ServiceOrders.Entities.ServiceOrder", null)
-                        .WithMany("Photos")
+                        .WithMany()
                         .HasForeignKey("ServiceOrderId")
                         .OnDelete(DeleteBehavior.ClientCascade)
                         .IsRequired()
@@ -2637,8 +2648,6 @@ namespace Oficina.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("Oficina.Domain.ServiceOrders.Entities.ServiceOrder", b =>
                 {
                     b.Navigation("PartItems");
-
-                    b.Navigation("Photos");
 
                     b.Navigation("Quotes");
 

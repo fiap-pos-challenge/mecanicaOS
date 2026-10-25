@@ -18,8 +18,27 @@ export const SECRET_PATTERNS = [
 const SKIPPED =
   /(^|\/)(node_modules|dist|coverage|playwright-report|test-results|\.angular)\/|package-lock\.json$|\.(png|jpe?g|ico|woff2?|pdf|xlsx)$/;
 
-export function findSecrets(content) {
-  return SECRET_PATTERNS.filter(({ pattern }) => pattern.test(content)).map(({ name }) => name);
+export const ENV_EXAMPLE = '.env.example';
+const SECRET_KEY = /(PASSWORD|SECRET|TOKEN)$/;
+
+export function exampleSecrets(content) {
+  return content
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter((line) => line !== '' && !line.startsWith('#') && line.includes('='))
+    .map((line) => [
+      line.slice(0, line.indexOf('=')).trim(),
+      line.slice(line.indexOf('=') + 1).trim(),
+    ])
+    .filter(([key, value]) => SECRET_KEY.test(key) && value.length >= 8)
+    .map(([key, value]) => ({ name: `${key} from ${ENV_EXAMPLE}`, value }));
+}
+
+export function findSecrets(content, knownValues = []) {
+  return [
+    ...SECRET_PATTERNS.filter(({ pattern }) => pattern.test(content)).map(({ name }) => name),
+    ...knownValues.filter(({ value }) => content.includes(value)).map(({ name }) => name),
+  ];
 }
 
 export function listCandidateFiles() {
@@ -32,10 +51,22 @@ export function listCandidateFiles() {
     .filter((line) => line !== '' && !SKIPPED.test(line));
 }
 
-export function checkSecrets(files) {
+function readExampleSecrets() {
+  try {
+    return exampleSecrets(readFileSync(ENV_EXAMPLE, 'utf8'));
+  } catch {
+    return [];
+  }
+}
+
+export function checkSecrets(files, knownValues = readExampleSecrets()) {
   return files.flatMap((file) => {
+    if (file === ENV_EXAMPLE || file === '.env') {
+      return [];
+    }
+
     try {
-      return findSecrets(readFileSync(file, 'utf8')).map((name) => `${file}: ${name}`);
+      return findSecrets(readFileSync(file, 'utf8'), knownValues).map((name) => `${file}: ${name}`);
     } catch {
       return [];
     }

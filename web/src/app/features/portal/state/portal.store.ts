@@ -8,7 +8,7 @@ import {
   withState,
 } from '@ngrx/signals';
 import { firstValueFrom } from 'rxjs';
-import { isApiError, isFeaturePending } from '../../../core/http/api-error';
+import { ApiError, isApiError, isFeaturePending } from '../../../core/http/api-error';
 import { messages } from '../../../core/i18n/messages.pt-BR';
 import { PortalGateway } from '../data/portal.gateway';
 import {
@@ -50,6 +50,12 @@ interface PortalState {
 }
 
 const text = messages.portal;
+
+export const THROTTLED_CODES: readonly string[] = ['common.tooManyRequests', 'portal.tryAgain'];
+
+function isThrottled(error: unknown): error is ApiError {
+  return isApiError(error) && (error.status === 429 || THROTTLED_CODES.includes(error.code));
+}
 
 function lockOrUnavailable(error: unknown): PortalPhase {
   if (isFeaturePending(error)) {
@@ -202,6 +208,11 @@ export const PortalStore = signalStore(
           await reload();
           patchState(store, { phase: 'ready' });
         } catch (error) {
+          if (isThrottled(error)) {
+            patchState(store, { digitsError: error.detail });
+            return;
+          }
+
           patchState(store, { phase: lockOrUnavailable(error) });
         } finally {
           patchState(store, { busy: false });

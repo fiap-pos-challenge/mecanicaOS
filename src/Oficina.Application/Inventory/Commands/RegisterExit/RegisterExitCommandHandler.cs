@@ -10,7 +10,7 @@ using Oficina.Domain.Inventory.Repositories;
 
 namespace Oficina.Application.Inventory.Commands.RegisterExit;
 
-public sealed class RegisterExitCommandHandler(IPartRepository parts, IInventoryQueries queries, ICurrentUser currentUser, IUnitOfWork unitOfWork) : IRequestHandler<RegisterExitCommand, Result<StockMovementDto>>
+public sealed class RegisterExitCommandHandler(IPartRepository parts, IInventoryQueries queries, ICurrentUser currentUser, IUnitOfWork unitOfWork, TimeProvider timeProvider) : IRequestHandler<RegisterExitCommand, Result<StockMovementDto>>
 {
     public async Task<Result<StockMovementDto>> Handle(RegisterExitCommand request, CancellationToken cancellationToken)
     {
@@ -26,7 +26,7 @@ public sealed class RegisterExitCommandHandler(IPartRepository parts, IInventory
         }
 
         var reason = string.IsNullOrWhiteSpace(request.Reason) ? "Saída manual" : request.Reason.Trim();
-        if (part.RegisterExit(quantity.Value, reason, request.ServiceOrderNumber, currentUser.UserId).Error is { } invalid)
+        if (part.RegisterExit(quantity.Value, reason, request.ServiceOrderNumber, currentUser.UserId, timeProvider.GetUtcNow()).Error is { } invalid)
         {
             return invalid;
         }

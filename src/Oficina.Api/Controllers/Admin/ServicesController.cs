@@ -80,6 +80,16 @@ public sealed class ServicesController(ISender sender) : ApiControllerBase
         return Respond(await sender.Send(command, cancellationToken), Ok);
     }
 
+    [HttpDelete("{id:guid}")]
+    [Authorize(Policy = Policies.AdminOrManager)]
+    [EndpointSummary("Delete service")]
+    [EndpointDescription("Logical delete: same rule as deactivate (the service leaves the default listing and new service orders, history is kept). Already inactive: 409. Used by an active package: 409 catalog.usedByActivePackage. Roles: Admin, Manager.")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound, ProblemResponses.ContentType)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status409Conflict, ProblemResponses.ContentType)]
+    public async Task<IActionResult> Delete(Guid id, CancellationToken cancellationToken) =>
+        Respond(await sender.Send(new DeactivateServiceCommand(id), cancellationToken));
+
     [HttpPost("{id:guid}/deactivate")]
     [Authorize(Policy = Policies.AdminOrManager)]
     [EndpointSummary("Deactivate service")]

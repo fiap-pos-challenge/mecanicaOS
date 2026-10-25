@@ -1,8 +1,8 @@
+using Oficina.Application.Jobs.Models;
 using Oficina.Domain.Audit.Entities;
 using Oficina.Domain.Automations;
 using Oficina.Domain.Dashboard;
 using Oficina.Domain.Documents.Entities;
-using Oficina.Domain.Jobs.Entities;
 using Oficina.Domain.Notifications;
 using Oficina.Domain.Portal.Entities;
 using Oficina.Domain.Reports;

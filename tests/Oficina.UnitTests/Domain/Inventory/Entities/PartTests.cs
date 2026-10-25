@@ -2,6 +2,7 @@ using Oficina.Domain.Common.ValueObjects;
 using Oficina.Domain.Inventory.Entities;
 using Oficina.Domain.Inventory.Enums;
 using Oficina.Domain.Inventory.Errors;
+using Oficina.Domain.Inventory.Events;
 using Oficina.Domain.Inventory.ValueObjects;
 
 namespace Oficina.UnitTests.Domain.Inventory.Entities;
@@ -11,6 +12,7 @@ public sealed class PartTests
     private static readonly PartCode Code = PartCode.Create("FLT-001").Value;
     private static readonly Money Price = Money.Create(35.9m).Value;
     private static readonly Guid UserId = Guid.CreateVersion7();
+    private static readonly DateTimeOffset Now = new(2026, 10, 24, 12, 0, 0, TimeSpan.Zero);
 
     [Fact]
     public void Create_WithValidData_StartsActiveWithZeroStockAndNoMovements()
@@ -172,7 +174,7 @@ public sealed class PartTests
         var part = CreatePartWithStock(10m);
         var serviceOrderId = Guid.CreateVersion7();
 
-        var result = part.DeductForServiceOrder(Quantity.Create(4m).Value, serviceOrderId, 42, null);
+        var result = part.DeductForServiceOrder(Quantity.Create(4m).Value, serviceOrderId, 42, null, Now);
 
         Assert.True(result.IsSuccess);
         Assert.Equal(6m, part.StockQuantity);
@@ -190,7 +192,7 @@ public sealed class PartTests
     {
         var part = CreatePartWithStock(2m);
 
-        var result = part.DeductForServiceOrder(Quantity.Create(2.5m).Value, Guid.CreateVersion7(), 7, UserId);
+        var result = part.DeductForServiceOrder(Quantity.Create(2.5m).Value, Guid.CreateVersion7(), 7, UserId, Now);
 
         Assert.Equal(InventoryErrors.InsufficientStock, result.Error);
         Assert.Equal(2m, part.StockQuantity);
@@ -221,6 +223,54 @@ public sealed class PartTests
         Assert.True(part.Reactivate().IsSuccess);
         Assert.True(part.IsActive);
         Assert.Equal(InventoryErrors.AlreadyActive, part.Reactivate().Error);
+    }
+
+    [Fact]
+    public void DeductForServiceOrder_RaisesStockDeducted_AndStockBelowMinimumWhenItCrossesTheMinimum()
+    {
+        var part = Part.Create(Code, "Filtro de óleo", PartType.Part, "un", Price, Money.Zero, 5m, null, null).Value;
+        part.RegisterEntry(Quantity.Create(6m).Value, "Carga inicial", UserId);
+        var serviceOrderId = Guid.CreateVersion7();
+
+        part.DeductForServiceOrder(Quantity.Create(2m).Value, serviceOrderId, 42, UserId, Now);
+
+        var deducted = Assert.Single(part.DomainEvents.OfType<StockDeducted>());
+        Assert.Equal(new StockDeducted(part.Id, 2m, 4m, serviceOrderId, 42, Now), deducted);
+        var low = Assert.Single(part.DomainEvents.OfType<StockBelowMinimum>());
+        Assert.Equal(new StockBelowMinimum(part.Id, "Filtro de óleo", 4m, 5m, Now), low);
+
+        part.ClearDomainEvents();
+        part.DeductForServiceOrder(Quantity.Create(1m).Value, serviceOrderId, 42, UserId, Now);
+        Assert.Empty(part.DomainEvents.OfType<StockBelowMinimum>());
+    }
+
+    [Fact]
+    public void RegisterExit_AndAdjust_RaiseStockBelowMinimumOnlyWhenTheyCrossTheMinimum()
+    {
+        var part = Part.Create(Code, "Filtro de óleo", PartType.Part, "un", Price, Money.Zero, 5m, null, null).Value;
+        part.RegisterEntry(Quantity.Create(8m).Value, "Carga inicial", UserId);
+
+        Assert.True(part.RegisterExit(Quantity.Create(1m).Value, "Uso interno", null, UserId, Now).IsSuccess);
+        Assert.Empty(part.DomainEvents);
+        Assert.True(part.RegisterExit(Quantity.Create(3m).Value, "Uso interno", null, UserId, Now).IsSuccess);
+        Assert.Single(part.DomainEvents.OfType<StockBelowMinimum>());
+
+        part.ClearDomainEvents();
+        part.Adjust(9m, "Inventário", UserId, Now);
+        part.Adjust(2m, "Inventário", UserId, Now);
+        Assert.Single(part.DomainEvents.OfType<StockBelowMinimum>());
+    }
+
+    [Fact]
+    public void StockBelowMinimum_IsNotRaisedForInactiveParts()
+    {
+        var part = Part.Create(Code, "Filtro de óleo", PartType.Part, "un", Price, Money.Zero, 5m, null, null).Value;
+        part.RegisterEntry(Quantity.Create(6m).Value, "Carga inicial", UserId);
+        part.Deactivate();
+
+        part.RegisterExit(Quantity.Create(3m).Value, "Descarte", null, UserId, Now);
+
+        Assert.Empty(part.DomainEvents);
     }
 
     private static Part CreatePartWithStock(decimal stock)

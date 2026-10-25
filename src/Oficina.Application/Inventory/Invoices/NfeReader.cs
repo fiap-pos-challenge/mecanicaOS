@@ -5,10 +5,6 @@ using System.Xml.Linq;
 
 namespace Oficina.Application.Inventory.Invoices;
 
-public sealed record NfeLine(string Description, string? Barcode, decimal Quantity, decimal UnitCost);
-
-public sealed record Nfe(string SupplierName, string? SupplierDocument, string Number, DateTimeOffset IssuedAt, IReadOnlyList<NfeLine> Lines);
-
 public static class NfeReader
 {
     public const int MaxContentLength = 2_000_000;

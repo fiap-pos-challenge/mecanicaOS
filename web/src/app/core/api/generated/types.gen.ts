@@ -1396,6 +1396,13 @@ export type SearchCustomerRequest = {
     document?: string | null;
 };
 
+export type SearchServiceOrdersRequest = {
+    licensePlate?: string | null;
+    status?: string | null;
+    page?: number | null;
+    pageSize?: number | null;
+};
+
 export type SearchUserRequest = {
     email?: string | null;
 };
@@ -1558,6 +1565,13 @@ export type ServiceOrderPartItemDto = {
     quantity?: number;
     unitPrice?: number;
     total?: number;
+};
+
+export type ServiceOrderPhotoContentDto = {
+    id?: string;
+    contentType?: string | null;
+    dataUrl?: string | null;
+    caption?: string | null;
 };
 
 export type ServiceOrderPhotoDto = {
@@ -5062,6 +5076,49 @@ export type PostApiAdminPartsResponses = {
 
 export type PostApiAdminPartsResponse = PostApiAdminPartsResponses[keyof PostApiAdminPartsResponses];
 
+export type DeleteApiAdminPartsByIdData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/admin/parts/{id}';
+};
+
+export type DeleteApiAdminPartsByIdErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ProblemDetails;
+    /**
+     * Forbidden
+     */
+    403: ProblemDetails;
+    /**
+     * Not Found
+     */
+    404: ProblemDetails;
+    /**
+     * Conflict
+     */
+    409: ProblemDetails;
+    /**
+     * Internal Server Error
+     */
+    500: ProblemDetails;
+};
+
+export type DeleteApiAdminPartsByIdError = DeleteApiAdminPartsByIdErrors[keyof DeleteApiAdminPartsByIdErrors];
+
+export type DeleteApiAdminPartsByIdResponses = {
+    /**
+     * No Content
+     */
+    204: void;
+};
+
+export type DeleteApiAdminPartsByIdResponse = DeleteApiAdminPartsByIdResponses[keyof DeleteApiAdminPartsByIdResponses];
+
 export type GetApiAdminPartsByIdData = {
     body?: never;
     path: {
@@ -5294,6 +5351,10 @@ export type PostApiPublicPortalAccessErrors = {
      */
     423: ProblemDetails;
     /**
+     * Too Many Requests
+     */
+    429: ProblemDetails;
+    /**
      * Internal Server Error
      */
     500: ProblemDetails;
@@ -5331,6 +5392,10 @@ export type PostApiPublicPortalConfirmErrors = {
      */
     423: ProblemDetails;
     /**
+     * Too Many Requests
+     */
+    429: ProblemDetails;
+    /**
      * Internal Server Error
      */
     500: ProblemDetails;
@@ -5363,6 +5428,10 @@ export type GetApiPublicPortalOrderErrors = {
      */
     401: ProblemDetails;
     /**
+     * Too Many Requests
+     */
+    429: ProblemDetails;
+    /**
      * Internal Server Error
      */
     500: ProblemDetails;
@@ -5378,6 +5447,48 @@ export type GetApiPublicPortalOrderResponses = {
 };
 
 export type GetApiPublicPortalOrderResponse = GetApiPublicPortalOrderResponses[keyof GetApiPublicPortalOrderResponses];
+
+export type GetApiPublicPortalPhotosByPhotoIdData = {
+    body?: never;
+    headers?: {
+        'X-Portal-Session'?: string;
+    };
+    path: {
+        photoId: string;
+    };
+    query?: never;
+    url: '/api/public/portal/photos/{photoId}';
+};
+
+export type GetApiPublicPortalPhotosByPhotoIdErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ProblemDetails;
+    /**
+     * Not Found
+     */
+    404: ProblemDetails;
+    /**
+     * Too Many Requests
+     */
+    429: ProblemDetails;
+    /**
+     * Internal Server Error
+     */
+    500: ProblemDetails;
+};
+
+export type GetApiPublicPortalPhotosByPhotoIdError = GetApiPublicPortalPhotosByPhotoIdErrors[keyof GetApiPublicPortalPhotosByPhotoIdErrors];
+
+export type GetApiPublicPortalPhotosByPhotoIdResponses = {
+    /**
+     * OK
+     */
+    200: ServiceOrderPhotoContentDto;
+};
+
+export type GetApiPublicPortalPhotosByPhotoIdResponse = GetApiPublicPortalPhotosByPhotoIdResponses[keyof GetApiPublicPortalPhotosByPhotoIdResponses];
 
 export type PostApiPublicPortalQuoteApproveData = {
     body?: PortalApproveBody;
@@ -5406,6 +5517,10 @@ export type PostApiPublicPortalQuoteApproveErrors = {
      * Unprocessable Content
      */
     422: ProblemDetails;
+    /**
+     * Too Many Requests
+     */
+    429: ProblemDetails;
     /**
      * Internal Server Error
      */
@@ -5451,6 +5566,10 @@ export type PostApiPublicPortalQuoteRejectErrors = {
      */
     422: ProblemDetails;
     /**
+     * Too Many Requests
+     */
+    429: ProblemDetails;
+    /**
      * Internal Server Error
      */
     500: ProblemDetails;
@@ -5486,6 +5605,10 @@ export type PostApiPublicPortalPaymentsPixErrors = {
      * Unprocessable Content
      */
     422: ProblemDetails;
+    /**
+     * Too Many Requests
+     */
+    429: ProblemDetails;
     /**
      * Internal Server Error
      */
@@ -5525,6 +5648,10 @@ export type GetApiPublicPortalPaymentsByIdErrors = {
      */
     404: ProblemDetails;
     /**
+     * Too Many Requests
+     */
+    429: ProblemDetails;
+    /**
      * Internal Server Error
      */
     500: ProblemDetails;
@@ -5560,6 +5687,10 @@ export type PostApiPublicPortalPaymentsCardErrors = {
      * Unprocessable Content
      */
     422: ProblemDetails;
+    /**
+     * Too Many Requests
+     */
+    429: ProblemDetails;
     /**
      * Internal Server Error
      */
@@ -5599,6 +5730,10 @@ export type GetApiPublicPortalDocumentsByCodeErrors = {
      */
     404: ProblemDetails;
     /**
+     * Too Many Requests
+     */
+    429: ProblemDetails;
+    /**
      * Internal Server Error
      */
     500: ProblemDetails;
@@ -5637,6 +5772,10 @@ export type GetApiPublicPortalDocumentsByCodePdfErrors = {
      */
     404: ProblemDetails;
     /**
+     * Too Many Requests
+     */
+    429: ProblemDetails;
+    /**
      * Internal Server Error
      */
     500: ProblemDetails;
@@ -5667,6 +5806,10 @@ export type GetApiPublicDocumentsByCodeVerificationErrors = {
      * Unauthorized
      */
     401: ProblemDetails;
+    /**
+     * Too Many Requests
+     */
+    429: ProblemDetails;
     /**
      * Internal Server Error
      */
@@ -5704,6 +5847,10 @@ export type PostApiPublicPaymentsPixWebhookErrors = {
      */
     404: ProblemDetails;
     /**
+     * Too Many Requests
+     */
+    429: ProblemDetails;
+    /**
      * Internal Server Error
      */
     500: ProblemDetails;
@@ -5740,6 +5887,10 @@ export type PostApiPublicServiceOrdersLookupErrors = {
      * Not Found
      */
     404: ProblemDetails;
+    /**
+     * Too Many Requests
+     */
+    429: ProblemDetails;
     /**
      * Internal Server Error
      */
@@ -5783,6 +5934,10 @@ export type PostApiPublicQuotesByTokenApproveErrors = {
      * Conflict
      */
     409: ProblemDetails;
+    /**
+     * Too Many Requests
+     */
+    429: ProblemDetails;
     /**
      * Internal Server Error
      */
@@ -6903,7 +7058,6 @@ export type GetApiAdminServiceOrdersData = {
         page?: number;
         pageSize?: number;
         status?: string;
-        plate?: string;
     };
     url: '/api/admin/service-orders';
 };
@@ -6983,6 +7137,43 @@ export type PostApiAdminServiceOrdersResponses = {
 
 export type PostApiAdminServiceOrdersResponse = PostApiAdminServiceOrdersResponses[keyof PostApiAdminServiceOrdersResponses];
 
+export type PostApiAdminServiceOrdersSearchData = {
+    body?: SearchServiceOrdersRequest;
+    path?: never;
+    query?: never;
+    url: '/api/admin/service-orders/search';
+};
+
+export type PostApiAdminServiceOrdersSearchErrors = {
+    /**
+     * Bad Request
+     */
+    400: ProblemDetails;
+    /**
+     * Unauthorized
+     */
+    401: ProblemDetails;
+    /**
+     * Forbidden
+     */
+    403: ProblemDetails;
+    /**
+     * Internal Server Error
+     */
+    500: ProblemDetails;
+};
+
+export type PostApiAdminServiceOrdersSearchError = PostApiAdminServiceOrdersSearchErrors[keyof PostApiAdminServiceOrdersSearchErrors];
+
+export type PostApiAdminServiceOrdersSearchResponses = {
+    /**
+     * OK
+     */
+    200: ServiceOrderSummaryDtoPagedResult;
+};
+
+export type PostApiAdminServiceOrdersSearchResponse = PostApiAdminServiceOrdersSearchResponses[keyof PostApiAdminServiceOrdersSearchResponses];
+
 export type GetApiAdminServiceOrdersByIdData = {
     body?: never;
     path: {
@@ -7021,6 +7212,46 @@ export type GetApiAdminServiceOrdersByIdResponses = {
 };
 
 export type GetApiAdminServiceOrdersByIdResponse = GetApiAdminServiceOrdersByIdResponses[keyof GetApiAdminServiceOrdersByIdResponses];
+
+export type GetApiAdminServiceOrdersByIdPhotosByPhotoIdData = {
+    body?: never;
+    path: {
+        id: string;
+        photoId: string;
+    };
+    query?: never;
+    url: '/api/admin/service-orders/{id}/photos/{photoId}';
+};
+
+export type GetApiAdminServiceOrdersByIdPhotosByPhotoIdErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ProblemDetails;
+    /**
+     * Forbidden
+     */
+    403: ProblemDetails;
+    /**
+     * Not Found
+     */
+    404: ProblemDetails;
+    /**
+     * Internal Server Error
+     */
+    500: ProblemDetails;
+};
+
+export type GetApiAdminServiceOrdersByIdPhotosByPhotoIdError = GetApiAdminServiceOrdersByIdPhotosByPhotoIdErrors[keyof GetApiAdminServiceOrdersByIdPhotosByPhotoIdErrors];
+
+export type GetApiAdminServiceOrdersByIdPhotosByPhotoIdResponses = {
+    /**
+     * OK
+     */
+    200: ServiceOrderPhotoContentDto;
+};
+
+export type GetApiAdminServiceOrdersByIdPhotosByPhotoIdResponse = GetApiAdminServiceOrdersByIdPhotosByPhotoIdResponses[keyof GetApiAdminServiceOrdersByIdPhotosByPhotoIdResponses];
 
 export type PostApiAdminServiceOrdersByIdQuoteApproveData = {
     body?: never;
@@ -7618,6 +7849,49 @@ export type PostApiAdminServicesResponses = {
 };
 
 export type PostApiAdminServicesResponse = PostApiAdminServicesResponses[keyof PostApiAdminServicesResponses];
+
+export type DeleteApiAdminServicesByIdData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/admin/services/{id}';
+};
+
+export type DeleteApiAdminServicesByIdErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ProblemDetails;
+    /**
+     * Forbidden
+     */
+    403: ProblemDetails;
+    /**
+     * Not Found
+     */
+    404: ProblemDetails;
+    /**
+     * Conflict
+     */
+    409: ProblemDetails;
+    /**
+     * Internal Server Error
+     */
+    500: ProblemDetails;
+};
+
+export type DeleteApiAdminServicesByIdError = DeleteApiAdminServicesByIdErrors[keyof DeleteApiAdminServicesByIdErrors];
+
+export type DeleteApiAdminServicesByIdResponses = {
+    /**
+     * No Content
+     */
+    204: void;
+};
+
+export type DeleteApiAdminServicesByIdResponse = DeleteApiAdminServicesByIdResponses[keyof DeleteApiAdminServicesByIdResponses];
 
 export type GetApiAdminServicesByIdData = {
     body?: never;

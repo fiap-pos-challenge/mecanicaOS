@@ -1,6 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
-using Oficina.Domain.Jobs.Entities;
+using Oficina.Application.Jobs.Models;
 
 namespace Oficina.Infrastructure.Persistence.Configurations.Jobs;
 

@@ -129,16 +129,6 @@
 .photo {
   position: relative;
   margin: 0;
-
-  img {
-    display: block;
-    width: 100%;
-    height: auto;
-    aspect-ratio: 1;
-    border-radius: var(--radius-sm);
-    background: var(--surface2);
-    object-fit: cover;
-  }
 }
 
 .pending {

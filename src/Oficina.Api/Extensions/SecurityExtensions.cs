@@ -19,6 +19,9 @@ public static class SecurityExtensions
     public const string InvitationRateLimitPolicy = "invitation";
     public const int LoginPermitLimit = 5;
     public const string LoginPermitLimitKey = "Security:LoginRateLimit:PermitLimit";
+    public const string PublicRateLimitPolicy = "public";
+    public const int PublicPermitLimit = 60;
+    public const string PublicPermitLimitKey = "Security:PublicRateLimit:PermitLimit";
 
     private static readonly TimeSpan ClockSkew = TimeSpan.FromSeconds(30);
     private static readonly TimeSpan LoginWindow = TimeSpan.FromMinutes(1);
@@ -75,10 +78,12 @@ public static class SecurityExtensions
             .AllowCredentials()));
 
         var loginPermitLimit = configuration.GetValue(LoginPermitLimitKey, LoginPermitLimit);
+        var publicPermitLimit = configuration.GetValue(PublicPermitLimitKey, PublicPermitLimit);
         services.AddRateLimiter(options =>
         {
             options.AddPolicy(LoginRateLimitPolicy, context => PerClientIp(context, loginPermitLimit));
             options.AddPolicy(InvitationRateLimitPolicy, context => PerClientIp(context, loginPermitLimit));
+            options.AddPolicy(PublicRateLimitPolicy, context => PerClientIp(context, publicPermitLimit));
             options.OnRejected = async (context, _) =>
             {
                 var error = context.Lease.TryGetMetadata(MetadataName.RetryAfter, out var retryAfter)

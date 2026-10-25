@@ -111,7 +111,8 @@ public sealed class MigrationTests(SqlServerFixture database)
             "deliveryTokenHash|char(64)|YES",
             "portalFailures|int|NO",
             "rejectionReason|nvarchar(500)|YES",
-            "acceptedLineIds|nvarchar(max)|NO"),
+            "acceptedLineIds|nvarchar(max)|NO",
+            "rowVersion|timestamp|NO"),
         ["settingsDocuments"] = new[]
         {
             "key|varchar(40)|NO",
@@ -156,7 +157,7 @@ public sealed class MigrationTests(SqlServerFixture database)
             "isActive|bit|NO",
             "failedLoginAttempts|int|NO",
             "lockoutEndAt|datetimeoffset|YES",
-            "twoFactorSecret|varchar(64)|YES",
+            "twoFactorSecret|varchar(512)|YES",
             "twoFactorEnabled|bit|NO"),
         ["customers"] = WithAudit(
             "id|uniqueidentifier|NO",
@@ -297,6 +298,7 @@ public sealed class MigrationTests(SqlServerFixture database)
             "sentToQuote|bit|NO",
             "reopened|bit|NO",
             "checklist|nvarchar(max)|NO",
+            "photoCount|int|NO",
             "rowVersion|timestamp|NO"),
         ["timeEntries"] = WithAudit(
             "id|uniqueidentifier|NO",
@@ -448,12 +450,12 @@ public sealed class MigrationTests(SqlServerFixture database)
     }
 
     [Fact]
-    public async Task RowVersion_ExistsOnlyOnPartsAndServiceOrders()
+    public async Task RowVersion_ExistsOnlyOnEstimatesPartsAndServiceOrders()
     {
         var rows = await database.QueryAsync(
             "SELECT TABLE_NAME AS name FROM INFORMATION_SCHEMA.COLUMNS WHERE COLUMN_NAME = 'rowVersion' AND DATA_TYPE = 'timestamp'");
 
-        Assert.Equal(new[] { "parts", "serviceOrders" }, rows.Select(row => (string)row["name"]!).Order(StringComparer.Ordinal));
+        Assert.Equal(new[] { "estimates", "parts", "serviceOrders" }, rows.Select(row => (string)row["name"]!).Order(StringComparer.Ordinal));
     }
 
     [Fact]

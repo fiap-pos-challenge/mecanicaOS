@@ -20,6 +20,7 @@ import { UiCard } from '../../../shared/ui/card/card';
 import { UiDialogService } from '../../../shared/ui/dialog/dialog';
 import { UiIcon } from '../../../shared/ui/icon/icon';
 import { UiPendingNotice } from '../../../shared/ui/pending-notice/pending-notice';
+import { UiPhoto } from '../../../shared/ui/photo/photo';
 import { UiPlate } from '../../../shared/ui/plate/plate';
 import { UiSkeleton } from '../../../shared/ui/skeleton/skeleton';
 import { UiStatusPill } from '../../../shared/ui/status-pill/status-pill';
@@ -50,6 +51,7 @@ type DetailLoad = 'loading' | 'ready' | 'pending' | 'notFound' | 'error';
     UiCard,
     UiIcon,
     UiPendingNotice,
+    UiPhoto,
     UiPlate,
     UiSkeleton,
     UiStatusPill,

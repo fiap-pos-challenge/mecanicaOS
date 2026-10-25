@@ -11,8 +11,8 @@ export interface Account {
 
 export const ACCOUNTS = {
   admin: {
-    email: 'admin@oficina.local',
-    password: 'Admin@123',
+    email: process.env['DEV_ADMIN_EMAIL'] ?? 'admin@oficina.local',
+    password: process.env['DEV_ADMIN_PASSWORD'] ?? '',
     name: 'Administrador',
     role: 'Admin',
   },

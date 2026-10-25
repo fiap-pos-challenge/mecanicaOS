@@ -1,6 +1,6 @@
 using System.Globalization;
 using Oficina.Application.Analytics;
-using Oficina.Application.Common.Numbers;
+using Oficina.Application.Reports.Dtos;
 
 namespace Oficina.Application.Reports;
 
@@ -143,12 +143,12 @@ public static class ReportEngine
             "orderCount" => orders,
             "partsOut" => items.Sum(item => item.Quantity),
             "averageTicket" => orders == 0 ? 0 : Cents(revenue / orders),
-            "margin" => revenue == 0 ? 0 : Rounding.HalfUp((revenue - items.Sum(item => item.Cost)) * 100 / revenue, 1),
+            "margin" => revenue == 0 ? 0 : Domain.Common.ValueObjects.Measure.Round((revenue - items.Sum(item => item.Cost)) * 100 / revenue, 1),
             _ => Cents(items.Sum(item => item.Commission)),
         };
     }
 
-    private static decimal Cents(decimal value) => Rounding.HalfUp(value * 100, 0);
+    private static decimal Cents(decimal value) => Domain.Common.ValueObjects.Measure.Round(value * 100, 0);
 
     private static IEnumerable<Contribution> Contribute(string groupBy, SaleFact sale, TimeSpan offset)
     {

@@ -1,17 +1,22 @@
+using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Oficina.Api.Authorization;
 using Oficina.Api.Contracts.Jobs;
 using Oficina.Api.ExceptionHandling;
-using Oficina.Application.Jobs;
+using Oficina.Application.Jobs.Commands.ExportCustomerData;
+using Oficina.Application.Jobs.Commands.ImportCustomers;
 using Oficina.Application.Jobs.Dtos;
+using Oficina.Application.Jobs.Queries.GetCustomerSummaries;
+using Oficina.Application.Jobs.Queries.GetJob;
+using Oficina.Application.Jobs.Queries.GetServiceHistory;
 
 namespace Oficina.Api.Controllers.Admin;
 
 [Route("api/admin")]
 [Tags("Customer insights")]
 [ProducesResponseType<ProblemDetails>(StatusCodes.Status403Forbidden, ProblemResponses.ContentType)]
-public sealed class JobsController(JobService jobs) : ApiControllerBase
+public sealed class JobsController(ISender sender) : ApiControllerBase
 {
     [HttpPost("customers/summaries")]
     [Authorize(Policy = Policies.Staff)]
@@ -20,7 +25,7 @@ public sealed class JobsController(JobService jobs) : ApiControllerBase
     [ProducesResponseType<CustomerSummaryListDto>(StatusCodes.Status200OK)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status400BadRequest, ProblemResponses.ContentType)]
     public async Task<IActionResult> Summaries(CustomerSummariesBody request, CancellationToken cancellationToken) =>
-        Respond(await jobs.SummariesAsync(request.CustomerIds, cancellationToken), Ok);
+        Respond(await sender.Send(new GetCustomerSummariesQuery(request.CustomerIds), cancellationToken), Ok);
 
     [HttpGet("customers/{id:guid}/service-history")]
     [Authorize(Policy = Policies.Staff)]
@@ -29,7 +34,7 @@ public sealed class JobsController(JobService jobs) : ApiControllerBase
     [ProducesResponseType<ServiceHistoryDto>(StatusCodes.Status200OK)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound, ProblemResponses.ContentType)]
     public async Task<IActionResult> History(Guid id, CancellationToken cancellationToken) =>
-        Respond(await jobs.HistoryAsync(id, cancellationToken), Ok);
+        Respond(await sender.Send(new GetServiceHistoryQuery(id), cancellationToken), Ok);
 
     [HttpPost("customers/{id:guid}/data-export")]
     [Authorize(Policy = Policies.AdminOrManager)]
@@ -38,7 +43,7 @@ public sealed class JobsController(JobService jobs) : ApiControllerBase
     [ProducesResponseType<JobDto>(StatusCodes.Status202Accepted)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound, ProblemResponses.ContentType)]
     public async Task<IActionResult> Export(Guid id, CancellationToken cancellationToken) =>
-        Respond(await jobs.ExportAsync(id, cancellationToken), job => StatusCode(StatusCodes.Status202Accepted, job));
+        Respond(await sender.Send(new ExportCustomerDataCommand(id), cancellationToken), job => StatusCode(StatusCodes.Status202Accepted, job));
 
     [HttpPost("imports/customers")]
     [Authorize(Policy = Policies.Staff)]
@@ -48,7 +53,7 @@ public sealed class JobsController(JobService jobs) : ApiControllerBase
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status400BadRequest, ProblemResponses.ContentType)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status413PayloadTooLarge, ProblemResponses.ContentType)]
     public async Task<IActionResult> Import(ImportCustomersBody request, CancellationToken cancellationToken) =>
-        Respond(await jobs.ImportAsync(request.FileName, request.Csv, cancellationToken), job => StatusCode(StatusCodes.Status202Accepted, job));
+        Respond(await sender.Send(new ImportCustomersCommand(request.FileName, request.Csv), cancellationToken), job => StatusCode(StatusCodes.Status202Accepted, job));
 
     [HttpGet("jobs/{id:guid}")]
     [Authorize(Policy = Policies.Staff)]
@@ -57,5 +62,5 @@ public sealed class JobsController(JobService jobs) : ApiControllerBase
     [ProducesResponseType<JobDto>(StatusCodes.Status200OK)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound, ProblemResponses.ContentType)]
     public async Task<IActionResult> Get(Guid id, CancellationToken cancellationToken) =>
-        Respond(await jobs.GetAsync(id, cancellationToken), Ok);
+        Respond(await sender.Send(new GetJobQuery(id), cancellationToken), Ok);
 }

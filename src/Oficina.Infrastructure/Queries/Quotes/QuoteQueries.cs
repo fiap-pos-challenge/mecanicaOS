@@ -1,10 +1,10 @@
 using Microsoft.EntityFrameworkCore;
 using Oficina.Application.Quotes.Dtos;
-using Oficina.Application.Quotes.Pricing;
 using Oficina.Application.Quotes.Queries;
 using Oficina.Domain.Customers.Enums;
 using Oficina.Domain.Inventory.Enums;
 using Oficina.Domain.Quotes.Entities;
+using Oficina.Domain.Quotes.Pricing;
 using Oficina.Domain.ServiceOrders.Enums;
 using Oficina.Infrastructure.Persistence;
 

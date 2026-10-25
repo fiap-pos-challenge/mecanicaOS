@@ -79,7 +79,7 @@ public sealed partial class SmtpEmailSender(IOptions<EmailOptions> options, ILog
     };
 
     private static SmtpClient SmtpServerClient(EmailOptions settings) =>
-        new(settings.SmtpHost, settings.SmtpPort) { EnableSsl = settings.EnableSsl, Timeout = SendTimeoutMilliseconds };
+        new(settings.SmtpHost, settings.SmtpPort) { EnableSsl = true, Timeout = SendTimeoutMilliseconds };
 
     [LoggerMessage(Level = LogLevel.Information, Message = "Invitation e-mail sent")]
     private partial void LogInvitationSent();

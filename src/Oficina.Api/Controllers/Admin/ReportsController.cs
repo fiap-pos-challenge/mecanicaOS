@@ -1,16 +1,26 @@
+using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Oficina.Api.Authorization;
 using Oficina.Api.Contracts.Reports;
 using Oficina.Api.ExceptionHandling;
-using Oficina.Application.Reports;
+using Oficina.Application.Reports.Commands.CreateSavedReport;
+using Oficina.Application.Reports.Commands.DeleteSavedReport;
+using Oficina.Application.Reports.Commands.ExportReport;
+using Oficina.Application.Reports.Commands.ScheduleSavedReport;
+using Oficina.Application.Reports.Commands.UpdateSavedReport;
+using Oficina.Application.Reports.Dtos;
+using Oficina.Application.Reports.Queries.GetReportExport;
+using Oficina.Application.Reports.Queries.ListSavedReports;
+using Oficina.Application.Reports.Queries.RunReport;
+using Oficina.Application.Reports.Queries.SuggestReport;
 
 namespace Oficina.Api.Controllers.Admin;
 
 [Route("api/admin")]
 [Tags("Reports")]
 [ProducesResponseType<ProblemDetails>(StatusCodes.Status403Forbidden, ProblemResponses.ContentType)]
-public sealed class ReportsController(ReportService reports) : ApiControllerBase
+public sealed class ReportsController(ISender sender) : ApiControllerBase
 {
     [HttpPost("reports/run")]
     [Authorize(Policy = Policies.AdminOrManager)]
@@ -20,7 +30,7 @@ public sealed class ReportsController(ReportService reports) : ApiControllerBase
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status400BadRequest, ProblemResponses.ContentType)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status422UnprocessableEntity, ProblemResponses.ContentType)]
     public async Task<IActionResult> Run(RunReportBody request, CancellationToken cancellationToken) =>
-        Respond(await reports.RunAsync(request.Definition, cancellationToken), Ok);
+        Respond(await sender.Send(new RunReportQuery(request.Definition), cancellationToken), Ok);
 
     [HttpGet("reports/saved")]
     [Authorize(Policy = Policies.AdminOrManager)]
@@ -28,7 +38,7 @@ public sealed class ReportsController(ReportService reports) : ApiControllerBase
     [EndpointDescription("Returns the saved reports with definition and schedule, most recently changed first. Roles: Admin, Manager.")]
     [ProducesResponseType<SavedReportListDto>(StatusCodes.Status200OK)]
     public async Task<IActionResult> Saved(CancellationToken cancellationToken) =>
-        Respond(await reports.ListAsync(cancellationToken), Ok);
+        Respond(await sender.Send(new ListSavedReportsQuery(), cancellationToken), Ok);
 
     [HttpPost("reports/saved")]
     [Authorize(Policy = Policies.AdminOrManager)]
@@ -39,7 +49,7 @@ public sealed class ReportsController(ReportService reports) : ApiControllerBase
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status409Conflict, ProblemResponses.ContentType)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status422UnprocessableEntity, ProblemResponses.ContentType)]
     public async Task<IActionResult> Save(SaveReportBody request, CancellationToken cancellationToken) =>
-        Respond(await reports.CreateAsync(request.Name, request.Definition, cancellationToken), report => StatusCode(StatusCodes.Status201Created, report));
+        Respond(await sender.Send(new CreateSavedReportCommand(request.Name, request.Definition), cancellationToken), report => StatusCode(StatusCodes.Status201Created, report));
 
     [HttpPut("reports/saved/{id:guid}")]
     [Authorize(Policy = Policies.AdminOrManager)]
@@ -51,7 +61,7 @@ public sealed class ReportsController(ReportService reports) : ApiControllerBase
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status409Conflict, ProblemResponses.ContentType)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status422UnprocessableEntity, ProblemResponses.ContentType)]
     public async Task<IActionResult> Update(Guid id, SaveReportBody request, CancellationToken cancellationToken) =>
-        Respond(await reports.UpdateAsync(id, request.Name, request.Definition, cancellationToken), Ok);
+        Respond(await sender.Send(new UpdateSavedReportCommand(id, request.Name, request.Definition), cancellationToken), Ok);
 
     [HttpDelete("reports/saved/{id:guid}")]
     [Authorize(Policy = Policies.AdminOrManager)]
@@ -60,7 +70,7 @@ public sealed class ReportsController(ReportService reports) : ApiControllerBase
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound, ProblemResponses.ContentType)]
     public async Task<IActionResult> Delete(Guid id, CancellationToken cancellationToken) =>
-        Respond(await reports.DeleteAsync(id, cancellationToken));
+        Respond(await sender.Send(new DeleteSavedReportCommand(id), cancellationToken));
 
     [HttpPut("reports/saved/{id:guid}/schedule")]
     [Authorize(Policy = Policies.AdminOrManager)]
@@ -70,7 +80,7 @@ public sealed class ReportsController(ReportService reports) : ApiControllerBase
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status400BadRequest, ProblemResponses.ContentType)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound, ProblemResponses.ContentType)]
     public async Task<IActionResult> Schedule(Guid id, ScheduleReportBody request, CancellationToken cancellationToken) =>
-        Respond(await reports.ScheduleAsync(id, request.Schedule, cancellationToken), Ok);
+        Respond(await sender.Send(new ScheduleSavedReportCommand(id, request.Schedule), cancellationToken), Ok);
 
     [HttpPost("reports/exports")]
     [Authorize(Policy = Policies.AdminOrManager)]
@@ -80,7 +90,7 @@ public sealed class ReportsController(ReportService reports) : ApiControllerBase
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status400BadRequest, ProblemResponses.ContentType)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status422UnprocessableEntity, ProblemResponses.ContentType)]
     public async Task<IActionResult> Export(ExportReportBody request, CancellationToken cancellationToken) =>
-        Respond(await reports.ExportAsync(request.Definition, request.Format, cancellationToken), job => StatusCode(StatusCodes.Status202Accepted, job));
+        Respond(await sender.Send(new ExportReportCommand(request.Definition, request.Format), cancellationToken), job => StatusCode(StatusCodes.Status202Accepted, job));
 
     [HttpGet("reports/exports/{id:guid}")]
     [Authorize(Policy = Policies.AdminOrManager)]
@@ -89,7 +99,7 @@ public sealed class ReportsController(ReportService reports) : ApiControllerBase
     [ProducesResponseType<ExportJobDto>(StatusCodes.Status200OK)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound, ProblemResponses.ContentType)]
     public async Task<IActionResult> GetExport(Guid id, CancellationToken cancellationToken) =>
-        Respond(await reports.GetExportAsync(id, cancellationToken), Ok);
+        Respond(await sender.Send(new GetReportExportQuery(id), cancellationToken), Ok);
 
     [HttpPost("assistant/report-definitions")]
     [Authorize(Policy = Policies.AdminOrManager)]
@@ -98,6 +108,6 @@ public sealed class ReportsController(ReportService reports) : ApiControllerBase
     [ProducesResponseType<ReportSuggestionDto>(StatusCodes.Status200OK)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status400BadRequest, ProblemResponses.ContentType)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status422UnprocessableEntity, ProblemResponses.ContentType)]
-    public IActionResult Suggest(AssistantQuestionBody request) =>
-        Respond(reports.Suggest(request.Question), Ok);
+    public async Task<IActionResult> Suggest(AssistantQuestionBody request, CancellationToken cancellationToken) =>
+        Respond(await sender.Send(new SuggestReportQuery(request.Question), cancellationToken), Ok);
 }

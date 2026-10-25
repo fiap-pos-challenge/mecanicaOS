@@ -1,16 +1,20 @@
+using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Oficina.Api.Authorization;
 using Oficina.Api.ExceptionHandling;
 using Oficina.Application.Common.Pagination;
-using Oficina.Application.Finance;
+using Oficina.Application.Finance.Dtos;
+using Oficina.Application.Finance.Queries.GetFinanceSummary;
+using Oficina.Application.Finance.Queries.GetPlatform;
+using Oficina.Application.Finance.Queries.ListFinanceDocuments;
 
 namespace Oficina.Api.Controllers.Admin;
 
 [Route("api/admin")]
 [Tags("Finance")]
 [ProducesResponseType<ProblemDetails>(StatusCodes.Status403Forbidden, ProblemResponses.ContentType)]
-public sealed class FinanceController(FinanceService finance) : ApiControllerBase
+public sealed class FinanceController(ISender sender) : ApiControllerBase
 {
     [HttpGet("finance")]
     [Authorize(Policy = Policies.AdminOrManager)]
@@ -19,7 +23,7 @@ public sealed class FinanceController(FinanceService finance) : ApiControllerBas
     [ProducesResponseType<FinanceSummaryDto>(StatusCodes.Status200OK)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status400BadRequest, ProblemResponses.ContentType)]
     public async Task<IActionResult> Summary([FromQuery] string? period, CancellationToken cancellationToken) =>
-        Respond(await finance.SummaryAsync(period, cancellationToken), Ok);
+        Respond(await sender.Send(new GetFinanceSummaryQuery(period), cancellationToken), Ok);
 
     [HttpGet("documents")]
     [Authorize(Policy = Policies.Staff)]
@@ -28,7 +32,7 @@ public sealed class FinanceController(FinanceService finance) : ApiControllerBas
     [ProducesResponseType<PagedResult<DocumentSummaryDto>>(StatusCodes.Status200OK)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status400BadRequest, ProblemResponses.ContentType)]
     public async Task<IActionResult> Documents([FromQuery] string? kind = null, [FromQuery] string? code = null, [FromQuery] int page = PageRequest.FirstPage, [FromQuery] int pageSize = PageRequest.DefaultPageSize, CancellationToken cancellationToken = default) =>
-        Respond(await finance.DocumentsAsync(kind, code, page, pageSize, cancellationToken), Ok);
+        Respond(await sender.Send(new ListFinanceDocumentsQuery(kind, code, page, pageSize), cancellationToken), Ok);
 
     [HttpGet("platform")]
     [Authorize(Policy = Policies.AdminOnly)]
@@ -36,5 +40,5 @@ public sealed class FinanceController(FinanceService finance) : ApiControllerBas
     [EndpointDescription("Returns the plan of the shop, users in use against the limit, monthly usage and the enabled modules. Roles: Admin.")]
     [ProducesResponseType<PlatformDto>(StatusCodes.Status200OK)]
     public async Task<IActionResult> Platform(CancellationToken cancellationToken) =>
-        Respond(await finance.PlatformAsync(cancellationToken), Ok);
+        Respond(await sender.Send(new GetPlatformQuery(), cancellationToken), Ok);
 }

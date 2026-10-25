@@ -13,11 +13,11 @@ using Oficina.FunctionalTests.Fixtures;
 namespace Oficina.FunctionalTests.Api;
 
 [Collection(nameof(DatabaseCollection))]
-public sealed class QuotePortalApiTests(SqlServerFixture database) : ApiTestBase(database)
+public sealed partial class QuotePortalApiTests(SqlServerFixture database) : ApiTestBase(database)
 {
     private const string Session = "X-Portal-Session";
 
-    private async Task<(Guid OrderId, Guid QuoteId)> QuoteAsync(HttpClient admin, HttpClient mechanic)
+    private async Task<(Guid OrderId, Guid PartId)> OrderInDiagnosisAsync(HttpClient admin, HttpClient mechanic)
     {
         var customer = await ReadJsonAsync(await admin.PostAsJsonAsync("/api/admin/customers", new
         {
@@ -42,7 +42,12 @@ public sealed class QuotePortalApiTests(SqlServerFixture database) : ApiTestBase
             items = new object[] { new { kind = "Service", itemId = service.GetProperty("id").GetGuid() }, new { kind = "Part", itemId = partId } },
         }, CancellationToken);
         Assert.Equal(HttpStatusCode.OK, sent.StatusCode);
+        return (orderId, partId);
+    }
 
+    private async Task<(Guid OrderId, Guid QuoteId)> QuoteAsync(HttpClient admin, HttpClient mechanic)
+    {
+        var (orderId, _) = await OrderInDiagnosisAsync(admin, mechanic);
         var open = await ReadJsonAsync(await admin.GetAsync("/api/admin/quotes/service-orders", CancellationToken));
         Assert.Contains(open.GetProperty("items").EnumerateArray(), item => item.GetProperty("id").GetGuid() == orderId);
         using var created = await admin.PostAsJsonAsync("/api/admin/quotes", new { serviceOrderId = orderId }, CancellationToken);
@@ -159,6 +164,8 @@ public sealed class QuotePortalApiTests(SqlServerFixture database) : ApiTestBase
 
         var paid = await ReadJsonAsync(await anonymous.SendAsync(Portal(HttpMethod.Get, $"/api/public/portal/payments/{paymentId}", session), CancellationToken));
         Assert.Equal("Paid", paid.GetProperty("status").GetString());
+        await EventuallyAsync(async () => (await ReadJsonAsync(await anonymous.SendAsync(Portal(HttpMethod.Get, "/api/public/portal/order", session), CancellationToken)))
+            .GetProperty("documents").EnumerateArray().Any(document => document.GetProperty("kind").GetString() == "Receipt"), "receipt issued by the outbox");
         var final = await ReadJsonAsync(await anonymous.SendAsync(Portal(HttpMethod.Get, "/api/public/portal/order", session), CancellationToken));
         Assert.Equal("Paid", final.GetProperty("payment").GetProperty("status").GetString());
         await AssertProblemAsync(await anonymous.SendAsync(Portal(HttpMethod.Post, "/api/public/portal/payments/card", session), CancellationToken), HttpStatusCode.UnprocessableEntity, "portal.nothingToPay");

@@ -16,6 +16,7 @@ import { UiButton } from '../../../shared/ui/button/button';
 import { UiControl, UiField } from '../../../shared/ui/field/field';
 import { UiIcon } from '../../../shared/ui/icon/icon';
 import { UiPendingNotice } from '../../../shared/ui/pending-notice/pending-notice';
+import { UiPhoto } from '../../../shared/ui/photo/photo';
 import { UiPlate } from '../../../shared/ui/plate/plate';
 import { UiSkeleton } from '../../../shared/ui/skeleton/skeleton';
 import { UiStatusPill } from '../../../shared/ui/status-pill/status-pill';
@@ -60,6 +61,7 @@ export function readAsDataUrl(file: Blob): Promise<string> {
     UiField,
     UiIcon,
     UiPendingNotice,
+    UiPhoto,
     UiPlate,
     UiSkeleton,
     UiStatusPill,

@@ -1,7 +1,12 @@
+import { existsSync } from 'node:fs';
 import { chromium } from '@playwright/test';
 import { launch } from 'chrome-launcher';
 import { desktopConfig, startFlow } from 'lighthouse';
 import puppeteer from 'puppeteer-core';
+
+if (existsSync('../.env')) {
+  process.loadEnvFile('../.env');
+}
 
 const base = process.env['DEMO_URL'] ?? 'http://localhost:4301';
 const minimumPerformance = 90;
@@ -10,7 +15,10 @@ const maximumBlockingMs = 200;
 const maximumShift = 0.1;
 
 const accounts = {
-  admin: { email: 'admin@oficina.local', password: 'Admin@123' },
+  admin: {
+    email: process.env.DEV_ADMIN_EMAIL ?? 'admin@oficina.local',
+    password: process.env.DEV_ADMIN_PASSWORD ?? '',
+  },
   mechanic: { email: 'mecanico.e2e@oficina.local', password: 'Oficina@2026' },
 };
 

@@ -8,7 +8,16 @@ export default function globalTeardown(): void {
 
   spawnSync(
     'docker',
-    ['compose', '-f', 'e2e/docker-compose.e2e.yml', 'down', '-v', '--remove-orphans'],
+    [
+      'compose',
+      '--env-file',
+      '../.env',
+      '-f',
+      'e2e/docker-compose.e2e.yml',
+      'down',
+      '-v',
+      '--remove-orphans',
+    ],
     { stdio: 'ignore' },
   );
   rmSync('e2e/.mail', { recursive: true, force: true });

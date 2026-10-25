@@ -9,7 +9,7 @@ using Oficina.Domain.Identity.Repositories;
 
 namespace Oficina.Application.Identity.Commands.SetupTwoFactor;
 
-public sealed class SetupTwoFactorCommandHandler(IUserRepository users, ICurrentUser currentUser, IUnitOfWork unitOfWork)
+public sealed class SetupTwoFactorCommandHandler(IUserRepository users, ICurrentUser currentUser, ISecretProtector protector, IUnitOfWork unitOfWork)
     : IRequestHandler<SetupTwoFactorCommand, Result<TwoFactorSetupDto>>
 {
     public const string Issuer = "Oficina";
@@ -22,7 +22,7 @@ public sealed class SetupTwoFactorCommandHandler(IUserRepository users, ICurrent
         }
 
         var secret = Totp.NewSecret();
-        user.PrepareTwoFactor(secret);
+        user.PrepareTwoFactor(protector.Protect(secret));
         if ((await unitOfWork.CommitAsync(cancellationToken)).Error is { } commitError)
         {
             return commitError;

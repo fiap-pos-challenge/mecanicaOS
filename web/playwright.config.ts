@@ -1,4 +1,9 @@
+import { existsSync } from 'node:fs';
 import { defineConfig, devices } from '@playwright/test';
+
+if (existsSync('../.env')) {
+  process.loadEnvFile('../.env');
+}
 
 const port = 4300;
 const isCi = Boolean(process.env['CI']);

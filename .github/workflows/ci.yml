@@ -154,6 +154,11 @@ jobs:
 
       # E2E runs against the production nginx image (real CSP and Trusted Types),
       # the real API and a throwaway SQL Server (web/e2e/docker-compose.e2e.yml).
+      # O stack do E2E lê os segredos do .env da raiz; no CI eles são gerados na hora e nunca vêm do repositório.
+      - name: Create throwaway .env
+        working-directory: .
+        run: bash scripts/ci/create-env.sh
+
       - name: Install Playwright browser
         run: npx playwright install --with-deps chromium
 

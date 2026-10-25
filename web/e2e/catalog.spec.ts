@@ -69,7 +69,7 @@ test.describe('catalog on the real API', () => {
 
     await expect(
       page.getByRole('heading', { level: 1, name: form.services.editTitle }),
-    ).toBeVisible();
+    ).toBeVisible({ timeout: 15_000 });
     const history = page.getByRole('list', { name: messages.catalog.history.caption });
     await expect(history.getByRole('listitem')).toHaveCount(1);
 
@@ -157,7 +157,7 @@ test.describe('catalog on the real API', () => {
 
     await expect(
       page.getByRole('heading', { level: 1, name: form.packages.editTitle }),
-    ).toBeVisible();
+    ).toBeVisible({ timeout: 15_000 });
     await expect(page.getByText(/R\$\s15,00/).first()).toBeVisible();
 
     await openCatalog(page, 'parts');

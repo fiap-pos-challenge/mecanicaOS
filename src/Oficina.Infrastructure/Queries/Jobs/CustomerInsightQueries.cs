@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Oficina.Application.Jobs;
 using Oficina.Application.Jobs.Dtos;
+using Oficina.Domain.Common.ValueObjects;
 using Oficina.Domain.ServiceOrders.Enums;
 using Oficina.Infrastructure.Persistence;
 
@@ -30,7 +31,7 @@ public sealed class CustomerInsightQueries(OficinaDbContext context) : ICustomer
             DateTimeOffset? last = mine.Count == 0 ? null : mine.Max(order => order.CreatedAt);
             var vehicleCount = vehicles.FirstOrDefault(vehicle => vehicle.Key == id)?.Count ?? 0;
             var situation = open > 0 ? "OpenServiceOrder" : last is { } visit && now - visit <= NoReturnAfter ? "Active" : "NoReturn";
-            return new CustomerSummaryDto(id, vehicleCount, last, spent, delivered.Count == 0 ? 0 : Oficina.Application.Common.Numbers.Rounding.HalfUp(spent / delivered.Count, 2), mine.Count, open, situation, vehicleCount >= 3);
+            return new CustomerSummaryDto(id, vehicleCount, last, spent, delivered.Count == 0 ? 0 : Measure.Round(spent / delivered.Count, 2), mine.Count, open, situation, vehicleCount >= 3);
         }).ToList();
     }
 

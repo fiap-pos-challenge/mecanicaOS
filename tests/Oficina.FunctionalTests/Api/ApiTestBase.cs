@@ -49,6 +49,21 @@ public abstract class ApiTestBase(SqlServerFixture database) : IAsyncLifetime
     protected static async Task CommitAsync(OficinaDbContext context) =>
         Assert.True((await new UnitOfWork(context, new OutboxWriter()).CommitAsync(CancellationToken)).IsSuccess);
 
+    protected static async Task EventuallyAsync(Func<Task<bool>> condition, string description)
+    {
+        for (var attempt = 0; attempt < 60; attempt++)
+        {
+            if (await condition())
+            {
+                return;
+            }
+
+            await Task.Delay(250, CancellationToken);
+        }
+
+        Assert.Fail(description);
+    }
+
     protected static async Task<JsonElement> ReadJsonAsync(HttpResponseMessage response) =>
         JsonDocument.Parse(await response.Content.ReadAsStringAsync(CancellationToken)).RootElement;
 

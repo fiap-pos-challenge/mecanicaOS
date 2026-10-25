@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Oficina.Application.Common.Pagination;
+using Oficina.Application.ServiceOrders;
 using Oficina.Application.ServiceOrders.Dtos;
 using Oficina.Application.ServiceOrders.Queries;
 using Oficina.Domain.Customers.ValueObjects;
@@ -60,6 +61,7 @@ public sealed class ServiceOrderQueries(OficinaDbContext context, TimeProvider t
         }
 
         var lookup = await LoadContextAsync([order], cancellationToken);
+        var photos = await PhotosAsync([order.Id], cancellationToken);
         var customer = await context.Customers.IgnoreQueryFilters().AsNoTracking()
             .SingleAsync(customer => customer.Id == order.CustomerId, cancellationToken);
         var vehicle = lookup.Vehicles[order.VehicleId];
@@ -105,7 +107,7 @@ public sealed class ServiceOrderQueries(OficinaDbContext context, TimeProvider t
                     history.Note,
                     history.ChangedAt))
                 .ToList(),
-            order.Photos.OrderBy(photo => photo.TakenAt).Select(Photo).ToList(),
+            photos.GetValueOrDefault(order.Id) ?? [],
             order.TimeEntries
                 .OrderBy(entry => entry.StartedAt)
                 .Select(entry => new ServiceOrderTimeEntryDto(
@@ -259,11 +261,17 @@ public sealed class ServiceOrderQueries(OficinaDbContext context, TimeProvider t
                     .ToList())
             : null;
 
-    private static ServiceOrderPhotoDto Photo(ServiceOrderPhoto photo) => new(photo.Id, photo.DataUrl, photo.Caption, photo.TakenAt);
+    private async Task<Dictionary<Guid, IReadOnlyList<ServiceOrderPhotoDto>>> PhotosAsync(IReadOnlyCollection<Guid> orderIds, CancellationToken cancellationToken) =>
+        (await context.ServiceOrderPhotos.AsNoTracking()
+            .Where(photo => orderIds.Contains(photo.ServiceOrderId))
+            .OrderBy(photo => photo.TakenAt)
+            .Select(photo => new { photo.Id, photo.ServiceOrderId, photo.Caption, photo.TakenAt })
+            .ToListAsync(cancellationToken))
+            .GroupBy(photo => photo.ServiceOrderId)
+            .ToDictionary(group => group.Key, group => (IReadOnlyList<ServiceOrderPhotoDto>)group.Select(photo => new ServiceOrderPhotoDto(photo.Id, ServiceOrderPhotoPaths.Admin(photo.ServiceOrderId, photo.Id), photo.Caption, photo.TakenAt)).ToList());
 
     private IQueryable<ServiceOrder> WorkQuery() =>
         context.ServiceOrders.AsNoTracking()
-            .Include(order => order.Photos)
             .Include(order => order.TimeEntries)
             .AsSplitQuery();
 
@@ -271,6 +279,7 @@ public sealed class ServiceOrderQueries(OficinaDbContext context, TimeProvider t
     {
         var vehicleIds = orders.Select(order => order.VehicleId).Distinct().ToList();
         var vehicles = await context.Vehicles.IgnoreQueryFilters().AsNoTracking().Where(vehicle => vehicleIds.Contains(vehicle.Id)).ToDictionaryAsync(vehicle => vehicle.Id, cancellationToken);
+        var photos = await PhotosAsync(orders.Select(order => order.Id).ToList(), cancellationToken);
         return orders.Select(order =>
         {
             var vehicle = vehicles[order.VehicleId];
@@ -283,7 +292,7 @@ public sealed class ServiceOrderQueries(OficinaDbContext context, TimeProvider t
                 order.ProblemDescription,
                 order.PromisedAt,
                 order.Checklist.Select(item => new ChecklistItemDto(item.Id, item.Label, item.State)).ToList(),
-                order.Photos.OrderBy(photo => photo.TakenAt).Select(Photo).ToList(),
+                photos.GetValueOrDefault(order.Id) ?? [],
                 order.Diagnosis,
                 order.SentToQuote,
                 order.TimerRunning,
@@ -364,7 +373,6 @@ public sealed class ServiceOrderQueries(OficinaDbContext context, TimeProvider t
             .Include(order => order.Quotes)
             .Include(order => order.StatusHistory)
             .Include(order => order.TimeEntries)
-            .Include(order => order.Photos)
             .AsSplitQuery();
 
     private async Task<ServiceOrderVehicleDto> LoadVehicleAsync(ServiceOrder order, CancellationToken cancellationToken)
