@@ -1,0 +1,296 @@
+<a class="back" routerLink="/team">
+  <ui-icon [icon]="icons.back" [size]="16" />
+  {{ text.back }}
+</a>
+
+@switch (state()) {
+  @case ('loading') {
+    <div class="skeletons" aria-hidden="true">
+      <ui-skeleton height="64px" />
+      <ui-skeleton height="260px" />
+    </div>
+  }
+  @case ('notFound') {
+    <p class="alert" role="alert">{{ text.notFound }}</p>
+  }
+  @case ('error') {
+    <div class="alert" role="alert">
+      <span>{{ text.loadError }}</span>
+      <button uiButton size="sm" type="button" (click)="retry()">{{ text.retry }}</button>
+    </div>
+  }
+  @case ('ready') {
+    @if (user(); as member) {
+      <header class="head" [attr.data-role]="member.role">
+        <ui-avatar class="avatar" [name]="member.name" />
+        <div>
+          <h1 class="title">{{ member.name }}</h1>
+          <p class="pills">
+            <ui-status-pill [tone]="roleTones[member.role]">{{
+              roleLabels[member.role]
+            }}</ui-status-pill>
+            <ui-status-pill [tone]="statusTones[member.status]">
+              {{ statuses[member.status] }}
+            </ui-status-pill>
+            <span class="since">{{ since(member) }}</span>
+          </p>
+        </div>
+      </header>
+
+      <div class="layout">
+        <ui-card [title]="text.access" [subtitle]="text.accessHint" [headingLevel]="2">
+          <form class="form" novalidate [formGroup]="access" (ngSubmit)="saveAccess()">
+            @if (accessError(); as message) {
+              <p class="alert" role="alert">{{ message }}</p>
+            }
+            <ui-field [label]="text.name" [required]="true" [error]="accessErrorOf()">
+              <input uiControl type="text" formControlName="name" maxlength="120" />
+            </ui-field>
+            <ui-field [label]="text.email" [hint]="text.emailHint">
+              <input uiControl type="email" [value]="member.email" disabled />
+            </ui-field>
+            <ui-field [label]="text.role" [required]="true">
+              <select uiControl formControlName="role">
+                @for (role of roles; track role) {
+                  <option [value]="role">{{ roleLabels[role] }}</option>
+                }
+              </select>
+            </ui-field>
+            @if (canManage()) {
+              <div class="row-actions">
+                <button
+                  uiButton
+                  variant="primary"
+                  type="submit"
+                  [loading]="savingAccess()"
+                  [disabled]="access.pristine"
+                >
+                  {{ text.saveAccess }}
+                </button>
+                @if (member.status === 'InvitationPending') {
+                  <button uiButton type="button" (click)="resend()">{{ listText.resend }}</button>
+                }
+                @if (member.status === 'Inactive') {
+                  <button uiButton type="button" (click)="reactivate()">
+                    {{ listText.reactivate }}
+                  </button>
+                } @else if (block(); as reason) {
+                  <button
+                    uiButton
+                    variant="danger"
+                    type="button"
+                    [disabled]="true"
+                    aria-describedby="member-block"
+                  >
+                    {{ listText.deactivate }}
+                  </button>
+                  <span class="reason" id="member-block">{{ blockReason(reason) }}</span>
+                } @else {
+                  <button uiButton variant="danger" type="button" (click)="deactivate()">
+                    {{ listText.deactivate }}
+                  </button>
+                }
+              </div>
+            } @else {
+              <p class="hint">{{ listText.readOnly }}</p>
+            }
+          </form>
+        </ui-card>
+
+        <ui-card [title]="text.profile" [subtitle]="text.profileHint" [headingLevel]="2">
+          @if (profilePending()) {
+            <ui-pending-notice class="pending" [message]="pending.production" />
+          }
+          <form class="form" novalidate [formGroup]="professional" (ngSubmit)="saveProfile()">
+            @if (profileError(); as message) {
+              <p class="alert" role="alert">{{ message }}</p>
+            }
+
+            <div class="specialties">
+              <ui-field
+                [label]="text.specialties"
+                [hint]="text.specialtiesHint"
+                [error]="specialtyError()"
+              >
+                <div class="adder">
+                  <input
+                    uiControl
+                    type="text"
+                    maxlength="40"
+                    autocomplete="off"
+                    [formControl]="specialtyInput"
+                    (keydown.enter)="addSpecialty($event)"
+                  />
+                  @if (canManage()) {
+                    <button uiButton size="sm" type="button" (click)="addSpecialty()">
+                      {{ text.addSpecialty }}
+                    </button>
+                  }
+                </div>
+              </ui-field>
+              <ul class="chips" [attr.aria-label]="text.specialtiesList">
+                @for (specialty of professional.controls.specialties.value; track specialty) {
+                  <li class="chip">
+                    {{ specialty }}
+                    @if (canManage()) {
+                      <button
+                        uiIconButton
+                        type="button"
+                        [label]="text.removeSpecialty(specialty)"
+                        (click)="removeSpecialty(specialty)"
+                      >
+                        <ui-icon [icon]="icons.remove" [size]="12" />
+                      </button>
+                    }
+                  </li>
+                }
+              </ul>
+            </div>
+
+            <div class="numbers">
+              <ui-field
+                [label]="text.commission"
+                [required]="true"
+                [error]="percentError('commissionPercent')"
+              >
+                <input
+                  uiControl
+                  type="number"
+                  inputmode="decimal"
+                  min="0"
+                  [max]="maxCommission"
+                  step="0.5"
+                  formControlName="commissionPercent"
+                />
+              </ui-field>
+              <ui-field
+                [label]="text.discountLimit"
+                [required]="true"
+                [hint]="isMechanic() ? text.discountMechanic : text.discountHint"
+                [error]="percentError('discountLimitPercent')"
+              >
+                <input
+                  uiControl
+                  type="number"
+                  inputmode="decimal"
+                  min="0"
+                  [max]="maxDiscount"
+                  step="0.5"
+                  formControlName="discountLimitPercent"
+                />
+              </ui-field>
+            </div>
+
+            <fieldset class="schedule" formArrayName="schedule">
+              <legend>{{ text.schedule }}</legend>
+              @for (
+                group of professional.controls.schedule.controls;
+                track group.controls.day.value;
+                let index = $index
+              ) {
+                <div
+                  class="shift"
+                  [formGroupName]="index"
+                  [class.shift--off]="!group.controls.works.value"
+                  [class.shift--invalid]="shiftInvalid(index)"
+                >
+                  <label class="day">
+                    <input
+                      type="checkbox"
+                      formControlName="works"
+                      [attr.aria-label]="text.worksOn(dayLabel(group.controls.day.value))"
+                    />
+                    <span aria-hidden="true">{{ shortDay(group.controls.day.value) }}</span>
+                  </label>
+                  @if (group.controls.works.value) {
+                    <input
+                      class="ui-control time"
+                      type="time"
+                      formControlName="start"
+                      [attr.aria-label]="text.start(dayLabel(group.controls.day.value))"
+                      [attr.aria-invalid]="shiftInvalid(index) || null"
+                    />
+                    <span class="dash" aria-hidden="true">–</span>
+                    <input
+                      class="ui-control time"
+                      type="time"
+                      formControlName="end"
+                      [attr.aria-label]="text.end(dayLabel(group.controls.day.value))"
+                      [attr.aria-invalid]="shiftInvalid(index) || null"
+                    />
+                  } @else {
+                    <span class="off">{{ text.dayOff }}</span>
+                  }
+                  @if (shiftInvalid(index)) {
+                    <span class="shift-error" role="alert">{{ text.invalidShift }}</span>
+                  }
+                </div>
+              }
+            </fieldset>
+
+            @if (canManage()) {
+              <div class="row-actions">
+                <button
+                  uiButton
+                  variant="primary"
+                  type="submit"
+                  [loading]="savingProfile()"
+                  [disabled]="professional.pristine"
+                >
+                  {{ text.saveProfile }}
+                </button>
+              </div>
+            }
+          </form>
+        </ui-card>
+
+        <section class="productivity" aria-labelledby="productivity-title">
+          <div class="productivity-head">
+            <div>
+              <h2 id="productivity-title" class="section-title">{{ text.productivity }}</h2>
+              <p class="hint">{{ text.productivityHint(period()) }}</p>
+            </div>
+            @if (producer()) {
+              <ui-segmented
+                [label]="listText.period"
+                [options]="periodOptions"
+                [value]="periodOption()"
+                (valueChange)="changePeriod($event)"
+              />
+            }
+          </div>
+          @if (producer() && productivity(); as stats) {
+            <div class="kpis">
+              <ui-kpi [label]="text.kpis.orders" [value]="'' + stats.serviceOrders" />
+              <ui-kpi [label]="text.kpis.hours" [value]="text.hours(stats.hours)" />
+              <ui-kpi
+                [label]="text.kpis.occupancy"
+                [value]="text.percent(stats.occupancyPercent)"
+              />
+              <ui-kpi [label]="text.kpis.revenue" [value]="revenue(stats)" />
+              <ui-kpi [label]="text.kpis.rework" [value]="text.percent(stats.reworkPercent)" />
+            </div>
+            <div class="trend">
+              <p class="hint">{{ text.weekly }}</p>
+              <ui-sparkline
+                class="trend-line"
+                [values]="stats.weekly"
+                [label]="listText.trend(member.name)"
+                [width]="560"
+                [height]="72"
+              />
+            </div>
+          } @else if (producer()) {
+            @if (profilePending()) {
+              <ui-pending-notice [message]="pending.production" />
+            } @else {
+              <p class="hint">{{ listText.productionUnavailable }}</p>
+            }
+          } @else {
+            <p class="hint">{{ text.noProductivity }}</p>
+          }
+        </section>
+      </div>
+    }
+  }
+}

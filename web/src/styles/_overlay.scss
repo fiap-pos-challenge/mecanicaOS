@@ -1,0 +1,14 @@
+.ui-dialog-backdrop {
+  background: var(--backdrop);
+}
+
+.ui-dialog-panel {
+  width: min(640px, calc(100vw - 24px));
+  max-height: calc(100dvh - 32px);
+  overflow: auto;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-xl);
+  background: var(--surface);
+  color: var(--fg);
+  box-shadow: var(--shadow-overlay);
+}

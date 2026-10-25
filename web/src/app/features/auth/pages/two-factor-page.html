@@ -1,0 +1,50 @@
+<aside class="brand-panel">
+  <p class="logo">mecanica<b>OS</b></p>
+  <div class="pitch">
+    <p class="eyebrow">{{ text.brand.eyebrow }}</p>
+    <p class="headline">{{ text.brand.headline }}</p>
+  </div>
+  <p class="tag" aria-hidden="true"><ui-plate [value]="text.brand.plate" /></p>
+</aside>
+
+<main class="form-panel" id="main-content">
+  <div class="card">
+    <h1 class="title">{{ text.twoFactor.title }}</h1>
+    <p class="subtitle" id="two-factor-hint">{{ text.twoFactor.subtitle }}</p>
+
+    <div aria-live="assertive">
+      @if (error(); as message) {
+        <p class="alert" data-testid="two-factor-error">{{ message }}</p>
+      }
+    </div>
+
+    <form novalidate (submit)="onSubmit($event)">
+      <fieldset class="code" aria-describedby="two-factor-hint">
+        <legend class="visually-hidden">{{ text.twoFactor.group }}</legend>
+        @for (position of positions; track position) {
+          <input
+            #digit
+            class="digit"
+            type="text"
+            inputmode="numeric"
+            pattern="[0-9]*"
+            maxlength="6"
+            [attr.autocomplete]="position === 0 ? 'one-time-code' : 'off'"
+            [attr.aria-label]="text.twoFactor.digit(position + 1)"
+            [value]="digits()[position]"
+            [attr.aria-disabled]="submitting() || null"
+            (input)="onInput(position, $event)"
+            (paste)="onPaste(position, $event)"
+            (keydown)="onKeydown(position, $event)"
+          />
+        }
+      </fieldset>
+      <button uiButton class="submit" type="submit" variant="primary" [loading]="submitting()">
+        {{ submitting() ? text.twoFactor.submitting : text.twoFactor.submit }}
+      </button>
+    </form>
+    <a class="secondary-action" routerLink="/login" (click)="$event.preventDefault(); back()">
+      {{ text.twoFactor.back }}
+    </a>
+  </div>
+</main>

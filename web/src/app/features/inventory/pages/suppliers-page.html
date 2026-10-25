@@ -1,0 +1,44 @@
+<header class="head">
+  <h2 class="title">{{ text.title }}</h2>
+  <button
+    *appCan="'inventory.manage'"
+    uiButton
+    variant="primary"
+    type="button"
+    (click)="open(null)"
+  >
+    <ui-icon [icon]="icons.plus" [size]="16" />
+    {{ text.add }}
+  </button>
+</header>
+
+@if (pending()) {
+  <ui-pending-notice class="pending" [message]="pendingText" />
+}
+
+@if (failed()) {
+  <p class="alert" role="alert">{{ text.loadError }}</p>
+}
+
+<ui-table
+  [caption]="text.caption"
+  [columns]="columns"
+  [rows]="suppliers()"
+  [trackBy]="trackRow"
+  [loading]="loading()"
+  [emptyMessage]="text.empty"
+>
+  <ng-template uiCell="actions" let-row>
+    <button
+      *appCan="'inventory.manage'"
+      uiButton
+      size="sm"
+      variant="ghost"
+      type="button"
+      [attr.aria-label]="text.editOf(row.name)"
+      (click)="open(row)"
+    >
+      {{ text.edit }}
+    </button>
+  </ng-template>
+</ui-table>

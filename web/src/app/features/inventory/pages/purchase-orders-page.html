@@ -1,0 +1,110 @@
+@if (pending()) {
+  <ui-pending-notice class="pending" [message]="pendingText" />
+}
+
+@if (failed()) {
+  <p class="alert" role="alert">{{ text.loadError }}</p>
+}
+
+@if (error(); as message) {
+  <p class="alert" role="alert" data-testid="orders-error">{{ message }}</p>
+}
+
+<section class="block" aria-labelledby="suggestions-title">
+  <h2 id="suggestions-title" class="title">{{ text.suggestionsTitle }}</h2>
+  <p class="hint">{{ text.suggestionsHint }}</p>
+  @if (!loading() && groups().length === 0) {
+    <p class="empty">{{ text.noSuggestions }}</p>
+  }
+  @for (group of groups(); track group.supplierName) {
+    <article class="group">
+      <header class="group-head">
+        <h3 class="supplier">{{ group.supplierName }}</h3>
+        <span class="total">{{ groupTotal(group) }}</span>
+      </header>
+      <ul class="lines" [attr.aria-label]="text.suggestionsCaption">
+        @for (line of group.lines; track line.suggestion.partId) {
+          <li class="line" [class.line--off]="!line.selected">
+            <label class="pick">
+              <input
+                type="checkbox"
+                [checked]="line.selected"
+                [attr.aria-label]="text.choose(line.suggestion.name)"
+                (change)="toggle(line.suggestion.partId, $event)"
+              />
+              <span>
+                <strong>{{ line.suggestion.name }}</strong>
+                <span class="code">{{ line.suggestion.code }}</span>
+              </span>
+            </label>
+            <span class="facts">
+              <span
+                >{{ text.columns.stock }}:
+                {{ amount(line.suggestion.stockQuantity, line.suggestion.unitOfMeasure) }} /
+                {{ amount(line.suggestion.minimumStock, line.suggestion.unitOfMeasure) }}</span
+              >
+              <span
+                >{{ text.columns.forecast }}:
+                {{ amount(line.suggestion.forecast30d, line.suggestion.unitOfMeasure) }}</span
+              >
+              <span>{{ text.columns.cost }}: {{ cost(line) }}</span>
+            </span>
+            <input
+              class="ui-control qty"
+              type="number"
+              min="0"
+              [step]="line.suggestion.type === 'Part' ? 1 : 0.1"
+              [value]="line.quantity"
+              [disabled]="!line.selected"
+              [attr.aria-label]="text.quantityOf(line.suggestion.name)"
+              [attr.aria-invalid]="invalid(line) || null"
+              (change)="setQuantity(line.suggestion.partId, $event)"
+            />
+          </li>
+        }
+      </ul>
+      <div class="group-foot">
+        <button
+          uiButton
+          variant="primary"
+          type="button"
+          [disabled]="!canCreate(group)"
+          [loading]="busy() === group.supplierId"
+          (click)="create(group)"
+        >
+          {{ text.createDraft(group.supplierName) }}
+        </button>
+      </div>
+    </article>
+  }
+</section>
+
+<section class="block" aria-labelledby="orders-title">
+  <h2 id="orders-title" class="title">{{ text.ordersTitle }}</h2>
+  <ui-table
+    [caption]="text.ordersCaption"
+    [columns]="orderColumns"
+    [rows]="orders()"
+    [trackBy]="trackOrder"
+    [loading]="loading()"
+    [emptyMessage]="text.noOrders"
+  >
+    <ng-template uiCell="status" let-row>
+      <ui-status-pill [tone]="statusTone(row)">{{ statusLabel(row) }}</ui-status-pill>
+    </ng-template>
+    <ng-template uiCell="actions" let-row>
+      @if (row.status === 'Draft') {
+        <button
+          uiButton
+          size="sm"
+          type="button"
+          [loading]="busy() === row.id"
+          [attr.aria-label]="text.sendOf(row.number)"
+          (click)="send(row)"
+        >
+          {{ text.send }}
+        </button>
+      }
+    </ng-template>
+  </ui-table>
+</section>

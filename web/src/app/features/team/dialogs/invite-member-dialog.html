@@ -1,0 +1,40 @@
+<ui-dialog-layout [title]="text.title">
+  <form class="dialog-form" novalidate [formGroup]="form" (ngSubmit)="send()">
+    @if (error(); as message) {
+      <p class="alert" role="alert">{{ message }}</p>
+    }
+    <ui-field [label]="text.name" [required]="true" [error]="errorOf('name')">
+      <input uiControl type="text" formControlName="name" autocomplete="off" maxlength="120" />
+    </ui-field>
+    <ui-field
+      [label]="text.email"
+      [required]="true"
+      [hint]="text.emailHint"
+      [error]="errorOf('email')"
+    >
+      <input
+        uiControl
+        type="email"
+        formControlName="email"
+        autocomplete="off"
+        inputmode="email"
+        spellcheck="false"
+        maxlength="160"
+      />
+    </ui-field>
+    <ui-field [label]="text.role" [required]="true">
+      <select uiControl formControlName="role">
+        @for (role of roles; track role) {
+          <option [value]="role">{{ roleLabels[role] }}</option>
+        }
+      </select>
+    </ui-field>
+    <p class="notice">{{ text.notice }}</p>
+    <div class="footer">
+      <button uiButton type="button" (click)="ref.close()">{{ text.cancel }}</button>
+      <button uiButton variant="primary" type="submit" [loading]="saving()">
+        {{ text.submit }}
+      </button>
+    </div>
+  </form>
+</ui-dialog-layout>

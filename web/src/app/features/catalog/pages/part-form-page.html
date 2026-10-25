@@ -1,0 +1,186 @@
+<a class="back" routerLink="/catalog/parts">
+  <ui-icon [icon]="icons.back" [size]="16" />
+  {{ text.back }}
+</a>
+
+@switch (state()) {
+  @case ('loading') {
+    <ui-skeleton height="320px" />
+  }
+  @case ('pending') {
+    <ui-pending-notice [message]="pendingText" />
+  }
+  @case ('notFound') {
+    <p class="alert" role="alert">{{ text.notFound }}</p>
+  }
+  @case ('error') {
+    <div class="alert" role="alert">
+      <span>{{ text.loadError }}</span>
+      <button uiButton size="sm" type="button" (click)="retry()">{{ text.retry }}</button>
+    </div>
+  }
+  @case ('ready') {
+    <header class="head">
+      <div>
+        <h1 class="title">{{ title() }}</h1>
+        @if (item(); as current) {
+          <p class="meta">
+            <span class="code">{{ current.code }}</span>
+            <ui-status-pill [tone]="current.isActive ? 'ok' : 'neutral'">
+              {{ text.status(current.isActive) }}
+            </ui-status-pill>
+          </p>
+        }
+      </div>
+    </header>
+
+    @if (optionsPending()) {
+      <ui-pending-notice class="pending-block" [message]="pendingText" />
+    }
+
+    @if (!canManage()) {
+      <p class="notice" role="note">{{ text.readOnly }}</p>
+    }
+
+    <div class="layout">
+      <form class="form" novalidate [formGroup]="form" (ngSubmit)="save()">
+        @if (error(); as message) {
+          <p class="alert" role="alert" data-testid="catalog-form-error">{{ message }}</p>
+        }
+        <ui-card [headingLevel]="2" [title]="part.identity">
+          <div class="grid">
+            <ui-field
+              [label]="part.code"
+              [required]="true"
+              [hint]="part.codeHint"
+              [error]="errorOf('code')"
+            >
+              <input
+                uiControl
+                class="code-input"
+                type="text"
+                formControlName="code"
+                maxlength="30"
+                autocomplete="off"
+                (input)="upperCode()"
+              />
+            </ui-field>
+            <div class="segment">
+              <span class="segment-label">{{ part.type }}</span>
+              <ui-segmented
+                [label]="part.type"
+                [options]="typeOptions"
+                [value]="form.controls.type.value"
+                (valueChange)="form.controls.type.setValue($event); form.markAsDirty()"
+              />
+            </div>
+            <ui-field class="wide" [label]="text.name" [required]="true" [error]="errorOf('name')">
+              <input uiControl type="text" formControlName="name" maxlength="120" />
+            </ui-field>
+            <ui-field
+              [label]="part.unit"
+              [required]="true"
+              [hint]="part.unitHint"
+              [error]="errorOf('unitOfMeasure')"
+            >
+              <input uiControl type="text" formControlName="unitOfMeasure" maxlength="10" />
+            </ui-field>
+            <ui-field
+              [label]="part.minimumStock"
+              [required]="true"
+              [error]="errorOf('minimumStock')"
+            >
+              <input
+                uiControl
+                type="number"
+                inputmode="decimal"
+                min="0"
+                formControlName="minimumStock"
+              />
+            </ui-field>
+            @if (item(); as current) {
+              <ui-field [label]="part.stock" [hint]="part.stockHint">
+                <input
+                  uiControl
+                  type="text"
+                  [value]="current.stockQuantity + ' ' + current.unitOfMeasure"
+                  disabled
+                />
+              </ui-field>
+            }
+          </div>
+        </ui-card>
+
+        <ui-card [headingLevel]="2" [title]="part.pricing">
+          <div class="grid">
+            @if (canSeeCosts()) {
+              <ui-field [label]="part.cost" [required]="true" [error]="errorOf('cost')">
+                <input
+                  uiControl
+                  type="text"
+                  inputmode="decimal"
+                  formControlName="cost"
+                  (blur)="formatMoney('cost')"
+                />
+              </ui-field>
+            }
+            <ui-field [label]="part.unitPrice" [required]="true" [error]="errorOf('unitPrice')">
+              <input
+                uiControl
+                type="text"
+                inputmode="decimal"
+                formControlName="unitPrice"
+                (blur)="formatMoney('unitPrice')"
+              />
+            </ui-field>
+            @if (canSeeCosts()) {
+              <div class="readout" [class.readout--bad]="belowCost()" aria-live="polite">
+                <span class="readout-label">{{ part.margin }}</span>
+                <span class="readout-value" data-testid="part-margin">{{ marginText() }}</span>
+                <span class="readout-hint">{{ part.marginHint }}</span>
+              </div>
+            }
+          </div>
+          @if (belowCost()) {
+            <p class="warning" role="status">{{ part.belowCost }}</p>
+          }
+        </ui-card>
+
+        <ui-card [headingLevel]="2" [title]="part.supply">
+          <div class="grid">
+            <ui-field [label]="part.supplier" [error]="errorOf('supplier')">
+              <input uiControl type="text" formControlName="supplier" maxlength="120" />
+            </ui-field>
+            <ui-field [label]="part.barcode" [error]="errorOf('barcode')">
+              <input
+                uiControl
+                type="text"
+                inputmode="numeric"
+                formControlName="barcode"
+                maxlength="13"
+              />
+            </ui-field>
+          </div>
+        </ui-card>
+
+        @if (canManage()) {
+          <div class="actions">
+            <a uiButton routerLink="/catalog/parts">{{ text.cancel }}</a>
+            <button uiButton variant="primary" type="submit" [loading]="saving()">
+              {{ text.save }}
+            </button>
+          </div>
+        }
+      </form>
+
+      @if (item(); as current) {
+        <app-price-history
+          class="history"
+          kind="parts"
+          [itemId]="current.id"
+          [version]="historyVersion()"
+        />
+      }
+    </div>
+  }
+}

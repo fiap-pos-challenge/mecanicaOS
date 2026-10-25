@@ -1,0 +1,17 @@
+<p class="label">{{ label() }}</p>
+<p class="value">{{ value() }}</p>
+@if (delta(); as delta) {
+  <p class="delta" [class.delta--up]="trend() === 'up'" [class.delta--down]="trend() === 'down'">
+    @switch (trend()) {
+      @case ('up') {
+        <ui-icon [icon]="upIcon" [size]="14" />
+        <span class="visually-hidden">{{ text.up }}: </span>
+      }
+      @case ('down') {
+        <ui-icon [icon]="downIcon" [size]="14" />
+        <span class="visually-hidden">{{ text.down }}: </span>
+      }
+    }
+    {{ delta }}
+  </p>
+}

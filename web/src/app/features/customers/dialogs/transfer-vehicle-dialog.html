@@ -1,0 +1,37 @@
+<ui-dialog-layout [title]="text.transferTitle">
+  <div class="dialog-form">
+    <p class="notice">{{ text.transfer(plate) }}</p>
+    <ui-field [label]="text.transferSearch">
+      <input uiControl type="search" autocomplete="off" [formControl]="search" />
+    </ui-field>
+    @if (candidates().length > 0) {
+      <fieldset class="options">
+        <legend class="visually-hidden">{{ text.transferChoose }}</legend>
+        @for (customer of candidates(); track customer.id) {
+          <label class="option">
+            <input
+              type="radio"
+              name="new-owner"
+              [value]="customer.id"
+              [checked]="selected() === customer.id"
+              (change)="choose(customer.id)"
+            />
+            <span>{{ customer.name }}</span>
+            <span class="option-doc">{{ customer.maskedDocument }}</span>
+          </label>
+        }
+      </fieldset>
+    } @else if (searched()) {
+      <p class="notice" role="status">{{ text.transferNoResults }}</p>
+    }
+    @if (error(); as message) {
+      <p class="alert" role="alert">{{ message }}</p>
+    }
+    <div class="footer">
+      <button uiButton type="button" (click)="ref.close()">{{ text.cancel }}</button>
+      <button uiButton variant="primary" type="button" [loading]="saving()" (click)="confirm()">
+        {{ text.transferConfirm }}
+      </button>
+    </div>
+  </div>
+</ui-dialog-layout>

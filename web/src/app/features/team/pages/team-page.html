@@ -1,0 +1,248 @@
+<header class="head">
+  <div>
+    <h1 class="page-title">{{ screen }}</h1>
+    <p class="sub">{{ text.subtitle(store.totalItems()) }}</p>
+  </div>
+  <div class="actions">
+    <a uiButton routerLink="/team/permissions">
+      <ui-icon [icon]="icons.permissions" [size]="16" />
+      {{ text.permissions }}
+    </a>
+    <button *appCan="'team.manage'" uiButton variant="primary" type="button" (click)="invite()">
+      <ui-icon [icon]="icons.invite" [size]="16" />
+      {{ text.invite }}
+    </button>
+  </div>
+</header>
+
+@if (!canManage()) {
+  <p class="notice" role="note">{{ text.readOnly }}</p>
+}
+
+<div class="toolbar" role="group" [attr.aria-label]="text.filters">
+  <ui-segmented
+    [label]="text.role"
+    [options]="roleOptions"
+    [value]="roleFilter()"
+    (valueChange)="setRole($event)"
+  />
+  <ui-field [label]="text.status">
+    <select uiControl (change)="setStatus($event)">
+      <option value="" [selected]="store.filters().status === null">{{ text.statusAll }}</option>
+      @for (option of statusOptions; track option) {
+        <option [value]="option" [selected]="store.filters().status === option">
+          {{ statuses[option] }}
+        </option>
+      }
+    </select>
+  </ui-field>
+  <ui-segmented
+    [label]="text.period"
+    [options]="periodOptions"
+    [value]="period()"
+    (valueChange)="setPeriod($event)"
+  />
+  <ui-segmented
+    [label]="text.view"
+    [options]="viewOptions"
+    [value]="store.view()"
+    (valueChange)="store.setView($event)"
+  />
+  @if (store.hasFilters()) {
+    <button uiButton variant="ghost" size="sm" type="button" (click)="store.clear()">
+      {{ text.clear }}
+    </button>
+  }
+</div>
+
+@if (store.error()) {
+  <div class="alert" role="alert">
+    <span>{{ text.loadError }}</span>
+    <button uiButton size="sm" type="button" (click)="store.load()">{{ text.retry }}</button>
+  </div>
+}
+
+@if (store.productionPending()) {
+  <ui-pending-notice class="pending" [message]="pending.production" />
+} @else if (store.productivityFailed()) {
+  <p class="notice" role="status">{{ text.productionUnavailable }}</p>
+}
+
+<ng-template #memberActions let-member>
+  <div class="member-actions">
+    <a
+      uiButton
+      size="sm"
+      [routerLink]="['/team', member.user.id]"
+      [attr.aria-label]="text.editOf(member.user.name)"
+      >{{ text.edit }}</a
+    >
+    <ng-container *appCan="'team.manage'">
+      @if (member.user.status === 'InvitationPending') {
+        <button
+          uiButton
+          size="sm"
+          variant="ghost"
+          type="button"
+          [attr.aria-label]="text.resendOf(member.user.name)"
+          (click)="resend(member.user)"
+        >
+          {{ text.resend }}
+        </button>
+      }
+      @if (member.user.status === 'Inactive') {
+        <button
+          uiButton
+          size="sm"
+          variant="ghost"
+          type="button"
+          [attr.aria-label]="text.reactivateOf(member.user.name)"
+          (click)="reactivate(member.user)"
+        >
+          {{ text.reactivate }}
+        </button>
+      } @else {
+        @if (block(member.user); as reason) {
+          <button
+            uiButton
+            size="sm"
+            variant="ghost"
+            type="button"
+            [disabled]="true"
+            [attr.aria-label]="text.deactivateOf(member.user.name)"
+            [attr.aria-describedby]="'block-' + member.user.id"
+          >
+            {{ text.deactivate }}
+          </button>
+          <span class="reason" [id]="'block-' + member.user.id">{{ blockReason(reason) }}</span>
+        } @else {
+          <button
+            uiButton
+            size="sm"
+            variant="ghost"
+            type="button"
+            [attr.aria-label]="text.deactivateOf(member.user.name)"
+            (click)="deactivate(member.user)"
+          >
+            {{ text.deactivate }}
+          </button>
+        }
+      }
+    </ng-container>
+  </div>
+</ng-template>
+
+@if (store.view() === 'cards') {
+  @if (store.loading() && store.members().length === 0) {
+    <div class="grid" aria-hidden="true">
+      @for (item of skeletons; track item) {
+        <ui-skeleton height="180px" />
+      }
+    </div>
+  } @else if (store.members().length === 0) {
+    <p class="empty">{{ text.empty }}</p>
+  } @else {
+    <ul class="grid" [attr.aria-label]="text.caption" [attr.aria-busy]="store.loading()">
+      @for (member of store.members(); track member.user.id) {
+        <li
+          class="member"
+          [class.member--inactive]="member.user.status === 'Inactive'"
+          [class.member--pending]="member.user.status === 'InvitationPending'"
+          [attr.data-role]="member.user.role"
+        >
+          <div class="identity">
+            <ui-avatar class="avatar" [name]="member.user.name" />
+            <div class="who">
+              <a
+                class="name"
+                [routerLink]="['/team', member.user.id]"
+                [attr.aria-label]="text.open(member.user.name)"
+                >{{ member.user.name }}</a
+              >
+              <span class="pills">
+                <ui-status-pill [tone]="roleTones[member.user.role]">
+                  {{ roleLabels[member.user.role] }}
+                </ui-status-pill>
+                @if (member.user.status !== 'Active') {
+                  <ui-status-pill [tone]="statusTones[status(member.user)]">
+                    {{ statuses[status(member.user)] }}
+                  </ui-status-pill>
+                }
+                @if (member.user.id === currentUserId()) {
+                  <ui-status-pill tone="neutral">{{ text.you }}</ui-status-pill>
+                }
+              </span>
+            </div>
+          </div>
+
+          <p class="specialties">{{ specialties(member) }}</p>
+
+          @if (member.user.status === 'InvitationPending') {
+            <p class="meta">{{ invitation(member.user) }}</p>
+          } @else if (producer(member) && member.productivity; as productivity) {
+            <div class="production">
+              <div>
+                <p class="meta">
+                  {{ text.production(productivity.serviceOrders, productivity.occupancyPercent) }}
+                </p>
+                <p class="revenue">{{ revenue(member) }}</p>
+              </div>
+              <ui-sparkline [values]="productivity.weekly" [label]="text.trend(member.user.name)" />
+            </div>
+          } @else {
+            <p class="meta">{{ producer(member) ? '—' : text.noProduction }}</p>
+          }
+
+          <ng-container
+            [ngTemplateOutlet]="memberActions"
+            [ngTemplateOutletContext]="{ $implicit: member }"
+          />
+        </li>
+      }
+    </ul>
+  }
+} @else {
+  <ui-table
+    [caption]="text.caption"
+    [columns]="columns"
+    [rows]="store.members()"
+    [trackBy]="trackMember"
+    [loading]="store.loading()"
+    [emptyMessage]="text.empty"
+  >
+    <ng-template uiCell="name" let-member>
+      <a
+        class="name"
+        [routerLink]="['/team', member.user.id]"
+        [attr.aria-label]="text.open(member.user.name)"
+        >{{ member.user.name }}</a
+      >
+    </ng-template>
+    <ng-template uiCell="email" let-member>
+      <span class="mono">{{ member.user.email }}</span>
+    </ng-template>
+    <ng-template uiCell="role" let-member>
+      <ui-status-pill [tone]="roleTone(member.user)">{{ roleName(member.user) }}</ui-status-pill>
+    </ng-template>
+    <ng-template uiCell="status" let-member>
+      <ui-status-pill [tone]="statusTones[status(member.user)]">
+        {{ statuses[status(member.user)] }}
+      </ui-status-pill>
+    </ng-template>
+    <ng-template uiCell="production" let-member>
+      @if (producer(member) && member.productivity; as productivity) {
+        <span class="mono">
+          {{ text.production(productivity.serviceOrders, productivity.occupancyPercent) }}
+        </span>
+      } @else {
+        <span class="muted">—</span>
+      }
+    </ng-template>
+    <ng-template uiCell="actions" let-member>
+      <ng-container
+        [ngTemplateOutlet]="memberActions"
+        [ngTemplateOutletContext]="{ $implicit: member }"
+      />
+    </ng-template>
+  </ui-table>
+}

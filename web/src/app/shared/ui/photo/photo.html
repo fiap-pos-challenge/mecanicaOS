@@ -1,0 +1,10 @@
+@if (image.hasValue() && image.value()) {
+  <img [src]="image.value()" [alt]="alt()" [width]="width()" [height]="height()" />
+} @else {
+  <span
+    class="placeholder"
+    role="img"
+    [attr.aria-label]="alt()"
+    [attr.aria-busy]="image.isLoading()"
+  ></span>
+}

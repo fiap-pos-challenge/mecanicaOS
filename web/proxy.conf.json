@@ -1,0 +1,13 @@
+{
+  "/api/health": {
+    "target": "http://localhost:8080",
+    "secure": false,
+    "pathRewrite": {
+      "^/api/health": "/health"
+    }
+  },
+  "/api": {
+    "target": "http://localhost:8080",
+    "secure": false
+  }
+}

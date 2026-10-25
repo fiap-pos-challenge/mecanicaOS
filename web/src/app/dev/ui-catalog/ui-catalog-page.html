@@ -1,0 +1,147 @@
+<h1>{{ text.title }}</h1>
+<p class="intro">{{ text.intro }}</p>
+
+<section class="section" aria-labelledby="dev-buttons">
+  <h2 id="dev-buttons">{{ text.sections.buttons }}</h2>
+  <div class="row">
+    <button uiButton variant="primary" type="button">{{ text.buttons.primary }}</button>
+    <button uiButton type="button">{{ text.buttons.secondary }}</button>
+    <button uiButton variant="ghost" type="button">{{ text.buttons.ghost }}</button>
+    <button uiButton variant="danger" type="button">{{ text.buttons.danger }}</button>
+    <button uiButton variant="primary" type="button" [loading]="true">
+      {{ text.buttons.loading }}
+    </button>
+    <button uiButton size="sm" type="button">{{ text.buttons.small }}</button>
+  </div>
+</section>
+
+<section class="section" aria-labelledby="dev-fields">
+  <h2 id="dev-fields">{{ text.sections.fields }}</h2>
+  <div class="form">
+    <ui-field [label]="text.fields.name" [hint]="text.fields.nameHint" [required]="true">
+      <input uiControl type="text" />
+    </ui-field>
+    <ui-field [label]="text.fields.document" [error]="text.fields.documentError">
+      <input uiControl type="text" inputmode="numeric" />
+    </ui-field>
+    <ui-field [label]="text.fields.type">
+      <select uiControl>
+        <option>{{ text.fields.person }}</option>
+        <option>{{ text.fields.company }}</option>
+      </select>
+    </ui-field>
+    <ui-field [label]="text.fields.notes">
+      <textarea uiControl></textarea>
+    </ui-field>
+  </div>
+</section>
+
+<section class="section" aria-labelledby="dev-selection">
+  <h2 id="dev-selection">{{ text.sections.selection }}</h2>
+  <div class="row">
+    @for (chip of text.chips; track chip) {
+      <button uiChip>{{ chip }}</button>
+    }
+  </div>
+  <div class="row">
+    <ui-segmented [label]="text.segmented.label" [options]="periodOptions" [(value)]="period" />
+    <div class="toggle-row">
+      <button uiToggle [(checked)]="notify">{{ text.toggle }}</button>
+      <span aria-hidden="true">{{ text.toggle }}</span>
+    </div>
+  </div>
+</section>
+
+<section class="section" aria-labelledby="dev-status">
+  <h2 id="dev-status">{{ text.sections.status }}</h2>
+  <div class="row">
+    <ui-status-pill tone="ok">{{ text.pills.ok }}</ui-status-pill>
+    <ui-status-pill tone="warn">{{ text.pills.warn }}</ui-status-pill>
+    <ui-status-pill tone="bad">{{ text.pills.bad }}</ui-status-pill>
+    <ui-status-pill tone="info">{{ text.pills.info }}</ui-status-pill>
+    <ui-status-pill>{{ text.pills.neutral }}</ui-status-pill>
+    <ui-plate [value]="text.plate" />
+  </div>
+</section>
+
+<section class="section" aria-labelledby="dev-data">
+  <h2 id="dev-data">{{ text.sections.data }}</h2>
+  <div class="grid">
+    @for (kpi of text.kpis; track kpi.label; let index = $index) {
+      <ui-kpi
+        [label]="kpi.label"
+        [value]="kpi.value"
+        [delta]="kpi.delta"
+        [trend]="kpiTrends[index] ?? 'neutral'"
+      />
+    }
+  </div>
+  <div class="skeletons">
+    <ui-skeleton width="60%" />
+    <ui-skeleton width="40%" />
+    <ui-skeleton height="48px" />
+  </div>
+</section>
+
+<section class="section" aria-labelledby="dev-table">
+  <h2 id="dev-table">{{ text.sections.table }}</h2>
+  <div class="row">
+    <button uiButton size="sm" type="button" (click)="tableLoading.set(!tableLoading())">
+      {{ text.table.toggleLoading }}
+    </button>
+    <button uiButton size="sm" type="button" (click)="tableEmpty.set(!tableEmpty())">
+      {{ text.table.toggleEmpty }}
+    </button>
+  </div>
+  <ui-card>
+    <ui-table
+      [caption]="text.table.caption"
+      [columns]="columns"
+      [rows]="rows()"
+      [trackBy]="trackOrder"
+      [loading]="tableLoading()"
+      [(sort)]="sort"
+      [page]="page()"
+      [pageSize]="2"
+      [totalItems]="rows().length"
+      (pageChange)="page.set($event)"
+    >
+      <ng-template uiCell="vehicle" let-order>
+        {{ order.vehicle }} <ui-plate [value]="order.plate" />
+      </ng-template>
+      <ng-template uiCell="status" let-order>
+        <ui-status-pill [tone]="order.status">{{ order.statusLabel }}</ui-status-pill>
+      </ng-template>
+    </ui-table>
+  </ui-card>
+</section>
+
+<section class="section" aria-labelledby="dev-feedback">
+  <h2 id="dev-feedback">{{ text.sections.feedback }}</h2>
+  <div class="row">
+    <button uiButton type="button" (click)="openDialog()">{{ text.dialog.open }}</button>
+    <button uiButton type="button" (click)="showInfo()">{{ text.toast.info }}</button>
+    <button uiButton type="button" (click)="showError()">{{ text.toast.error }}</button>
+  </div>
+  <ui-card>
+    <ui-empty-state
+      [title]="text.emptyState.title"
+      [description]="text.emptyState.description"
+      [headingLevel]="3"
+    />
+  </ui-card>
+</section>
+
+<section class="section" aria-labelledby="dev-layout">
+  <h2 id="dev-layout">{{ text.sections.layout }}</h2>
+  <ui-card [title]="text.card.title" [subtitle]="text.card.subtitle">
+    <ui-tabs [tabs]="text.tabs" [label]="text.tabsLabel" [(selected)]="tab">
+      <p>{{ text.tabContent(tabLabel()) }}</p>
+    </ui-tabs>
+  </ui-card>
+  <div class="row">
+    @for (name of text.avatars; track name) {
+      <ui-avatar [name]="name" />
+    }
+  </div>
+</section>

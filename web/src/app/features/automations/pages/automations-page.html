@@ -1,0 +1,171 @@
+<header class="head">
+  <div>
+    <h1 class="page-title">{{ screen }}</h1>
+    <p class="sub">{{ text.subtitle }}</p>
+  </div>
+  <button
+    uiButton
+    variant="primary"
+    type="button"
+    [disabled]="store.state() !== 'ready'"
+    (click)="create()"
+  >
+    {{ text.newRule }}
+  </button>
+</header>
+
+@if (store.state() === 'pending') {
+  <ui-pending-notice class="block" [message]="pendingText" />
+}
+
+<div class="layout">
+  <div class="column">
+    <ui-card [headingLevel]="2" [title]="text.rules.title" [subtitle]="text.rules.hint">
+      @switch (store.state()) {
+        @case ('loading') {
+          <ui-skeleton height="120px" />
+        }
+        @case ('error') {
+          <div class="alert" role="alert">
+            <span>{{ text.loadError }}</span>
+            <button uiButton size="sm" type="button" (click)="store.loadRules()">
+              {{ text.retry }}
+            </button>
+          </div>
+        }
+        @case ('ready') {
+          <ul class="list" [attr.aria-label]="text.rules.label">
+            @for (rule of store.rules(); track rule.id) {
+              <li class="rule">
+                <div class="rule-head">
+                  <button
+                    uiToggle
+                    [checked]="rule.enabled"
+                    [disabled]="store.busy() === rule.id"
+                    (click)="toggle(rule)"
+                  >
+                    {{ text.rules.toggle(rule.definition.name) }}
+                  </button>
+                  <strong>{{ rule.definition.name }}</strong>
+                  <ui-status-pill [tone]="rule.enabled ? 'ok' : 'neutral'">
+                    {{ rule.enabled ? text.rules.active : text.rules.paused }}
+                  </ui-status-pill>
+                </div>
+                <p class="sub">{{ summary(rule) }}</p>
+                <small class="sub">{{ text.rules.runs(rule.runs24h) }}</small>
+                <div class="actions">
+                  <button
+                    uiButton
+                    size="sm"
+                    type="button"
+                    [attr.aria-label]="text.rules.edit(rule.definition.name)"
+                    (click)="edit(rule, rule.definition)"
+                  >
+                    {{ text.rules.editLabel }}
+                  </button>
+                  <button
+                    uiButton
+                    size="sm"
+                    variant="danger"
+                    type="button"
+                    [attr.aria-label]="text.rules.remove(rule.definition.name)"
+                    (click)="remove(rule)"
+                  >
+                    {{ text.rules.removeConfirm }}
+                  </button>
+                </div>
+              </li>
+            } @empty {
+              <li class="sub">{{ text.rules.empty }}</li>
+            }
+          </ul>
+        }
+      }
+    </ui-card>
+
+    @if (store.state() === 'ready') {
+      <ui-card [headingLevel]="2" [title]="text.templates.title" [subtitle]="text.templates.hint">
+        <div class="templates">
+          @for (template of templates; track template) {
+            <button uiButton size="sm" type="button" (click)="useTemplate(template)">
+              {{ text.templates.names[template] }}
+            </button>
+          }
+          <button uiButton size="sm" type="button" (click)="create()">
+            {{ text.templates.blank }}
+          </button>
+        </div>
+      </ui-card>
+    }
+  </div>
+
+  <div class="column">
+    <ui-card [headingLevel]="2" [title]="text.queues.title" [subtitle]="text.queues.hint">
+      @switch (store.queueState()) {
+        @case ('loading') {
+          <ui-skeleton height="120px" />
+        }
+        @case ('error') {
+          <div class="alert" role="alert">
+            <span>{{ text.loadError }}</span>
+            <button uiButton size="sm" type="button" (click)="store.loadQueues()">
+              {{ text.retry }}
+            </button>
+          </div>
+        }
+        @case ('ready') {
+          <ul class="list queues" [attr.aria-label]="text.queues.label">
+            @for (queue of store.queues(); track queue.name) {
+              <li class="queue" [class.queue--failed]="queue.failed > 0">
+                <strong>{{ text.queues.names[queue.name] }}</strong>
+                <span>{{ text.queues.processed(queue.processed) }}</span>
+                <span>{{ text.queues.failed(queue.failed) }}</span>
+                <span>{{ text.queues.pending(queue.pending) }}</span>
+              </li>
+            }
+          </ul>
+          <h3 class="subtitle">{{ text.queues.failures }}</h3>
+          @if (!canRetry) {
+            <p class="sub">{{ text.queues.adminOnly }}</p>
+          }
+          <ul class="list" [attr.aria-label]="text.queues.failuresLabel">
+            @for (item of store.failures(); track item.id) {
+              <li class="failure">
+                <strong>{{ item.summary }}</strong>
+                <span class="sub">
+                  {{ text.queues.names[item.queue] }} · {{ item.error }} ·
+                  {{ text.queues.attempts(item.attempts) }} · {{ when(item.failedAt) }}
+                </span>
+                <button
+                  *appCan="'automations.reprocess'"
+                  uiButton
+                  size="sm"
+                  type="button"
+                  [loading]="store.busy() === item.id"
+                  [attr.aria-label]="text.queues.retryOf(item.summary)"
+                  (click)="retry(item)"
+                >
+                  {{ text.queues.retry }}
+                </button>
+              </li>
+            } @empty {
+              <li class="sub">{{ text.queues.noFailures }}</li>
+            }
+          </ul>
+        }
+      }
+    </ui-card>
+
+    <ui-card [headingLevel]="2" [title]="text.ai.title" class="ai">
+      <ul class="list">
+        @for (item of text.ai.items; track item[0]) {
+          <li class="ai-item">
+            <ui-ai-badge [label]="item[0]" />
+            <span class="sub">{{ item[1] }}</span>
+          </li>
+        }
+      </ul>
+      <p class="sub">{{ aiRule }}</p>
+    </ui-card>
+  </div>
+</div>

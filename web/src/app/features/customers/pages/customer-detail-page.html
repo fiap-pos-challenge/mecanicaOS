@@ -1,0 +1,353 @@
+<article class="sheet" [attr.aria-busy]="state() === 'loading' || null">
+  <a class="back" routerLink="/customers">
+    <ui-icon [icon]="icons.back" [size]="16" />
+    {{ text.back }}
+  </a>
+
+  @switch (state()) {
+    @case ('loading') {
+      <h2 class="visually-hidden">{{ text.screen }}</h2>
+      <ui-skeleton />
+      <ui-skeleton />
+      <ui-skeleton />
+    }
+    @case ('notFound') {
+      <h2>{{ text.notFound }}</h2>
+    }
+    @case ('error') {
+      <h2>{{ text.loadError }}</h2>
+    }
+    @case ('ready') {
+      @if (customer(); as current) {
+        <header class="identity">
+          <ui-avatar [name]="current.name" aria-hidden="true" />
+          <div>
+            <h2 class="name">{{ current.name }}</h2>
+            <span class="pills">
+              <ui-status-pill tone="neutral">{{
+                documentTypes[current.documentType]
+              }}</ui-status-pill>
+              @if (summary(); as info) {
+                <ui-status-pill [tone]="tones[info.situation]">{{
+                  situations[info.situation]
+                }}</ui-status-pill>
+              }
+            </span>
+          </div>
+        </header>
+
+        @if (actionError(); as message) {
+          <p class="alert" role="alert">{{ message }}</p>
+        }
+
+        @if (insightsPending()) {
+          <ui-pending-notice class="pending" [message]="pending.customerSummary" />
+        }
+        <dl class="kpis">
+          <div>
+            <dt>{{ text.totalSpent }}</dt>
+            <dd>{{ kpis().total }}</dd>
+          </div>
+          <div>
+            <dt>{{ text.averageTicket }}</dt>
+            <dd>{{ kpis().average }}</dd>
+          </div>
+          <div>
+            <dt>{{ text.lastVisit }}</dt>
+            <dd>{{ kpis().lastVisit }}</dd>
+          </div>
+          <div>
+            <dt>{{ text.serviceOrders }}</dt>
+            <dd>{{ kpis().orders }}</dd>
+          </div>
+        </dl>
+
+        <section class="block" aria-labelledby="customer-data">
+          <h3 id="customer-data">{{ text.data }}</h3>
+          <dl class="fields">
+            <div>
+              <dt>{{ text.document }}</dt>
+              <dd>
+                <span class="mono" data-testid="customer-document">{{
+                  value('Document', current.maskedDocument)
+                }}</span>
+                @if (!isRevealed('Document')) {
+                  <button
+                    *appCan="'customers.reveal'"
+                    uiIconButton
+                    [label]="text.reveal(text.document)"
+                    [disabled]="revealing() === 'Document'"
+                    (click)="reveal('Document')"
+                  >
+                    <ui-icon [icon]="icons.eye" [size]="16" />
+                  </button>
+                }
+              </dd>
+            </div>
+            <div>
+              <dt>{{ text.phone }}</dt>
+              <dd>
+                <span class="mono" data-testid="customer-phone">{{
+                  value('Phone', current.maskedPhone)
+                }}</span>
+                @if (!isRevealed('Phone')) {
+                  <button
+                    *appCan="'customers.reveal'"
+                    uiIconButton
+                    [label]="text.reveal(text.phone)"
+                    [disabled]="revealing() === 'Phone'"
+                    (click)="reveal('Phone')"
+                  >
+                    <ui-icon [icon]="icons.eye" [size]="16" />
+                  </button>
+                }
+              </dd>
+            </div>
+            <div>
+              <dt>{{ text.email }}</dt>
+              <dd>
+                @if (current.maskedEmail) {
+                  <span class="mono" data-testid="customer-email">{{
+                    value('Email', current.maskedEmail)
+                  }}</span>
+                  @if (!isRevealed('Email')) {
+                    <button
+                      *appCan="'customers.reveal'"
+                      uiIconButton
+                      [label]="text.reveal(text.email)"
+                      [disabled]="revealing() === 'Email'"
+                      (click)="reveal('Email')"
+                    >
+                      <ui-icon [icon]="icons.eye" [size]="16" />
+                    </button>
+                  }
+                } @else {
+                  <span class="muted">{{ text.noEmail }}</span>
+                }
+              </dd>
+            </div>
+            <div class="wide">
+              <dt>{{ text.address }}</dt>
+              <dd>
+                @if (current.address; as address) {
+                  {{ address.street }}, {{ address.number }}
+                  @if (address.complement) {
+                    · {{ address.complement }}
+                  }
+                  · {{ address.district }} · {{ address.city }}/{{ address.state }}
+                } @else {
+                  <span class="muted">{{ text.noAddress }}</span>
+                }
+              </dd>
+            </div>
+          </dl>
+          @if (isRevealed('Document') || isRevealed('Phone') || isRevealed('Email')) {
+            <p class="hint" role="status">{{ text.revealed }}</p>
+          }
+        </section>
+
+        <section class="block" aria-labelledby="customer-consent">
+          <h3 id="customer-consent">{{ text.consent }}</h3>
+          <ul class="consent">
+            <li>
+              <span>{{ text.consentWhatsApp }}</span>
+              <ui-status-pill [tone]="current.messagingConsent.whatsApp ? 'ok' : 'neutral'">{{
+                current.messagingConsent.whatsApp ? text.consentYes : text.consentNo
+              }}</ui-status-pill>
+            </li>
+            <li>
+              <span>{{ text.consentEmail }}</span>
+              <ui-status-pill [tone]="current.messagingConsent.email ? 'ok' : 'neutral'">{{
+                current.messagingConsent.email ? text.consentYes : text.consentNo
+              }}</ui-status-pill>
+            </li>
+          </ul>
+          <p class="hint">{{ consentDate() }}</p>
+        </section>
+
+        <section class="block" aria-labelledby="customer-actions">
+          <h3 id="customer-actions" class="visually-hidden">{{ text.actions }}</h3>
+          <div class="actions">
+            <button
+              *appCan="'quotes.manage'"
+              uiButton
+              variant="primary"
+              type="button"
+              (click)="newQuote()"
+            >
+              {{ text.newQuote }}
+            </button>
+            <a
+              *appCan="'customers.manage'"
+              uiButton
+              [routerLink]="['/customers', current.id, 'edit']"
+            >
+              <ui-icon [icon]="icons.edit" [size]="16" />
+              {{ text.edit }}
+            </a>
+            <button
+              uiButton
+              type="button"
+              [disabled]="whatsAppBlocked() !== null"
+              [attr.aria-describedby]="whatsAppBlocked() ? 'whatsapp-blocked' : null"
+              (click)="sendMessage()"
+            >
+              <ui-icon [icon]="icons.message" [size]="16" />
+              {{ text.sendWhatsApp }}
+            </button>
+            <button
+              uiButton
+              type="button"
+              [disabled]="emailBlocked() !== null"
+              [attr.aria-describedby]="emailBlocked() ? 'email-blocked' : null"
+              (click)="sendMessage()"
+            >
+              <ui-icon [icon]="icons.mail" [size]="16" />
+              {{ text.sendEmail }}
+            </button>
+            <button
+              *appCan="'customers.export'"
+              uiButton
+              variant="ghost"
+              type="button"
+              (click)="requestExport()"
+            >
+              {{ text.export }}
+            </button>
+            <button
+              *appCan="'customers.delete'"
+              uiButton
+              variant="danger"
+              type="button"
+              [disabled]="!canDelete()"
+              [attr.aria-describedby]="canDelete() ? null : 'delete-blocked'"
+              (click)="deleteCustomer()"
+            >
+              <ui-icon [icon]="icons.trash" [size]="16" />
+              {{ text.delete }}
+            </button>
+          </div>
+          <ul class="reasons">
+            @if (whatsAppBlocked(); as reason) {
+              <li id="whatsapp-blocked">{{ reason }}</li>
+            }
+            @if (emailBlocked(); as reason) {
+              <li id="email-blocked">{{ reason }}</li>
+            }
+            @if (!canDelete() && auth.can('customers.delete')) {
+              <li id="delete-blocked">{{ text.deleteBlockedVehicles }}</li>
+            }
+          </ul>
+          <div aria-live="polite">
+            @if (exportJob(); as job) {
+              @switch (job.status) {
+                @case ('Completed') {
+                  <p class="export">
+                    {{ text.exportReady }}
+                    <button uiButton size="sm" type="button" (click)="downloadExport()">
+                      {{ text.exportDownload }}
+                    </button>
+                  </p>
+                }
+                @case ('Failed') {
+                  <p class="alert">{{ text.exportFailed }}</p>
+                }
+                @default {
+                  <p class="export">{{ text.exportProcessing }}</p>
+                }
+              }
+            }
+          </div>
+        </section>
+
+        <section class="block" aria-labelledby="customer-vehicles">
+          <div class="block-head">
+            <h3 id="customer-vehicles">{{ text.vehicles }}</h3>
+            <button
+              *appCan="'vehicles.manage'"
+              uiButton
+              size="sm"
+              type="button"
+              (click)="openVehicle(null)"
+            >
+              <ui-icon [icon]="icons.plus" [size]="16" />
+              {{ text.addVehicle }}
+            </button>
+          </div>
+          @if (vehiclesPending()) {
+            <ui-pending-notice [message]="pending.vehicles" />
+          } @else if (vehicles().length === 0) {
+            <p class="muted">{{ text.noVehicles }}</p>
+          } @else {
+            <ul class="vehicles">
+              @for (vehicle of vehicles(); track vehicle.id) {
+                <li class="vehicle">
+                  <ui-plate [value]="vehicle.licensePlate" />
+                  <div class="vehicle-info">
+                    <strong>{{
+                      vehicleText.summary(vehicle.brand, vehicle.model, vehicle.year)
+                    }}</strong>
+                    <small class="mono">{{ mileage(vehicle) }}</small>
+                  </div>
+                  <div class="vehicle-actions" *appCan="'vehicles.manage'">
+                    <button
+                      uiIconButton
+                      [label]="vehicleText.edit(vehicle.licensePlate)"
+                      (click)="openVehicle(vehicle)"
+                    >
+                      <ui-icon [icon]="icons.edit" [size]="16" />
+                    </button>
+                    <button
+                      uiIconButton
+                      [label]="vehicleText.transfer(vehicle.licensePlate)"
+                      (click)="transfer(vehicle)"
+                    >
+                      <ui-icon [icon]="icons.transfer" [size]="16" />
+                    </button>
+                    @if (auth.can('customers.delete')) {
+                      <button
+                        uiIconButton
+                        [label]="vehicleText.remove(vehicle.licensePlate)"
+                        (click)="removeVehicle(vehicle)"
+                      >
+                        <ui-icon [icon]="icons.trash" [size]="16" />
+                      </button>
+                    }
+                  </div>
+                </li>
+              }
+            </ul>
+          }
+        </section>
+
+        <section class="block" aria-labelledby="customer-history">
+          <h3 id="customer-history">{{ text.history }}</h3>
+          @if (insightsPending()) {
+            <ui-pending-notice [message]="pending.history" />
+          } @else if (history().length === 0) {
+            <p class="muted">{{ text.noHistory }}</p>
+          } @else {
+            <ul class="history">
+              @for (entry of history(); track entry.number) {
+                <li [class.history--open]="entry.status === 'InProgress'">
+                  <span class="dot" aria-hidden="true"></span>
+                  <div>
+                    <strong>{{ text.historyEntry(entry.number, entry.description) }}</strong>
+                    <span class="mono"> · {{ money(entry.total) }}</span>
+                    <small>
+                      @if (entry.closedAt) {
+                        {{ text.historyClosed(date(entry.closedAt), entry.paymentMethod ?? '') }}
+                      } @else {
+                        {{ text.historyOpen(date(entry.openedAt)) }}
+                      }
+                    </small>
+                  </div>
+                </li>
+              }
+            </ul>
+          }
+        </section>
+      }
+    }
+  }
+</article>

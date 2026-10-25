@@ -1,0 +1,160 @@
+<ui-card [headingLevel]="2" [title]="text.discount.title" [subtitle]="text.discount.hint">
+  @if (editable()) {
+    <ui-segmented
+      [label]="text.discount.mode"
+      [options]="modes"
+      [value]="mode()"
+      (valueChange)="modeChange.emit($event)"
+    />
+  } @else {
+    <p class="mode">{{ text.discount.modes[mode()] }}</p>
+  }
+  @switch (mode()) {
+    @case ('Automatic') {
+      <ul class="rules" [attr.aria-label]="text.discount.rules">
+        @for (item of rules(); track item.rule.id) {
+          <li class="rule" [class.rule--off]="!item.matches" [class.rule--on]="item.applied">
+            {{ item.label }}
+            @if (item.applied) {
+              <strong> · {{ text.discount.applied }}</strong>
+            }
+          </li>
+        }
+      </ul>
+      @if (pricing().appliedRule === null) {
+        <p class="hint">{{ text.discount.noRule }}</p>
+      }
+    }
+    @case ('Manual') {
+      <div class="manual">
+        @if (editable()) {
+          <ui-segmented
+            [label]="text.discount.kind"
+            [options]="kinds"
+            [value]="kind()"
+            (valueChange)="setKind($event)"
+          />
+        }
+        <ui-field [label]="text.discount.value" [required]="true">
+          <input
+            uiControl
+            type="text"
+            inputmode="decimal"
+            maxlength="12"
+            [value]="value()"
+            [disabled]="!editable()"
+            (input)="setValue($event)"
+          />
+        </ui-field>
+        <ui-field class="reason" [label]="text.discount.reason" [required]="true">
+          <input
+            uiControl
+            type="text"
+            maxlength="200"
+            [value]="reason()"
+            [disabled]="!editable()"
+            (input)="setReason($event)"
+          />
+        </ui-field>
+      </div>
+      @if (pricing().exceedsLimit) {
+        <div class="banner banner--warn" role="status" data-testid="discount-limit">
+          <span>{{ text.discount.exceeds(limit()) }}</span>
+          @if (approvalText(); as status) {
+            <span>{{ status }}</span>
+          }
+          <div class="actions">
+            @if (editable() && approval()?.status !== 'Pending') {
+              <button
+                uiButton
+                size="sm"
+                type="button"
+                [loading]="busy()"
+                (click)="approvalRequested.emit()"
+              >
+                {{ text.discount.requestApproval }}
+              </button>
+            }
+            @if (canApprove() && approval()?.status === 'Pending') {
+              <button
+                uiButton
+                size="sm"
+                variant="primary"
+                type="button"
+                (click)="decided.emit(true)"
+              >
+                {{ text.discount.approve }}
+              </button>
+              <button
+                uiButton
+                size="sm"
+                variant="danger"
+                type="button"
+                (click)="decided.emit(false)"
+              >
+                {{ text.discount.reject }}
+              </button>
+            }
+          </div>
+        </div>
+      } @else {
+        <p class="hint">{{ text.discount.limit(limit()) }}</p>
+      }
+    }
+  }
+</ui-card>
+
+<ui-card [headingLevel]="2" [title]="text.payment.title" [subtitle]="text.payment.hint">
+  <div class="chips" role="group" [attr.aria-label]="text.payment.methods">
+    @for (method of methods(); track method) {
+      <button
+        uiChip
+        [disabled]="!editable()"
+        [selected]="payment().methods.includes(method)"
+        (selectedChange)="toggleMethod(method, $event)"
+      >
+        {{ text.paymentMethods[method] }}
+      </button>
+    }
+  </div>
+  @if (payment().methods.includes('Credit')) {
+    <ui-field class="installments" [label]="text.payment.installments">
+      <select uiControl [disabled]="!editable()" (change)="setInstallments($event)">
+        @for (count of installmentOptions(); track count) {
+          <option [value]="count" [selected]="count === payment().maxInstallments">
+            {{ text.payment.upTo(count) }}
+          </option>
+        }
+      </select>
+    </ui-field>
+    @if (simulation().length > 0) {
+      <p class="label">{{ text.payment.simulation }}</p>
+      <ul class="simulation">
+        @for (line of simulation(); track $index) {
+          <li>{{ line }}</li>
+        }
+      </ul>
+    }
+  }
+</ui-card>
+
+<ui-card [headingLevel]="2" [title]="text.totals.title">
+  <dl class="sum" data-testid="quote-totals">
+    <div>
+      <dt>{{ text.totals.services }}</dt>
+      <dd>{{ totals().services }}</dd>
+    </div>
+    <div>
+      <dt>{{ text.totals.parts }}</dt>
+      <dd>{{ totals().parts }}</dd>
+    </div>
+    <div>
+      <dt>{{ totals().discountLabel }}</dt>
+      <dd>{{ totals().discount }}</dd>
+    </div>
+    <div class="total">
+      <dt>{{ text.totals.total }}</dt>
+      <dd>{{ totals().total }}</dd>
+    </div>
+  </dl>
+</ui-card>

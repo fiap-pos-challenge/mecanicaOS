@@ -1,0 +1,55 @@
+:host {
+  position: fixed;
+  right: var(--space-5);
+  bottom: calc(var(--space-5) + env(safe-area-inset-bottom, 0px));
+  z-index: var(--z-toast);
+  max-width: calc(100% - 40px);
+}
+
+.region {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.toast {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  width: min(380px, 100%);
+  padding: 10px 10px 10px 16px;
+  border-radius: 9px;
+  background: var(--fg);
+  color: var(--bg);
+  box-shadow: var(--shadow-overlay);
+}
+
+.toast--error {
+  border-left: 4px solid var(--bad);
+}
+
+.toast--success {
+  border-left: 4px solid var(--ok);
+}
+
+.content {
+  flex: 1;
+  min-width: 0;
+}
+
+.message {
+  margin: 0;
+  font-weight: 500;
+}
+
+.detail {
+  margin: 2px 0 0;
+  font-family: var(--f-mono);
+  font-size: var(--text-xs);
+  opacity: 0.8;
+  word-break: break-all;
+}
+
+.toast button {
+  color: inherit;
+}

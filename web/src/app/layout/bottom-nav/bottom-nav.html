@@ -1,0 +1,24 @@
+<nav class="bottom-nav" [attr.aria-label]="text.label">
+  @for (link of links(); track link.path) {
+    <a
+      class="link"
+      [class.link--primary]="link.primary"
+      [routerLink]="link.path"
+      routerLinkActive="link--active"
+      ariaCurrentWhenActive="page"
+    >
+      <ui-icon [icon]="link.icon" [size]="20" />
+      {{ link.label }}
+    </a>
+  }
+  <button
+    type="button"
+    class="link"
+    aria-controls="app-sidebar"
+    [attr.aria-expanded]="layout.drawerOpen()"
+    (click)="layout.openDrawer()"
+  >
+    <ui-icon [icon]="menuIcon" [size]="20" />
+    {{ text.menu }}
+  </button>
+</nav>

@@ -1,0 +1,37 @@
+<p class="hint">{{ text.board.dragHint }}</p>
+<div class="board" cdkDropListGroup role="group" [attr.aria-label]="text.board.label">
+  @for (column of columns(); track column.status) {
+    <section
+      class="column"
+      [class.column--allowed]="column.allowed"
+      [class.column--blocked]="column.blocked"
+      [attr.aria-label]="column.title"
+      [attr.data-status]="column.status"
+    >
+      <h2 class="title">{{ column.title }}</h2>
+      <div
+        class="cards"
+        cdkDropList
+        [cdkDropListData]="column.status"
+        (cdkDropListDropped)="drop($event)"
+      >
+        @for (card of column.cards; track card.id) {
+          <app-order-card
+            cdkDrag
+            [cdkDragData]="card"
+            [cdkDragDisabled]="!canMove() || card.status === 'Delivered'"
+            [card]="card"
+            [now]="now()"
+            [canMove]="canMove()"
+            [busy]="moving() === card.id"
+            (cdkDragStarted)="dragging.set(card)"
+            (cdkDragEnded)="dragging.set(null)"
+            (moved)="moved.emit($event)"
+          />
+        } @empty {
+          <p class="empty">{{ text.board.empty }}</p>
+        }
+      </div>
+    </section>
+  }
+</div>

@@ -1,0 +1,185 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [develop, main]
+  push:
+    branches: [develop, main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: write
+
+concurrency:
+  group: ci-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+env:
+  DOTNET_NOLOGO: "true"
+  DOTNET_CLI_TELEMETRY_OPTOUT: "true"
+  COVERAGE_THRESHOLD: "85"
+
+jobs:
+  build-and-test:
+    name: build-and-test
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v6
+        with:
+          global-json-file: global.json
+
+      - name: Restore
+        run: |
+          dotnet restore Oficina.slnx
+          dotnet tool restore
+
+      - name: Build
+        run: dotnet build Oficina.slnx --configuration Release --no-restore -warnaserror
+
+      # Os testes funcionais sobem um SQL Server com Testcontainers (o Docker já existe no runner).
+      - name: Test with coverage
+        run: |
+          for project in UnitTests ContractTests FunctionalTests; do
+            dotnet test --project "tests/Oficina.${project}/Oficina.${project}.csproj" \
+              --configuration Release --no-build \
+              --results-directory "TestResults/${project}" \
+              --coverlet --coverlet-output-format cobertura \
+              --coverlet-include "[Oficina.Api]*" --coverlet-include "[Oficina.Application]*" \
+              --coverlet-include "[Oficina.Domain]*" --coverlet-include "[Oficina.Infrastructure]*" \
+              --coverlet-exclude-by-file "**/Program.cs" --coverlet-exclude-by-file "**/Migrations/*.cs"
+          done
+
+      - name: Coverage report
+        if: always()
+        run: >-
+          dotnet reportgenerator
+          "-reports:TestResults/**/*.cobertura.*.xml"
+          "-targetdir:coveragereport"
+          "-reporttypes:Html;Cobertura;MarkdownSummaryGithub"
+          "-assemblyfilters:+Oficina.Api;+Oficina.Application;+Oficina.Domain;+Oficina.Infrastructure"
+          "-filefilters:-**/Program.cs;-**/Migrations/**"
+
+      - name: Coverage summary
+        if: always()
+        run: |
+          if [ -f coveragereport/SummaryGithub.md ]; then
+            cat coveragereport/SummaryGithub.md >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Comment coverage on pull request
+        if: always() && github.event_name == 'pull_request'
+        uses: marocchino/sticky-pull-request-comment@v3
+        with:
+          header: coverage
+          path: coveragereport/SummaryGithub.md
+
+      - name: Upload coverage report
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: coverage-report
+          path: coveragereport
+          retention-days: 14
+
+      - name: Enforce minimum coverage
+        run: |
+          rate=$(grep -o 'line-rate="[0-9.]*"' coveragereport/Cobertura.xml | head -1 | grep -o '[0-9.]*')
+          percent=$(awk -v rate="$rate" 'BEGIN { printf "%.2f", rate * 100 }')
+          echo "Line coverage: ${percent}% (minimum ${COVERAGE_THRESHOLD}%)"
+          awk -v value="$percent" -v minimum="$COVERAGE_THRESHOLD" 'BEGIN { exit (value + 0 < minimum + 0) }'
+
+  web:
+    name: web
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      - name: Install (locked)
+        run: npm ci
+
+      - name: Lint (ESLint, comment check, Prettier)
+        run: npm run lint
+
+      - name: Unit and component tests with coverage gate (85%)
+        run: |
+          set -o pipefail
+          npm test 2>&1 | tee test-output.txt
+
+      - name: Coverage summary
+        if: always()
+        run: |
+          {
+            echo "### Cobertura do frontend"
+            echo ""
+            echo '```'
+            sed -n '/Coverage summary/,/^=\{10,\}$/p' test-output.txt | sed 's/\x1b\[[0-9;]*m//g'
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Production build
+        run: npm run build
+
+      # The fake API (src/testing) must never reach the production bundle; the demo build must contain it.
+      - name: No fake API in the production bundle
+        run: npm run check:bundle
+
+      - name: Demo build contains the fake API
+        run: |
+          npm run build:demo
+          node scripts/check-bundle.mjs dist/oficina-web-demo/browser --expect-fake
+
+      - name: Dependency audit
+        run: npm audit --audit-level=high
+
+      - name: Secret scan (tracked and untracked files of the repository)
+        run: npm run check:secrets
+
+      # E2E runs against the production nginx image (real CSP and Trusted Types),
+      # the real API and a throwaway SQL Server (web/e2e/docker-compose.e2e.yml).
+      # O stack do E2E lê os segredos do .env da raiz; no CI eles são gerados na hora e nunca vêm do repositório.
+      - name: Create throwaway .env
+        working-directory: .
+        run: bash scripts/ci/create-env.sh
+
+      - name: Install Playwright browser
+        run: npx playwright install --with-deps chromium
+
+      - name: End-to-end tests
+        run: npm run e2e
+
+      - name: Lighthouse accessibility (minimum 95)
+        run: npm run lighthouse
+
+      - name: Upload Playwright report
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: web-playwright-report
+          path: web/playwright-report
+          retention-days: 14
+
+      - name: Upload coverage report
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: web-coverage
+          path: web/coverage
+          retention-days: 14

@@ -1,0 +1,133 @@
+<a class="back" routerLink="/inventory/counts">
+  <ui-icon [icon]="icons.back" [size]="16" />
+  {{ text.back }}
+</a>
+
+@switch (state()) {
+  @case ('loading') {
+    <ui-skeleton height="320px" />
+  }
+  @case ('pending') {
+    <h1 class="title">{{ text.screen }}</h1>
+    <ui-pending-notice [message]="pendingText" />
+  }
+  @case ('notFound') {
+    <p class="alert" role="alert">{{ text.notFound }}</p>
+  }
+  @case ('error') {
+    <p class="alert" role="alert">{{ text.loadError }}</p>
+  }
+  @case ('ready') {
+    @if (count(); as current) {
+      <header class="head">
+        <h1 class="title">{{ title(current) }}</h1>
+        <p class="meta">
+          <ui-status-pill [tone]="tones[current.status]">{{
+            statuses[current.status]
+          }}</ui-status-pill>
+          <span>{{ opened(current) }}</span>
+        </p>
+        @if (decided(current); as decision) {
+          <p class="meta">{{ decision }}</p>
+        }
+        @if (current.rejectionReason; as reason) {
+          <p class="meta">{{ reason }}</p>
+        }
+        @if (editable()) {
+          <p class="hint">{{ text.instructions }}</p>
+        }
+      </header>
+
+      @if (error(); as message) {
+        <p class="alert" role="alert" data-testid="count-error">{{ message }}</p>
+      }
+
+      <ol class="lines" [attr.aria-label]="title(current)">
+        @for (line of current.lines; track line.partId; let index = $index) {
+          <li
+            class="line"
+            [class.line--diff]="(difference(index) ?? 0) !== 0"
+            [class.line--invalid]="invalid(index)"
+          >
+            <div class="what">
+              <strong>{{ line.name }}</strong>
+              <span class="code">{{ line.code }}</span>
+            </div>
+            <div class="system">
+              <span class="label">{{ text.system }}</span>
+              <span class="mono">{{ amount(line.systemQuantity, line) }}</span>
+            </div>
+            <label class="counted">
+              <span class="label">{{ text.counted }}</span>
+              <input
+                class="ui-control"
+                type="text"
+                inputmode="decimal"
+                autocomplete="off"
+                [formControl]="counted.at(index)"
+                [attr.aria-label]="text.countedOf(line.name)"
+                [attr.aria-invalid]="invalid(index) || null"
+              />
+            </label>
+            <div class="diff" aria-live="polite">
+              <span class="label">{{ text.difference }}</span>
+              <span class="mono" [attr.data-testid]="'difference-' + line.code">{{
+                differenceText(index)
+              }}</span>
+            </div>
+          </li>
+        }
+      </ol>
+
+      <div class="footer">
+        <p class="progress" role="status">
+          {{ text.progress(summary().counted, summary().total, summary().withDifference) }}
+        </p>
+        <div class="buttons">
+          @if (editable()) {
+            <button uiButton type="button" [loading]="busy()" (click)="save()">
+              {{ text.save }}
+            </button>
+            <button uiButton variant="primary" type="button" [loading]="busy()" (click)="submit()">
+              {{ text.submit }}
+            </button>
+          } @else if (current.status === 'PendingApproval') {
+            @if (canApprove()) {
+              @if (rejecting()) {
+                <div class="reject">
+                  <ui-field [label]="text.rejectReason" [required]="true">
+                    <input uiControl type="text" maxlength="300" [formControl]="reason" />
+                  </ui-field>
+                  <button
+                    uiButton
+                    variant="danger"
+                    type="button"
+                    [loading]="busy()"
+                    (click)="reject()"
+                  >
+                    {{ text.reject }}
+                  </button>
+                </div>
+              } @else {
+                <button uiButton type="button" (click)="rejecting.set(true)">
+                  {{ text.reject }}
+                </button>
+                <button
+                  uiButton
+                  variant="primary"
+                  type="button"
+                  [loading]="busy()"
+                  (click)="approve()"
+                >
+                  {{ text.approve }}
+                </button>
+              }
+            } @else {
+              <span class="hint">{{ text.waiting }}</span>
+            }
+          }
+        </div>
+      </div>
+    }
+  }
+}

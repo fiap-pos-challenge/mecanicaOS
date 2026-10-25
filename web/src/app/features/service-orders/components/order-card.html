@@ -1,0 +1,68 @@
+<article
+  class="card"
+  [attr.aria-label]="text.number(card().number)"
+  [attr.aria-busy]="busy() || null"
+>
+  <header class="top">
+    <a
+      class="number"
+      [routerLink]="['/service-orders', card().id]"
+      [attr.aria-label]="text.open(card().number)"
+      >{{ text.number(card().number) }}</a
+    >
+    <ui-plate [value]="card().plate" />
+  </header>
+  <p class="vehicle">{{ card().vehicle }}</p>
+  <p class="summary">{{ card().summary }}</p>
+  <p class="meta">
+    <span>{{ card().customerName }}</span>
+    <span>{{ card().mechanicName ?? text.unassigned }}</span>
+    @if (promised(); as when) {
+      <span>{{ when }}</span>
+    }
+  </p>
+  @if (tags().length > 0) {
+    <p class="tags">
+      @for (item of tags(); track item.tag) {
+        <ui-status-pill [tone]="item.tone">{{ item.label }}</ui-status-pill>
+      }
+    </p>
+  }
+  <footer class="bottom">
+    <span class="total">{{ total() }}</span>
+    @if (canMove()) {
+      <button
+        #toggle
+        uiButton
+        size="sm"
+        type="button"
+        [attr.aria-label]="text.board.moveOf(card().number)"
+        [attr.aria-expanded]="menuOpen()"
+        [attr.aria-controls]="menuId"
+        (click)="openMenu()"
+      >
+        {{ text.board.move }}
+      </button>
+    }
+  </footer>
+  @if (menuOpen()) {
+    <ul class="menu" [id]="menuId">
+      @for (target of targets(); track target.status) {
+        <li>
+          <button
+            type="button"
+            class="target"
+            [disabled]="!target.allowed"
+            [attr.aria-describedby]="target.reason ? menuId + '-' + target.status : null"
+            (click)="choose(target.status)"
+          >
+            {{ target.label }}
+          </button>
+          @if (target.reason; as reason) {
+            <small class="reason" [id]="menuId + '-' + target.status">{{ reason }}</small>
+          }
+        </li>
+      }
+    </ul>
+  }
+</article>

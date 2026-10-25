@@ -1,0 +1,94 @@
+# ------------------------------------------------------------------
+# mecanicaOS: só vai para o Git o que é código, teste, configuração
+# de build/CI/Docker e documentação da entrega.
+# ------------------------------------------------------------------
+
+# Segredos e ambiente local (o modelo .env.example é versionado)
+.env
+.env.*
+!.env.example
+appsettings.*.local.json
+secrets.json
+*.pfx
+*.pem
+*.key
+
+# IDE e sistema operacional
+.vs/
+.vscode/
+.idea/
+*.user
+*.suo
+*.userprefs
+*.DotSettings.user
+*.code-workspace
+*.swp
+*~
+Thumbs.db
+[Dd]esktop.ini
+.DS_Store
+
+# Build do .NET
+[Bb]in/
+[Oo]bj/
+[Dd]ebug/
+[Rr]elease/
+publish/
+artifacts/
+*.nupkg
+*.snupkg
+*.binlog
+
+# Resultados de testes e cobertura (o CI publica como artefato)
+[Tt]est[Rr]esults/
+*.trx
+coverage*.xml
+coverage*.json
+coverage*.info
+coveragereport/
+Summary*.txt
+SummaryGithub.md
+
+# Banco local
+*.mdf
+*.ldf
+*.ndf
+
+# Logs e temporários
+logs/
+*.log
+*.tmp
+
+# Front-end (web/): dependências, builds e relatórios de teste
+node_modules/
+web/dist/
+web/.angular/
+web/coverage/
+web/playwright-report/
+web/test-results/
+web/out-tsc/
+
+# E-mails gravados em arquivo no desenvolvimento e no E2E (pickup directory)
+.mail/
+*.eml
+
+# Pastas de trabalho dos scanners do SonarQube
+.sonarqube/
+.scannerwork/
+
+# Ferramentas locais
+actionlint
+actionlint.exe
+.actrc
+.act/
+__pycache__/
+
+# Documentos de trabalho locais (análises, planos, rascunhos e relatórios)
+docs/analise-*.md
+docs/plano-*.md
+docs/modelo-de-dados.md
+docs/relatorios/
+docs/evidencias/
+
+# Coleções locais de cliente HTTP
+bruno/

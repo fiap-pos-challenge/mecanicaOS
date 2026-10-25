@@ -1,0 +1,139 @@
+<h1 class="page-title">{{ editing() ? text.editTitle : text.newTitle }}</h1>
+
+<form
+  class="form"
+  novalidate
+  [formGroup]="form"
+  (ngSubmit)="save()"
+  [attr.aria-busy]="loading() || null"
+>
+  @if (draftRestored()) {
+    <p class="notice" role="status">{{ text.draftRestored }}</p>
+  }
+  <div aria-live="assertive">
+    @if (error(); as message) {
+      <p class="alert" data-testid="customer-form-error">{{ message }}</p>
+    }
+  </div>
+
+  <ui-card [headingLevel]="2" [title]="text.identification">
+    <div class="grid">
+      <ui-field class="wide" [label]="text.name" [required]="true" [error]="fieldError('name')">
+        <input uiControl type="text" formControlName="name" autocomplete="off" maxlength="160" />
+      </ui-field>
+      <ui-field
+        [label]="text.document"
+        [required]="!editing()"
+        [hint]="text.documentHint"
+        [error]="fieldError('document')"
+      >
+        <input
+          uiControl
+          type="text"
+          inputmode="numeric"
+          class="mono"
+          formControlName="document"
+          autocomplete="off"
+          maxlength="18"
+          (input)="maskDocument()"
+        />
+      </ui-field>
+    </div>
+  </ui-card>
+
+  <ui-card [headingLevel]="2" [title]="text.contact">
+    <div class="grid">
+      <ui-field [label]="text.phone" [required]="true" [error]="fieldError('phone')">
+        <input
+          uiControl
+          type="tel"
+          inputmode="tel"
+          class="mono"
+          formControlName="phone"
+          autocomplete="off"
+          maxlength="15"
+          (input)="maskPhone()"
+        />
+      </ui-field>
+      <ui-field [label]="text.email" [error]="fieldError('email')">
+        <input uiControl type="email" formControlName="email" autocomplete="off" maxlength="160" />
+      </ui-field>
+    </div>
+  </ui-card>
+
+  <ui-card [headingLevel]="2" [title]="text.address">
+    <div class="grid" formGroupName="address">
+      <div class="zip">
+        <ui-field
+          [label]="text.zipCode"
+          [hint]="text.zipCodeHint"
+          [error]="addressError('zipCode')"
+        >
+          <input
+            uiControl
+            type="text"
+            inputmode="numeric"
+            class="mono"
+            formControlName="zipCode"
+            autocomplete="off"
+            maxlength="9"
+            (input)="maskZip()"
+          />
+        </ui-field>
+        <button uiButton type="button" [loading]="lookingUp()" (click)="lookup()">
+          {{ text.lookup }}
+        </button>
+      </div>
+      <p class="zip-message" aria-live="polite">{{ zipMessage() }}</p>
+      <ui-field class="wide" [label]="text.street">
+        <input uiControl type="text" formControlName="street" maxlength="150" />
+      </ui-field>
+      <ui-field [label]="text.number">
+        <input uiControl type="text" formControlName="number" maxlength="10" />
+      </ui-field>
+      <ui-field [label]="text.complement">
+        <input uiControl type="text" formControlName="complement" maxlength="60" />
+      </ui-field>
+      <ui-field [label]="text.district">
+        <input uiControl type="text" formControlName="district" maxlength="80" />
+      </ui-field>
+      <ui-field [label]="text.city">
+        <input uiControl type="text" formControlName="city" maxlength="80" />
+      </ui-field>
+      <ui-field [label]="text.state" [error]="addressError('state')">
+        <input uiControl type="text" class="uf" formControlName="state" maxlength="2" />
+      </ui-field>
+    </div>
+    @if (addressIncomplete()) {
+      <p class="field-error" role="alert">{{ text.incompleteAddress }}</p>
+    }
+  </ui-card>
+
+  <ui-card [headingLevel]="2" [title]="text.consent">
+    <div class="consent" formGroupName="messagingConsent">
+      <label class="check">
+        <input type="checkbox" formControlName="whatsApp" />
+        {{ text.consentWhatsApp }}
+      </label>
+      <label class="check">
+        <input
+          type="checkbox"
+          formControlName="email"
+          [attr.aria-describedby]="emailConsentBlocked() ? 'consent-email-blocked' : null"
+        />
+        {{ text.consentEmail }}
+      </label>
+      @if (emailConsentBlocked()) {
+        <p id="consent-email-blocked" class="hint">{{ text.consentEmailNeedsEmail }}</p>
+      }
+      <p class="hint">{{ consentRecorded() ?? text.consentHint }}</p>
+    </div>
+  </ui-card>
+
+  <div class="footer">
+    <a uiButton [routerLink]="cancelLink()">{{ text.cancel }}</a>
+    <button uiButton variant="primary" type="submit" [loading]="saving()">
+      {{ saving() ? text.saving : text.save }}
+    </button>
+  </div>
+</form>

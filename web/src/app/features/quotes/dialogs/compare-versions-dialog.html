@@ -1,0 +1,50 @@
+<ui-dialog-layout [title]="text.title">
+  <div class="dialog-form">
+    @if (loading()) {
+      <ui-skeleton height="120px" />
+    } @else if (versions().length < 2) {
+      <p class="notice">{{ text.only }}</p>
+    } @else {
+      <div class="row">
+        <ui-field [label]="text.from">
+          <select uiControl (change)="pick('from', $event)">
+            @for (version of versions(); track version.id) {
+              <option [value]="version.id" [selected]="version.id === fromId()">
+                {{ label(version) }}
+              </option>
+            }
+          </select>
+        </ui-field>
+        <ui-field [label]="text.to">
+          <select uiControl (change)="pick('to', $event)">
+            @for (version of versions(); track version.id) {
+              <option [value]="version.id" [selected]="version.id === toId()">
+                {{ label(version) }}
+              </option>
+            }
+          </select>
+        </ui-field>
+      </div>
+      @if (comparison(); as result) {
+        @if (result.rows.length === 0) {
+          <p class="notice">{{ text.none }}</p>
+        } @else {
+          <ul class="choices" [attr.aria-label]="text.caption">
+            @for (row of result.rows; track row.name) {
+              <li class="choice">
+                <span>
+                  <strong>{{ text[row.kind] }} · {{ row.name }}</strong>
+                  <small>{{ row.before }} → {{ row.after }}</small>
+                </span>
+              </li>
+            }
+          </ul>
+        }
+        <p class="hint" data-testid="version-delta">{{ result.delta }}</p>
+      }
+      @for (version of reasons(); track version.id) {
+        <p class="hint">{{ label(version) }} · {{ text.reason(version.rejectionReason ?? '') }}</p>
+      }
+    }
+  </div>
+</ui-dialog-layout>

@@ -1,0 +1,52 @@
+<header class="head">
+  <div>
+    <h1 class="page-title">{{ screen }}</h1>
+    <p class="sub">{{ text.subtitle }}</p>
+  </div>
+  <button *appCan="'quotes.manage'" uiButton variant="primary" type="button" (click)="create()">
+    <ui-icon [icon]="icons.plus" [size]="16" />
+    {{ text.newQuote }}
+  </button>
+</header>
+
+@if (pending()) {
+  <ui-pending-notice class="block" [message]="pendingText" />
+}
+
+@if (failed()) {
+  <div class="alert block" role="alert">
+    <span>{{ text.loadError }}</span>
+    <button uiButton size="sm" type="button" (click)="load()">{{ text.retry }}</button>
+  </div>
+}
+
+<ui-segmented
+  class="block"
+  [label]="text.list.filter"
+  [options]="filters"
+  [value]="filter()"
+  (valueChange)="setFilter($event)"
+/>
+
+<ui-table
+  [caption]="text.list.caption"
+  [columns]="columns"
+  [rows]="rows()"
+  [trackBy]="trackRow"
+  [loading]="loading()"
+  [emptyMessage]="text.list.empty"
+>
+  <ng-template uiCell="number" let-row>
+    <a [routerLink]="['/quotes', row.id]" [attr.aria-label]="text.list.open(row.number)">{{
+      text.list.number(row.number)
+    }}</a>
+  </ng-template>
+  <ng-template uiCell="status" let-row>
+    <span class="status">
+      <ui-status-pill [tone]="stage(row).tone">{{ stage(row).label }}</ui-status-pill>
+      @if (row.approvalPending) {
+        <ui-status-pill tone="warn">{{ text.list.approvalPending }}</ui-status-pill>
+      }
+    </span>
+  </ng-template>
+</ui-table>

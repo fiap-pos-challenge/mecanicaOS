@@ -1,0 +1,16 @@
+:host {
+  padding: 5px 11px;
+  border: 1px solid var(--line2);
+  border-radius: var(--radius-pill);
+  background: var(--surface);
+  color: var(--fg);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  cursor: pointer;
+}
+
+:host(.ui-chip--selected) {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+}
