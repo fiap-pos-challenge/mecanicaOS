@@ -22,8 +22,7 @@ Os links abaixo abrem a versão da branch `main` no visualizador do diagrams.net
 
 ## Event Storming
 
-Os três fluxos pedidos no enunciado: criação da O.S., acompanhamento da O.S. e gestão de peças e insumos. Cada post-it de comando, agregado, evento e política aparece com o nome usado no código.
-
+Os três fluxos pedidos no enunciado: criação da O.S., acompanhamento da O.S. e gestão de peças e insumos. Os post-its usam a linguagem do negócio. A correspondência de cada um com o código (comando, agregado, evento, política e teste) está em [rastreabilidade.md](rastreabilidade.md)
 ### Criação da O.S.
 
 ![Criação da O.S.](img/EventStorming_mecanicaOS-1-criacao-da-o-s.svg)

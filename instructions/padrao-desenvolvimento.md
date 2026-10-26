@@ -2,6 +2,8 @@
 
 Regras que todo desenvolvedor do grupo segue. As decisões de arquitetura estão em [arquitetura.md](arquitetura.md).
 
+As seções 1 a 10 descrevem as regras atuais. A seção 11 guarda o histórico das mudanças por etapa.
+
 ---
 
 ## 1. Idioma
@@ -20,24 +22,26 @@ Regras que todo desenvolvedor do grupo segue. As decisões de arquitetura estão
 | Sem `throw new NotImplementedException()` | `BannedSymbols.txt` |
 | Sem `DateTime.Now` e `DateTime.UtcNow` (usar `TimeProvider`) | `BannedSymbols.txt` |
 | Sem `Math.Round` e `MidpointRounding` (arredondamento meio para cima só em `Money` e `Measure`) | `BannedSymbols.txt` e teste de arquitetura |
-| Sem collection expressions | `.editorconfig` (`IDE0300` a `IDE0305` desligados) |
-| Sem comentários `TODO` | Checagem no CI |
-| Sem arquivos `.gitkeep` | Checagem no CI |
+| Collection expressions (`[...]`) são permitidas; o analisador só não sugere trocar o código existente | `.editorconfig` (`IDE0300` a `IDE0305` desligados) |
+| Sem comentários `TODO` (consequência da regra de zero comentários) | Teste de arquitetura `SourceFileRulesTests` |
+| Sem arquivos `.gitkeep` | Revisão no PR |
 | Log com template estruturado, sem interpolação | `CA2254` tratado como erro |
 | Nullable ligado e warnings como erro | `Directory.Build.props` |
-| **Zero comentários** em `.cs` (`//`, `/* */`, `///`) e `.sql` (`--`, `/* */`), exceto nas migrations geradas pelo EF Core (`Migrations/`) | Revisão no PR (Etapa 3) |
+| Um tipo por arquivo, com o nome do arquivo igual ao do tipo | Teste de arquitetura `SourceFileRulesTests` |
+| **Zero comentários** em `.cs` (`//`, `/* */`, `///`) e `.sql` (`--`, `/* */`), exceto nas migrations geradas pelo EF Core (`Migrations/`) | Teste de arquitetura `SourceFileRulesTests` (back-end) e `npm run lint` (front-end) |
+| Nenhuma classe técnica com sufixo `Service`; controllers injetam só `ISender`; Domain não referencia as outras camadas | Testes de arquitetura em `Oficina.ContractTests/Architecture` e `Oficina.UnitTests/Architecture` |
 
-**Sobre comentários (Etapa 3):** o código se explica pelos nomes. As explicações vão para o README. Arquivos de configuração podem ter comentários (`.gitignore`, `.gitattributes`, `.editorconfig`, workflows, `Dockerfile`, `docker-compose.yml`, `.props` e `.csproj`). O Swagger é documentado por metadados de endpoint (`[EndpointSummary]`, `[EndpointDescription]`, `[Tags]`, `[ProducesResponseType]`), e não por XML comments.
+**Sobre comentários:** o código se explica pelos nomes. As explicações vão para o README. Arquivos de configuração podem ter comentários (`.gitignore`, `.gitattributes`, `.editorconfig`, workflows, `Dockerfile`, `docker-compose.yml`, `.props` e `.csproj`). O Swagger é documentado por metadados de endpoint (`[EndpointSummary]`, `[EndpointDescription]`, `[Tags]`, `[ProducesResponseType]`), e não por XML comments.
 
 **Sobre dados sigilosos:** nunca logar senha, hash, JWT, token de orçamento, CPF/CNPJ, e-mail, telefone, placa ou corpo de requisição. Logar apenas IDs, número da OS e `traceId`.
 
-**Nenhum dado pessoal na URL (Etapa 2):** CPF/CNPJ, placa, e-mail e telefone nunca vão em parâmetro de rota ou de query, nem em rota autenticada. A URL vaza em logs de proxy, no histórico do navegador e em ferramentas de monitoramento. Buscas por esses dados usam `POST` com o dado no corpo (ex.: `POST /api/admin/customers/search`, `POST /api/public/service-orders/lookup`). Um teste de contrato falha se alguma rota tiver parâmetro chamado `document`, `plate`, `licensePlate`, `email` ou `phone`.
+**Nenhum dado pessoal na URL:** CPF/CNPJ, placa, e-mail e telefone nunca vão em parâmetro de rota ou de query, nem em rota autenticada. A URL vaza em logs de proxy, no histórico do navegador e em ferramentas de monitoramento. Buscas por esses dados usam `POST` com o dado no corpo (ex.: `POST /api/admin/customers/search`, `POST /api/public/service-orders/lookup`). Um teste de contrato falha se alguma rota tiver parâmetro chamado `document`, `plate`, `licensePlate`, `email` ou `phone`.
 
 ## 3. Estilo
 
 - Namespace por arquivo e um tipo por arquivo, com o nome do arquivo igual ao do tipo.
 - Classes `sealed` por padrão.
-- Primary constructors em use cases, repositórios e controllers.
+- Primary constructors em handlers, repositórios e controllers.
 - `record` para Commands e DTOs.
 - Value objects são `sealed class` com construtor privado e método `Create`.
 - Campos privados como `_camelCase`. Métodos assíncronos com sufixo `Async`.
@@ -50,23 +54,27 @@ Regras que todo desenvolvedor do grupo segue. As decisões de arquitetura estão
 
 | Artefato | Padrão | Exemplo |
 |---|---|---|
-| Command | `<Verbo><Substantivo>Command` | `SendEstimateCommand` |
-| Use case | `<Verbo><Substantivo>UseCase`, com método `ExecuteAsync` | `SendEstimateUseCase` |
+| Command | `<Verbo><Substantivo>Command` | `OpenServiceOrderCommand` |
+| Query | `<Verbo><Substantivo>Query` | `GetServiceOrderByIdQuery` |
+| Handler do caso de uso | `<Command ou Query>Handler` (MediatR) | `OpenServiceOrderCommandHandler` |
+| Validator | `<Command ou Query>Validator` (FluentValidation) | `OpenServiceOrderCommandValidator` |
 | Queries | `I<Agregado>Queries` | `IServiceOrderQueries` |
-| DTO | `<Nome>Dto` | `ServiceOrderDetailsDto` |
+| DTO | `<Nome>Dto` | `ServiceOrderDetailDto` |
 | Repositório | `I<Agregado>Repository`, só para raiz de agregado | `IPartRepository` |
-| Evento de domínio | Particípio passado | `EstimateApproved` |
-| Handler de evento | `<Ação>On<Evento>` | `DeductStockOnEstimateApproved` |
+| Evento de domínio | Particípio passado | `QuoteApproved` |
+| Handler de evento | `<Ação>On<Evento>` | `IssueReceiptOnPaymentConfirmed` |
 | Configuração EF | `<Entidade>Configuration` | `ServiceOrderConfiguration` |
-| Exceção | Sufixo `Exception` | `InsufficientStockException` |
+| Catálogo de erros | `<Contexto>Errors`, com código `<contexto>.<erro>` | `InventoryErrors.InsufficientStock` (`inventory.insufficientStock`) |
 | Classe de teste | `<Classe>Tests` | `ServiceOrderTests` |
-| Método de teste | `Method_Scenario_ExpectedResult` | `ApproveEstimate_WhenStockIsInsufficient_ThrowsInsufficientStockException` |
+| Método de teste | `Method_Scenario_ExpectedResult` | `DeductForServiceOrder_RaisesStockDeducted_AndStockBelowMinimumWhenItCrossesTheMinimum` |
 
-O sufixo `Service` é proibido em classes técnicas, porque `Service` é uma entidade do domínio (o serviço do catálogo).
+O sufixo `Service` é proibido em classes técnicas, porque `Service` é uma entidade do domínio (o serviço do catálogo). Não existem classes de exceção de domínio: erros esperados voltam como `Result` com um `Error` do catálogo.
+
+Alguns handlers de evento usam só `On<Evento>` (`OnQuoteApproved`, `OnStockBelowMinimum`); novos handlers seguem `<Ação>On<Evento>`.
 
 ## 5. Mapperly
 
-- Usado só para converter domínio em DTO e para projeções de query (`IQueryable`).
+- Usado só para converter domínio em DTO. Não há projeção `IQueryable`: a consulta pagina no SQL, materializa com `AsNoTracking` e mapeia depois.
 - Nunca usado para converter DTO ou Command em agregado. Agregados são criados só pelos métodos de fábrica.
 - Os mappers ficam na Application (`<Contexto>Mapper.cs`) e em `Infrastructure/Queries`.
 - Propriedade não mapeada (`RMG012`, `RMG020`) gera erro de compilação.
@@ -78,15 +86,16 @@ O sufixo `Service` é proibido em classes técnicas, porque `Service` é uma ent
 - Criação só por métodos de fábrica ou construtor que valida.
 - Métodos com nome de intenção. Não existe `Update(dto)`.
 - Todo conceito com regra vira value object.
-- O use case não tem `if` de regra de negócio.
-- Mensagens das exceções de domínio em português.
+- O handler não tem `if` de regra de negócio: carrega o agregado, chama o domínio e faz o commit.
+- Erros esperados são `Error` dos catálogos `…Errors`, com mensagem em português. Não há exceções de domínio.
 
 ## 7. Testes
 
 | Tipo | O que cobre |
 |---|---|
-| Unitário de Domain | Cada transição de status, válida e inválida. Value objects. Estoque. Arredondamento do `Money` |
-| Unitário de Application | Só a orquestração, com repositórios mockados via NSubstitute |
+| Unitário de Domain | Cada transição de status, válida e inválida. Value objects. Estoque e eventos de domínio. Regras de preço do orçamento. Arredondamento do `Money` |
+| Unitário de Application | Um `…HandlerTests` e um `…ValidatorTests` por caso de uso, só a orquestração, com repositórios mockados via NSubstitute |
+| Arquitetura | Um tipo por arquivo, zero comentários, arredondamento só nos value objects, dependências entre camadas, controllers só com `ISender` e nenhum sufixo `Service` técnico |
 | Contrato (`Oficina.ContractTests`) | Snapshot do OpenAPI, formato do JSON, ProblemDetails, "toda rota exige autorização" e "nenhum dado pessoal na URL" |
 | Funcional (`Oficina.FunctionalTests`) | Fluxos ponta a ponta pela API e persistência com SQL Server real: fluxo da OS, rollback por falta de estoque, reprovação, 401 e 403 por perfil, e cada saída de erro conferindo o `code` do ProblemDetails |
 
@@ -95,7 +104,7 @@ O sufixo `Service` é proibido em classes técnicas, porque `Service` é uma ent
 - Test Data Builders em `Builders/`, por exemplo `ServiceOrderBuilder`.
 - Testes funcionais com um container SQL Server (Testcontainers MsSql) por collection e limpeza do banco com Respawn entre os testes.
 - Os testes criam os próprios dados e não dependem de dados inseridos manualmente.
-- **A cobertura mínima é de 85% em linhas (Etapa 3), somando os testes unitários, de contrato e funcionais, medida sobre `src/`**, com gate no CI. Só `Migrations/` e `Program.cs` podem ser excluídos. Nunca se criam exclusões nem testes vazios para subir o número.
+- **A cobertura mínima é de 85% em linhas, somando os testes unitários, de contrato e funcionais, medida sobre `src/`**, com gate no CI. Só `Migrations/` e `Program.cs` podem ser excluídos. Nunca se criam exclusões nem testes vazios para subir o número.
 
 ## 8. Ambiente
 
@@ -131,14 +140,14 @@ main ◄── release/x.y ◄── develop ◄── feature/E6-03-open-servic
 
 Conventional Commits em português, com scope obrigatório escolhido desta lista:
 
-`service-orders`, `customers`, `catalog`, `inventory`, `identity`, `infra`, `ci`, `docs`
+`service-orders`, `quotes`, `customers`, `vehicles`, `catalog`, `inventory`, `identity`, `web`, `infra`, `ci`, `docs`
 
 Exemplo: `feat(service-orders): adiciona envio de orçamento`
 
 ### Checklist do PR (Definition of Done)
 
 - [ ] Testes do comportamento novo e de cada saída de erro
-- [ ] Nenhum `if` de regra de negócio no use case
+- [ ] Nenhum `if` de regra de negócio no handler
 - [ ] Nenhum comentário em `.cs` e `.sql`
 - [ ] Endpoint com policy explícita, metadados de Swagger e todos os tipos de resposta e status declarados
 - [ ] Nenhum dado pessoal em rota ou query
@@ -148,7 +157,9 @@ Exemplo: `feat(service-orders): adiciona envio de orçamento`
 
 ## 10. CI
 
-O workflow `.github/workflows/ci.yml` roda em todo PR e push para `develop` e `main`, num único job:
+O workflow `.github/workflows/ci.yml` roda em todo PR e push para `develop` e `main`, com dois jobs.
+
+**`build-and-test` (back-end):**
 
 1. `dotnet restore` e `dotnet tool restore`
 2. Build em Release com warnings tratados como erro
@@ -156,9 +167,17 @@ O workflow `.github/workflows/ci.yml` roda em todo PR e push para `develop` e `m
 4. Relatório de cobertura com o ReportGenerator sobre `src/` (exceto `Migrations/` e `Program.cs`): resumo no job, comentário no PR e HTML como artefato
 5. Falha se a cobertura de linhas ficar abaixo de **85%**
 
+**`web` (front-end):** `npm ci`, lint (ESLint, checagem de comentários e Prettier), testes com cobertura mínima de 85%, build de produção, conferência do bundle, `npm audit`, varredura de segredos, testes E2E com Playwright (com um `.env` descartável gerado por `scripts/ci/create-env.sh`) e acessibilidade com Lighthouse (mínimo de 95).
+
 O `cd.yml` publica a imagem no GitHub Container Registry e faz um teste de fumaça com o `docker compose`.
 
-## 11. Mudanças da Etapa 3
+A análise do SonarQube não roda no CI: é feita por `node scripts/sonar/run-analysis.mjs`, e o quality gate precisa passar antes do PR para a `main`.
+
+## 11. Histórico das mudanças
+
+Registro do que mudou em cada etapa. As regras atuais estão nas seções 1 a 10; os textos abaixo ficam como histórico.
+
+### 11.1 Mudanças da Etapa 3
 
 | Regra | Antes | Agora |
 |---|---|---|
@@ -170,7 +189,7 @@ O `cd.yml` publica a imagem no GitHub Container Registry e faz um teste de fuma�
 | Contrato para o front-end | — | JSON camelCase, enums como string, datas ISO 8601 UTC, paginação `{ items, page, pageSize, totalItems }`, ProblemDetails com `code`/`traceId`/`errors`, CORS por configuração (`http://localhost:4200` em desenvolvimento), snapshot do OpenAPI e `GET /api/auth/me` |
 | Continuidade | — | Todo trabalho começa e termina com build verde, todos os testes passando e cobertura ≥ 85%. Contratos entregues não mudam sem acordo |
 
-## 12. Estado ao fim da Etapa 3
+### 11.2 Estado ao fim da Etapa 3
 
 | Tema | Como ficou |
 |---|---|
@@ -180,7 +199,7 @@ O `cd.yml` publica a imagem no GitHub Container Registry e faz um teste de fuma�
 | Testes | Um `…HandlerTests` e um `…ValidatorTests` por caso de uso (sucesso, cada erro, `CommitAsync` só no sucesso). Contrato com o `ISender` substituído; funcional com banco real. Snapshot do OpenAPI atualizado só com `UPDATE_OPENAPI_SNAPSHOT=1` |
 | Docker | `docker compose up -d --build` sobe o SQL Server e a API em Development (migrations e Admin de teste `admin@oficina.local` na subida). `docker compose down -v` zera o banco |
 
-## 13. Estado ao fim da Etapa 5
+### 11.3 Estado ao fim da Etapa 5
 
 | Tema | Como ficou |
 |---|---|
