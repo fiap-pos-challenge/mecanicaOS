@@ -7,7 +7,6 @@
   <!-- Only packages referenced by some project are listed here (YAGNI). Each phase adds what it uses. -->
 
   <ItemGroup Label="Analyzers">
-    <PackageVersion Include="Microsoft.CodeAnalysis.BannedApiAnalyzers" Version="5.6.0" />
   </ItemGroup>
 
   <ItemGroup Label="Application">

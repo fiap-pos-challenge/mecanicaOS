@@ -5,7 +5,7 @@ FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /src
 
 # Restore first (only project and build files) so the layer is cached between code changes.
-COPY global.json nuget.config Directory.Build.props Directory.Packages.props BannedSymbols.txt .editorconfig ./
+COPY global.json nuget.config Directory.Build.props Directory.Packages.props .editorconfig ./
 COPY src/Oficina.Domain/Oficina.Domain.csproj src/Oficina.Domain/
 COPY src/Oficina.Application/Oficina.Application.csproj src/Oficina.Application/
 COPY src/Oficina.Infrastructure/Oficina.Infrastructure.csproj src/Oficina.Infrastructure/

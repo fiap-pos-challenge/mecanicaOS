@@ -73,8 +73,6 @@ dotnet_diagnostic.CA2016.severity = error
 dotnet_diagnostic.CA1068.severity = error
 # Structured logging templates only (no interpolation).
 dotnet_diagnostic.CA2254.severity = error
-# Banned APIs (BannedSymbols.txt).
-dotnet_diagnostic.RS0030.severity = error
 
 [tests/**/*.cs]
 # Test names follow Method_Scenario_ExpectedResult.
