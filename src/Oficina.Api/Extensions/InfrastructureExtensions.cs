@@ -5,6 +5,7 @@ using Oficina.Application.Abstractions.Persistence;
 using Oficina.Application.Abstractions.Security;
 using Oficina.Application.Catalog.Queries;
 using Oficina.Application.Customers.Queries;
+using Oficina.Application.Inventory.Queries;
 using Oficina.Application.ServiceOrders.Queries;
 using Oficina.Application.Users.Queries;
 using Oficina.Application.Vehicles.Queries;
@@ -21,6 +22,7 @@ using Oficina.Infrastructure.Persistence.Seeding;
 using Oficina.Infrastructure.Queries.Catalog;
 using Oficina.Infrastructure.Queries.Customers;
 using Oficina.Infrastructure.Queries.Identity;
+using Oficina.Infrastructure.Queries.Inventory;
 using Oficina.Infrastructure.Queries.ServiceOrders;
 using Oficina.Infrastructure.Queries.Vehicles;
 using Oficina.Infrastructure.Repositories.Catalog;
@@ -69,6 +71,7 @@ public static class InfrastructureExtensions
         services.AddScoped<IServiceOrderRepository, ServiceOrderRepository>();
         services.AddScoped<ICustomerQueries, CustomerQueries>();
         services.AddScoped<IServiceQueries, ServiceQueries>();
+        services.AddScoped<IPartQueries, PartQueries>();
         services.AddScoped<IUserQueries, UserQueries>();
         services.AddScoped<IVehicleQueries, VehicleQueries>();
         services.AddScoped<IServiceOrderQueries, ServiceOrderQueries>();
@@ -80,6 +83,7 @@ public static class InfrastructureExtensions
 
         services.AddOptions<DevelopmentAdminOptions>().Bind(configuration.GetSection(DevelopmentAdminOptions.SectionName));
         services.AddScoped<DevelopmentAdminSeeder>();
+        services.AddScoped<DevelopmentDataSeeder>();
 
         services.AddScoped<INotifier, LogNotifier>();
         services.AddScoped<OutboxBatchProcessor>();
@@ -105,6 +109,7 @@ public static class InfrastructureExtensions
         if (app.Environment.IsDevelopment())
         {
             await scope.ServiceProvider.GetRequiredService<DevelopmentAdminSeeder>().SeedAsync(CancellationToken.None);
+            await scope.ServiceProvider.GetRequiredService<DevelopmentDataSeeder>().SeedAsync(CancellationToken.None);
         }
     }
 }

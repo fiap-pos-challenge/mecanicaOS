@@ -44,6 +44,11 @@ public static class InventoryErrors
         "A peça ou insumo está inativo e não pode ser incluído na ordem de serviço.",
         ErrorType.BusinessRule);
 
+    public static readonly Error NotFound = new(
+        "inventory.notFound",
+        "Peça ou insumo não encontrado.",
+        ErrorType.NotFound);
+
     public static readonly Error AlreadyInactive = new(
         "inventory.alreadyInactive",
         "A peça ou insumo já está inativo.",

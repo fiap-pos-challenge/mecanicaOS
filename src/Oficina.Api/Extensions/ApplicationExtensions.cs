@@ -2,6 +2,7 @@ using FluentValidation;
 using Oficina.Application;
 using Oficina.Application.Abstractions.Messaging;
 using Oficina.Application.Common.Behaviors;
+using Oficina.Application.ServiceOrders.Commands;
 using Oficina.Application.ServiceOrders.EventHandlers;
 using Oficina.Domain.ServiceOrders.Events;
 
@@ -18,6 +19,7 @@ public static class ApplicationExtensions
             configuration.AddOpenBehavior(typeof(ValidationBehavior<,>));
         });
         services.AddValidatorsFromAssembly(AssemblyReference.Assembly, includeInternalTypes: true);
+        services.AddScoped<ServiceOrderChanges>();
         services.AddScoped<IDomainEventHandler<ServiceOrderCompleted>, NotifyCustomerOnServiceOrderCompleted>();
 
         return services;

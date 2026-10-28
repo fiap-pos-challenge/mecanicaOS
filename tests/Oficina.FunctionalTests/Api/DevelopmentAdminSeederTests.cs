@@ -13,10 +13,27 @@ public sealed class DevelopmentAdminSeederTests(SqlServerFixture database) : Api
         await StartWithSeedAsync();
         await StartWithSeedAsync();
 
-        var admin = Assert.Single(await Database.QueryAsync("SELECT email, role FROM users"));
+        var admin = Assert.Single(await Database.QueryAsync("SELECT email, role FROM users WHERE role = 'Admin'"));
         Assert.Equal("admin@oficina.local", admin["email"]);
         Assert.Equal("Admin", admin["role"]);
     }
+
+    [Fact]
+    public async Task Startup_InDevelopment_SeedsSampleDataOnce()
+    {
+        await StartWithSeedAsync();
+        await StartWithSeedAsync();
+
+        Assert.Equal(3, await CountAsync("customers"));
+        Assert.Equal(3, await CountAsync("vehicles"));
+        Assert.Equal(4, await CountAsync("services"));
+        Assert.Equal(5, await CountAsync("parts"));
+        Assert.Equal(5, await CountAsync("stockMovements"));
+        Assert.Equal(3, await CountAsync("users"));
+    }
+
+    private async Task<int> CountAsync(string table) =>
+        Convert.ToInt32((await Database.QueryAsync($"SELECT COUNT(*) AS total FROM {table}")).Single()["total"]);
 
     private async Task StartWithSeedAsync()
     {

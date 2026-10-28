@@ -47,7 +47,8 @@ public static class SecurityExtensions
             .SetFallbackPolicy(new AuthorizationPolicyBuilder().RequireAuthenticatedUser().Build())
             .AddPolicy(Policies.Authenticated, policy => policy.RequireAuthenticatedUser())
             .AddPolicy(Policies.AdminOnly, policy => policy.RequireAuthenticatedUser().RequireRole(nameof(Role.Admin)))
-            .AddPolicy(Policies.AdminOrAttendant, policy => policy.RequireAuthenticatedUser().RequireRole(nameof(Role.Admin), nameof(Role.Attendant)));
+            .AddPolicy(Policies.AdminOrAttendant, policy => policy.RequireAuthenticatedUser().RequireRole(nameof(Role.Admin), nameof(Role.Attendant)))
+            .AddPolicy(Policies.AdminOrMechanic, policy => policy.RequireAuthenticatedUser().RequireRole(nameof(Role.Admin), nameof(Role.Mechanic)));
         services.AddSingleton<IAuthorizationMiddlewareResultHandler, ProblemDetailsAuthorizationResultHandler>();
 
         var cors = configuration.GetSection(CorsSettings.SectionName).Get<CorsSettings>();

@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using Oficina.Api.Contracts.ServiceOrders;
 using Oficina.Api.ExceptionHandling;
 using Oficina.Application.ServiceOrders.Commands.ApproveQuoteByToken;
+using Oficina.Application.ServiceOrders.Commands.RejectQuoteByToken;
 using Oficina.Application.ServiceOrders.Dtos;
 using Oficina.Application.ServiceOrders.Queries.LookupServiceOrder;
 
@@ -32,4 +33,14 @@ public sealed class PublicServiceOrdersController(ISender sender) : ApiControlle
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status409Conflict, ProblemResponses.ContentType)]
     public async Task<IActionResult> ApproveQuote([FromRoute] string token, CancellationToken cancellationToken) =>
         Respond(await sender.Send(new ApproveQuoteByTokenCommand(token), cancellationToken), Ok);
+
+    [HttpPost("quotes/{token}/reject")]
+    [EndpointSummary("Reject quote by link")]
+    [EndpointDescription("Rejects the pending quote identified by the link token with the reason sent in the body and moves the service order back to InDiagnosis. The token is single use. Anonymous.")]
+    [ProducesResponseType<PublicServiceOrderDto>(StatusCodes.Status200OK)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status400BadRequest, ProblemResponses.ContentType)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound, ProblemResponses.ContentType)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status409Conflict, ProblemResponses.ContentType)]
+    public async Task<IActionResult> RejectQuote([FromRoute] string token, RejectQuoteRequest request, CancellationToken cancellationToken) =>
+        Respond(await sender.Send(new RejectQuoteByTokenCommand(token, request.Reason), cancellationToken), Ok);
 }

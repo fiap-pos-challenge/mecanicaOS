@@ -16,6 +16,7 @@ public sealed class RouteAuthorizationTests(ContractApiFactory factory)
         "health",
         "api/public/service-orders/lookup",
         "api/public/quotes/{token}/approve",
+        "api/public/quotes/{token}/reject",
     };
 
     [Fact]
@@ -50,7 +51,7 @@ public sealed class RouteAuthorizationTests(ContractApiFactory factory)
             Assert.True(policies.Length > 0 && policies.All(policy => policy is not null), Route(endpoint));
             if (Route(endpoint).StartsWith("api/admin/", StringComparison.Ordinal))
             {
-                Assert.All(policies, policy => Assert.Contains(policy, new[] { Policies.AdminOnly, Policies.AdminOrAttendant, Policies.Authenticated }));
+                Assert.All(policies, policy => Assert.Contains(policy, new[] { Policies.AdminOnly, Policies.AdminOrAttendant, Policies.AdminOrMechanic, Policies.Authenticated }));
             }
         }
     }

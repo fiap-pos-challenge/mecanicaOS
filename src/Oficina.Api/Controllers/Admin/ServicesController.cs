@@ -21,9 +21,9 @@ namespace Oficina.Api.Controllers.Admin;
 public sealed class ServicesController(ISender sender) : ApiControllerBase
 {
     [HttpGet]
-    [Authorize(Policy = Policies.AdminOrAttendant)]
+    [Authorize(Policy = Policies.Authenticated)]
     [EndpointSummary("List services")]
-    [EndpointDescription("Returns a page of services ordered by name. Only active services are listed unless includeInactive is true. Roles: Admin, Attendant.")]
+    [EndpointDescription("Returns a page of services ordered by name. Only active services are listed unless includeInactive is true. Roles: Admin, Attendant, Mechanic.")]
     [ProducesResponseType<PagedResult<ServiceDto>>(StatusCodes.Status200OK)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status400BadRequest, ProblemResponses.ContentType)]
     public async Task<IActionResult> List(
@@ -46,9 +46,9 @@ public sealed class ServicesController(ISender sender) : ApiControllerBase
     }
 
     [HttpGet("{id:guid}")]
-    [Authorize(Policy = Policies.AdminOrAttendant)]
+    [Authorize(Policy = Policies.Authenticated)]
     [EndpointSummary("Get service")]
-    [EndpointDescription("Returns one service by id, active or inactive (see isActive). Roles: Admin, Attendant.")]
+    [EndpointDescription("Returns one service by id, active or inactive (see isActive). Roles: Admin, Attendant, Mechanic.")]
     [ProducesResponseType<ServiceDto>(StatusCodes.Status200OK)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound, ProblemResponses.ContentType)]
     public async Task<IActionResult> GetById(Guid id, CancellationToken cancellationToken) =>

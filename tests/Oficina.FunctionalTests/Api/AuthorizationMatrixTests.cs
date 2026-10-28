@@ -9,6 +9,7 @@ public sealed class AuthorizationMatrixTests(SqlServerFixture database) : ApiTes
 {
     private static readonly Role[] AdminOnly = { Role.Admin };
     private static readonly Role[] AdminOrAttendant = { Role.Admin, Role.Attendant };
+    private static readonly Role[] AdminOrMechanic = { Role.Admin, Role.Mechanic };
     private static readonly Role[] Everyone = { Role.Admin, Role.Attendant, Role.Mechanic };
     private static readonly string AnyId = Guid.CreateVersion7().ToString();
 
@@ -21,9 +22,9 @@ public sealed class AuthorizationMatrixTests(SqlServerFixture database) : ApiTes
         { "PUT", $"/api/admin/customers/{AnyId}", """{"name":"Maria","phone":"11987654321"}""", nameof(AdminOrAttendant) },
         { "POST", "/api/admin/customers/search", """{"document":"52998224725"}""", nameof(AdminOrAttendant) },
         { "DELETE", $"/api/admin/customers/{AnyId}", null, nameof(AdminOnly) },
-        { "GET", "/api/admin/services", null, nameof(AdminOrAttendant) },
+        { "GET", "/api/admin/services", null, nameof(Everyone) },
         { "POST", "/api/admin/services", """{"name":"Troca de óleo","basePrice":150,"estimatedMinutes":45}""", nameof(AdminOnly) },
-        { "GET", $"/api/admin/services/{AnyId}", null, nameof(AdminOrAttendant) },
+        { "GET", $"/api/admin/services/{AnyId}", null, nameof(Everyone) },
         { "PUT", $"/api/admin/services/{AnyId}", """{"name":"Troca de óleo","basePrice":150,"estimatedMinutes":45}""", nameof(AdminOnly) },
         { "POST", $"/api/admin/services/{AnyId}/deactivate", null, nameof(AdminOnly) },
         { "POST", $"/api/admin/services/{AnyId}/reactivate", null, nameof(AdminOnly) },
@@ -43,6 +44,22 @@ public sealed class AuthorizationMatrixTests(SqlServerFixture database) : ApiTes
         { "GET", "/api/admin/service-orders", null, nameof(Everyone) },
         { "GET", $"/api/admin/service-orders/{AnyId}", null, nameof(Everyone) },
         { "POST", $"/api/admin/service-orders/{AnyId}/quote/approve", null, nameof(AdminOrAttendant) },
+        { "POST", "/api/admin/service-orders", """{"customerDocument":"52998224725","licensePlate":"BRA2E19","problemDescription":"Barulho ao frear"}""", nameof(AdminOrAttendant) },
+        { "POST", $"/api/admin/service-orders/{AnyId}/diagnosis/start", null, nameof(AdminOrMechanic) },
+        { "POST", $"/api/admin/service-orders/{AnyId}/services", $$"""{"serviceId":"{{AnyId}}","quantity":1}""", nameof(AdminOrMechanic) },
+        { "POST", $"/api/admin/service-orders/{AnyId}/parts", $$"""{"partId":"{{AnyId}}","quantity":1}""", nameof(AdminOrMechanic) },
+        { "DELETE", $"/api/admin/service-orders/{AnyId}/items/{AnyId}", null, nameof(AdminOrMechanic) },
+        { "POST", $"/api/admin/service-orders/{AnyId}/quote/send", null, nameof(AdminOrAttendant) },
+        { "POST", $"/api/admin/service-orders/{AnyId}/quote/reject", """{"reason":"Muito caro"}""", nameof(AdminOrAttendant) },
+        { "POST", $"/api/admin/service-orders/{AnyId}/complete", null, nameof(AdminOrMechanic) },
+        { "POST", $"/api/admin/service-orders/{AnyId}/deliver", null, nameof(AdminOrAttendant) },
+        { "GET", "/api/admin/parts", null, nameof(Everyone) },
+        { "POST", "/api/admin/parts", """{"code":"FLT-001","name":"Filtro","type":"Part","unitOfMeasure":"un","unitPrice":25,"minimumStock":2}""", nameof(AdminOnly) },
+        { "GET", $"/api/admin/parts/{AnyId}", null, nameof(Everyone) },
+        { "PUT", $"/api/admin/parts/{AnyId}", """{"name":"Filtro","type":"Part","unitOfMeasure":"un","unitPrice":25,"minimumStock":2}""", nameof(AdminOnly) },
+        { "POST", $"/api/admin/parts/{AnyId}/stock-entries", """{"quantity":5,"reason":"Compra"}""", nameof(AdminOnly) },
+        { "POST", $"/api/admin/parts/{AnyId}/deactivate", null, nameof(AdminOnly) },
+        { "POST", $"/api/admin/parts/{AnyId}/reactivate", null, nameof(AdminOnly) },
         { "GET", "/api/admin/metrics/average-execution-time", null, nameof(AdminOnly) },
     };
 
@@ -54,6 +71,7 @@ public sealed class AuthorizationMatrixTests(SqlServerFixture database) : ApiTes
         {
             nameof(AdminOnly) => AdminOnly,
             nameof(AdminOrAttendant) => AdminOrAttendant,
+            nameof(AdminOrMechanic) => AdminOrMechanic,
             _ => Everyone,
         };
 
