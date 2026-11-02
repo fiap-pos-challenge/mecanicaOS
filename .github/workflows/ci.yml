@@ -1,0 +1,174 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [develop, develop-new, main]
+  push:
+    branches: [develop, develop-new, main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: write
+
+concurrency:
+  group: ci-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+env:
+  DOTNET_NOLOGO: "true"
+  DOTNET_CLI_TELEMETRY_OPTOUT: "true"
+  COVERAGE_THRESHOLD: "85"
+  # SonarQube Cloud (https://sonarcloud.io). O token vem do secret SONAR_TOKEN; sem ele as etapas do Sonar são puladas.
+  SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+  SONAR_ORGANIZATION: ${{ vars.SONAR_ORGANIZATION || 'fiap-pos-challenge' }}
+  SONAR_PROJECT_KEY: ${{ vars.SONAR_PROJECT_KEY || 'fiap-pos-challenge_mecanicaOS' }}
+
+jobs:
+  build-and-test:
+    name: build-and-test
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          # O Sonar precisa do histórico completo para calcular o código novo e o blame.
+          fetch-depth: 0
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v6
+        with:
+          global-json-file: global.json
+
+      - name: Setup Java (SonarScanner)
+        if: env.SONAR_TOKEN != ''
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Restore
+        run: |
+          dotnet restore Oficina.slnx
+          dotnet tool restore
+
+      - name: SonarQube begin
+        if: env.SONAR_TOKEN != ''
+        run: |
+          dotnet tool install --global dotnet-sonarscanner
+          dotnet sonarscanner begin \
+            /k:"${SONAR_PROJECT_KEY}" /o:"${SONAR_ORGANIZATION}" \
+            /d:sonar.host.url="https://sonarcloud.io" /d:sonar.token="${SONAR_TOKEN}" \
+            /d:sonar.coverageReportPaths="coveragereport/SonarQube.xml" \
+            /d:sonar.exclusions="**/Migrations/**" \
+            /d:sonar.coverage.exclusions="**/Program.cs,**/Migrations/**,tests/**" \
+            /d:sonar.qualitygate.wait=true
+
+      - name: Build
+        run: dotnet build Oficina.slnx --configuration Release --no-restore -warnaserror
+
+      # Os testes funcionais sobem um SQL Server com Testcontainers (o Docker já existe no runner).
+      - name: Test with coverage
+        run: |
+          for project in UnitTests ContractTests FunctionalTests; do
+            dotnet test --project "tests/Oficina.${project}/Oficina.${project}.csproj" \
+              --configuration Release --no-build \
+              --results-directory "TestResults/${project}" \
+              --coverlet --coverlet-output-format cobertura \
+              --coverlet-include "[Oficina.Api]*" --coverlet-include "[Oficina.Application]*" \
+              --coverlet-include "[Oficina.Domain]*" --coverlet-include "[Oficina.Infrastructure]*" \
+              --coverlet-exclude-by-file "**/Program.cs" --coverlet-exclude-by-file "**/Migrations/*.cs"
+          done
+
+      - name: Coverage report
+        if: always()
+        run: >-
+          dotnet reportgenerator
+          "-reports:TestResults/**/*.cobertura.*.xml"
+          "-targetdir:coveragereport"
+          "-reporttypes:Html;Cobertura;MarkdownSummaryGithub;SonarQube"
+          "-assemblyfilters:+Oficina.Api;+Oficina.Application;+Oficina.Domain;+Oficina.Infrastructure"
+          "-filefilters:-**/Program.cs;-**/Migrations/**"
+
+      - name: Coverage summary
+        if: always()
+        run: |
+          if [ -f coveragereport/SummaryGithub.md ]; then
+            cat coveragereport/SummaryGithub.md >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Comment coverage on pull request
+        if: always() && github.event_name == 'pull_request'
+        uses: marocchino/sticky-pull-request-comment@v3
+        with:
+          header: coverage
+          path: coveragereport/SummaryGithub.md
+
+      - name: Upload coverage report
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: coverage-report
+          path: coveragereport
+          retention-days: 14
+
+      - name: Enforce minimum coverage
+        run: |
+          rate=$(grep -o 'line-rate="[0-9.]*"' coveragereport/Cobertura.xml | head -1 | grep -o '[0-9.]*')
+          percent=$(awk -v rate="$rate" 'BEGIN { printf "%.2f", rate * 100 }')
+          echo "Line coverage: ${percent}% (minimum ${COVERAGE_THRESHOLD}%)"
+          awk -v value="$percent" -v minimum="$COVERAGE_THRESHOLD" 'BEGIN { exit (value + 0 < minimum + 0) }'
+
+      # Envia a análise (bugs, vulnerabilidades, security hotspots, code smells e cobertura) e espera o Quality Gate.
+      - name: SonarQube end (Quality Gate)
+        if: env.SONAR_TOKEN != ''
+        run: dotnet sonarscanner end /d:sonar.token="${SONAR_TOKEN}"
+
+  vulnerability-scan:
+    name: vulnerability-scan
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v6
+        with:
+          global-json-file: global.json
+
+      - name: Restore
+        run: dotnet restore Oficina.slnx
+
+      # Consulta a base de vulnerabilidades do NuGet (GitHub Advisory Database) para pacotes diretos e transitivos.
+      - name: Scan NuGet packages
+        run: |
+          dotnet list Oficina.slnx package --vulnerable --include-transitive | tee vulnerable-packages.txt
+          dotnet list Oficina.slnx package --vulnerable --include-transitive --format json > vulnerable-packages.json
+
+      - name: Write job summary
+        if: always()
+        run: |
+          {
+            echo "### Análise de vulnerabilidades (pacotes NuGet)"
+            echo ""
+            echo '```'
+            cat vulnerable-packages.txt
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload report
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: vulnerability-report
+          path: vulnerable-packages.*
+          retention-days: 30
+
+      - name: Fail on vulnerable packages
+        run: |
+          if grep -q '"vulnerabilities"' vulnerable-packages.json; then
+            echo "::error::Há pacotes NuGet com vulnerabilidade conhecida. Veja o relatório acima."
+            exit 1
+          fi

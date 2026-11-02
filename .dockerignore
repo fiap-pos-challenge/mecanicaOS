@@ -1,0 +1,24 @@
+# Only what `dotnet publish` of the API needs goes into the build context.
+.git/
+.gitignore
+.gitattributes
+.github/
+.vs/
+.vscode/
+.idea/
+**/bin/
+**/obj/
+**/TestResults/
+tests/
+docs/
+docker/
+instructions/
+.config/
+.env
+.env.*
+*.md
+*.user
+*.suo
+Dockerfile
+docker-compose*.yml
+.dockerignore
