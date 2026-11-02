@@ -321,7 +321,7 @@ Sem o secret, o CI pula as etapas do Sonar, e o resto continua rodando.
 
 ## Documentação DDD
 
-- **Board no Miro (acesso sem pedir permissão):** https://miro.com/app/board/uXjVEVRxgE4=/
+- **Board no Miro (acesso sem pedir permissão):** https://miro.com/app/board/uXjVESyPi8o=/?share_link_id=587184665645
 - **Exportação no repositório:** [docs/ddd/](docs/ddd/README.md), com:
   - o [Event Storming](docs/ddd/event-storming.pdf) da criação da OS, do acompanhamento e da gestão de peças e insumos;
   - os [diagramas](docs/ddd/diagramas.pdf): subdomínios, mapa de contextos, modelo de domínio, Domain Storytelling e C4;

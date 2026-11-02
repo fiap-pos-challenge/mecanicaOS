@@ -11,7 +11,7 @@ Documentação de Domain-Driven Design da solução entregue. Todos os nomes de 
 | [fontes/](fontes/) | Fontes HTML dos dois PDFs |
 | [miro/](miro/) | Os três Event Storming em CSV (uma célula = um post-it), para montar o board do Miro igual aos PDFs |
 
-**Board no Miro:** https://miro.com/app/board/uXjVEVRxgE4=/
+**Board no Miro:** https://miro.com/app/board/uXjVESyPi8o=/?share_link_id=587184665645
 
 ## Resumo do modelo
 
