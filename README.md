@@ -2,6 +2,7 @@
 
 [![CI](https://github.com/fiap-pos-challenge/mecanicaOS/actions/workflows/ci.yml/badge.svg)](https://github.com/fiap-pos-challenge/mecanicaOS/actions/workflows/ci.yml)
 [![CD](https://github.com/fiap-pos-challenge/mecanicaOS/actions/workflows/cd.yml/badge.svg)](https://github.com/fiap-pos-challenge/mecanicaOS/actions/workflows/cd.yml)
+[![Quality Gate](https://sonarcloud.io/api/project_badges/measure?project=fiap-pos-challenge_mecanicaOS&metric=alert_status)](https://sonarcloud.io/project/overview?id=fiap-pos-challenge_mecanicaOS)
 
 Back-end de uma oficina mecânica, feito no Tech Challenge da Pós Tech SOAT (Software Architecture), Fase 1.
 
@@ -13,6 +14,19 @@ A API cobre:
 - login com JWT e perfis (Admin, Attendant e Mechanic).
 
 **Stack:** .NET 10, ASP.NET Core, SQL Server 2022, EF Core 10, MediatR, FluentValidation, Mapperly, JWT + BCrypt, Swagger, xUnit, NSubstitute e Testcontainers.
+
+**Arquitetura:** monolito em camadas (Api → Application → Domain ← Infrastructure), com DDD, CQRS e eventos de domínio gravados em Outbox. Detalhes em [Padrões](#padrões) e na [documentação DDD](#documentação-ddd).
+
+## Integrantes
+
+| Nome | RM |
+|---|---|
+| Gustavo Rene Dias Boamorte | RM377251 |
+| Gustavo Bertonsin Silva | RM377609 |
+| Alessandro José Dionisio Filho | RM378128 |
+| José Eduardo Lehmam Smith | RM378239 |
+
+**Vídeo da entrega:** `<link do YouTube>` · **PDF de entrega:** [docs/entrega/entrega-fase1.pdf](docs/entrega/entrega-fase1.pdf)
 
 ---
 
@@ -27,7 +41,17 @@ git clone https://github.com/fiap-pos-challenge/mecanicaOS.git
 cd mecanicaOS
 ```
 
-**2. Suba a aplicação**
+**2. Crie o arquivo `.env`**
+
+A senha do SQL Server e a chave do JWT não ficam no repositório. Copie o modelo e, se quiser, troque os valores:
+
+```bash
+cp .env.example .env        # no PowerShell: Copy-Item .env.example .env
+```
+
+O `.env` não é versionado (está no `.gitignore`), e o `docker compose` lê o arquivo sozinho. Sem ele, a subida para com a mensagem `Defina MSSQL_SA_PASSWORD no .env`.
+
+**3. Suba a aplicação**
 
 ```bash
 docker compose up -d --build
@@ -35,13 +59,13 @@ docker compose up -d --build
 
 A primeira execução leva alguns minutos, porque o Docker baixa as imagens do SQL Server e do .NET e compila a API. Na subida, a API cria o banco, aplica as migrations e cria o Admin de teste e os dados de exemplo.
 
-**3. Abra o Swagger**
+**4. Abra o Swagger**
 
-Acesse **http://localhost:8080/swagger**.
+Acesse **http://localhost:8080/swagger** (porta **8080**, a da API rodando no Docker).
 
 Se a página ainda não abrir, espere cerca de 30 segundos (o SQL Server demora um pouco para ficar pronto) e recarregue.
 
-**4. Faça login**
+**5. Faça login**
 
 1. Em `POST /api/auth/login`, clique em **Try it out** e envie:
 
@@ -52,13 +76,25 @@ Se a página ainda não abrir, espere cerca de 30 segundos (o SQL Server demora 
 2. Copie o `accessToken` da resposta.
 3. Clique em **Authorize**, no topo da página, cole o token e confirme.
 
-**5. Execute o fluxo completo**
+**6. Execute o fluxo completo**
 
-O roteiro [docs/roteiro-swagger.md](docs/roteiro-swagger.md) mostra, passo a passo e com os payloads prontos, o fluxo de uma OS do cadastro do cliente até a entrega do veículo.
+No Swagger, a ordem do fluxo de uma OS é:
+1. cadastrar o cliente (`POST /api/admin/customers`) e o veículo (`POST /api/admin/vehicles`);
+2. abrir a OS (`POST /api/admin/service-orders`);
+3. iniciar o diagnóstico;
+4. incluir serviços e peças;
+5. enviar o orçamento (`quote/send`), que devolve o token do link;
+6. aprovar pelo link (`POST /api/public/quotes/{token}/approve`);
+7. finalizar (`complete`);
+8. entregar (`deliver`).
 
-**Alternativa: Postman ou Insomnia**
+O cliente acompanha a OS em `POST /api/public/service-orders/lookup`, e o tempo médio fica em `GET /api/admin/metrics/average-execution-time`.
 
-Importe [docs/postman/oficina-fluxo-completo.postman_collection.json](docs/postman/oficina-fluxo-completo.postman_collection.json) e rode a collection inteira, em ordem (no Postman, **Run collection**). Ela executa o fluxo completo da OS, guarda token e ids entre as requisições e confere o resultado de cada passo. A variável `baseUrl` vem como `http://localhost:5080`; troque para `http://localhost:8080` se estiver usando o Docker. O login permite 5 tentativas por minuto, e cada execução faz 3, então espere um minuto entre duas execuções seguidas.
+**Postman ou Insomnia (recomendado)**
+
+Importe [docs/postman/oficina-fluxo-completo.postman_collection.json](docs/postman/oficina-fluxo-completo.postman_collection.json). A pasta **Workflow** executa, em 27 passos e na ordem do enunciado, o fluxo de um chamado: login, cadastro do cliente e do veículo, abertura da OS, diagnóstico, serviços e peças, orçamento, aprovação pelo link, finalização, entrega, consulta do cliente e tempo médio. Rode só essa pasta (no Postman, **Run folder**). As demais pastas são a suíte de testes, com casos de erro. Cada passo guarda token e ids e confere o resultado.
+
+A variável `baseUrl` vem como `http://localhost:8080` (Docker); troque para `http://localhost:5080` se rodar com `dotnet run`. O login permite 5 tentativas por minuto e a pasta Workflow faz 3, então espere um minuto entre duas execuções seguidas.
 
 **Para parar**
 
@@ -73,7 +109,8 @@ docker compose down -v   # para tudo e apaga o banco (na próxima subida ele é 
 |---|---|
 | `Cannot connect to the Docker daemon` ou erro parecido | Abra o Docker Desktop e espere ele terminar de iniciar. |
 | `port is already allocated` (porta 8080 ou 1433) | Outro programa usa a porta. Pare esse programa, ou troque a porta da esquerda no `docker-compose.yml` (por exemplo, `"8081:8080"` e abra `http://localhost:8081/swagger`). |
-| `container oficina-sqlserver is unhealthy` | Normalmente é um banco de uma execução antiga com outra senha. Rode `docker compose down -v` e suba de novo. |
+| `required variable MSSQL_SA_PASSWORD is missing a value` | Falta o `.env`. Rode `cp .env.example .env` e suba de novo. |
+| `container oficina-sqlserver is unhealthy` | Normalmente é um banco de uma execução antiga com outra senha, ou uma senha fraca no `.env` (o SQL Server exige 8 caracteres, com maiúscula, minúscula, número e símbolo). Rode `docker compose down -v` e suba de novo. |
 | Mac com chip Apple (M1, M2…) e o SQL Server não sobe | No Docker Desktop, ative **Settings → General → Use Rosetta for x86_64/amd64 emulation** e suba de novo. |
 | Ver o que a API está fazendo | `docker compose logs -f api` |
 
@@ -92,19 +129,52 @@ Na primeira subida em Development, a API também cria dados para você testar se
 
 Para recriar tudo do zero, rode `docker compose down -v` e suba de novo.
 
-## Credenciais (somente desenvolvimento)
+## Autenticação e usuários de demonstração
 
-Estes valores ficam no `docker-compose.yml` e no `appsettings.Development.json` só para facilitar a execução local. **Não use em produção.**
+As rotas administrativas exigem um JWT. Faça login em `POST /api/auth/login`, copie o `accessToken` e envie no cabeçalho `Authorization: Bearer <token>` (no Swagger, botão **Authorize**). O token vale 60 minutos.
 
-| O quê | Valor |
-|---|---|
-| Admin de teste | `admin@oficina.local` / `Admin@123` |
-| Atendente e mecânico de teste | `ana@oficina.local` e `caio@oficina.local` / `Oficina@2026` |
-| SQL Server | servidor `localhost,1433`, usuário `sa`, senha `Oficina@Dev123`, banco `oficina` |
+Os usuários abaixo só existem em Development e servem apenas para demonstração. **Não use em produção.**
 
-Para conectar no SSMS ou no Azure Data Studio, marque "Confiar no certificado do servidor".
+| Perfil | E-mail | Senha |
+|---|---|---|
+| Admin | `admin@oficina.local` | `Admin@123` |
+| Attendant | `ana@oficina.local` | `Oficina@2026` |
+| Mechanic | `caio@oficina.local` | `Oficina@2026` |
 
-Fora de Development, a API não cria o Admin de teste e não publica o Swagger. A chave do JWT deve vir da variável de ambiente `Jwt__Secret`, com no mínimo 32 caracteres.
+**Segredos:** a senha do SQL Server (`MSSQL_SA_PASSWORD`) e a chave do JWT (`JWT_SECRET`) vêm do `.env`, que não é versionado. O modelo é o [.env.example](.env.example). Para conectar no SSMS ou no Azure Data Studio, use:
+- servidor `localhost,1433`;
+- usuário `sa`;
+- a senha do seu `.env`;
+- banco `oficina`;
+- a opção "Confiar no certificado do servidor" marcada.
+
+Fora de Development, a API não cria os usuários de demonstração e não publica o Swagger. A chave do JWT vem da variável de ambiente `Jwt__Secret` (mínimo de 32 caracteres), e a conexão vem de `ConnectionStrings__Oficina`.
+
+---
+
+## Banco de dados: SQL Server 2022
+
+**Decisão:** banco relacional, SQL Server 2022 (imagem oficial `mcr.microsoft.com/mssql/server:2022-latest`, edição Developer).
+
+**Justificativa:**
+
+- **Transações ACID nos fluxos críticos.** A aprovação do orçamento muda o status da OS e baixa o estoque das peças no mesmo commit (`QuoteApprovalPolicy` + `UnitOfWork`). Os eventos de domínio vão para a tabela de Outbox na mesma transação, então nunca existe evento sem o dado, nem dado sem o evento.
+- **Concorrência otimista nativa.** `ServiceOrder` e `Part` têm coluna `rowversion`. Se duas aprovações simultâneas, ou duas baixas da mesma peça, chegarem juntas, a segunda recebe 409 e o estoque não fica negativo.
+- **Regras garantidas pelo banco.** Índices únicos filtrados impedem:
+  - duas OS abertas para o mesmo veículo (`status <> 'Delivered'`);
+  - CPF/CNPJ, placa, código de peça ou e-mail duplicados.
+
+  O filtro `deletedAt IS NULL` evita conflito com registros excluídos (soft delete).
+- **Número da OS sequencial e legível**, gerado por uma `SEQUENCE` sem corrida entre requisições.
+- **Modelo naturalmente relacional.** Os dados formam a cadeia cliente → veículos → ordens de serviço → itens, orçamento e histórico de status. Há integridade referencial, e as listagens e a métrica de tempo médio usam junções e paginação (`OFFSET/FETCH`).
+- **Ecossistema .NET.**
+  - O provedor do EF Core é maduro: migrations, `rowversion`, sequences e índices filtrados ficam mapeados direto no modelo.
+  - Há imagem oficial para Docker.
+  - O Testcontainers permite rodar os testes funcionais com o banco real.
+
+**Alternativas consideradas:**
+- **PostgreSQL:** foi usado nas primeiras etapas e é equivalente em recursos. Foi trocado pelo SQL Server para alinhar com a experiência do grupo e com o ferramental .NET (SSMS e Azure Data Studio).
+- **NoSQL:** descartado, porque o fluxo da OS depende de transação entre agregados (OS e estoque) e de restrições de unicidade.
 
 ---
 
@@ -179,12 +249,34 @@ Pré-requisitos: Docker Desktop, [.NET 10 SDK](https://dotnet.microsoft.com/down
 
 **Rodar a API fora do Docker**
 
+O .NET não lê o `.env` sozinho, então carregue os valores no terminal antes do `dotnet run`:
+
 ```bash
+# bash / Git Bash
 docker compose up -d sqlserver
+set -a; . ./.env; set +a
+export ConnectionStrings__Oficina="Server=localhost,1433;Database=oficina;User Id=sa;Password=$MSSQL_SA_PASSWORD;Encrypt=True;TrustServerCertificate=True"
+export Jwt__Secret="$JWT_SECRET"
 dotnet run --project src/Oficina.Api
 ```
 
-O Swagger fica em `http://localhost:5080/swagger`. No Visual Studio (2026 ou 2022 17.14+), abra `Oficina.slnx`, defina `Oficina.Api` como projeto de inicialização e aperte **F5**. A conexão fica em `src/Oficina.Api/appsettings.Development.json`. Para usar um SQL Server local com autenticação do Windows, troque a `ConnectionStrings:Oficina` por `Server=.\SQLEXPRESS;Database=oficina;Trusted_Connection=True;TrustServerCertificate=True`.
+```powershell
+# PowerShell
+docker compose up -d sqlserver
+Get-Content .env | Where-Object { $_ -match '^[A-Z_]+=' } | ForEach-Object { $k, $v = $_ -split '=', 2; Set-Item "env:$k" $v }
+$env:ConnectionStrings__Oficina = "Server=localhost,1433;Database=oficina;User Id=sa;Password=$env:MSSQL_SA_PASSWORD;Encrypt=True;TrustServerCertificate=True"
+$env:Jwt__Secret = $env:JWT_SECRET
+dotnet run --project src/Oficina.Api
+```
+
+Rodando assim, a API usa a porta **5080**, e o Swagger fica em `http://localhost:5080/swagger`. Pelo Docker (`docker compose up`), a porta é a **8080**.
+
+No Visual Studio (2026 ou 2022 17.14+):
+1. Abra `Oficina.slnx` e defina `Oficina.Api` como projeto de inicialização.
+2. Em **Propriedades → Depurar → Variáveis de ambiente**, informe `ConnectionStrings__Oficina` e `Jwt__Secret` com os valores do seu `.env`. Essa configuração fica no `launchSettings.json`; não faça commit dela.
+3. Aperte **F5**.
+
+Para usar um SQL Server local com autenticação do Windows, use como `ConnectionStrings__Oficina` o valor `Server=.\SQLEXPRESS;Database=oficina;Trusted_Connection=True;TrustServerCertificate=True`.
 
 **Migrations**
 
@@ -202,7 +294,39 @@ dotnet test --project tests/Oficina.ContractTests
 dotnet test --project tests/Oficina.FunctionalTests   # precisa do Docker aberto (Testcontainers)
 ```
 
-O CI roda os três projetos e falha se a cobertura de linhas ficar abaixo de 85%. Depois de mudar uma rota ou um DTO, atualize o snapshot do OpenAPI com `UPDATE_OPENAPI_SNAPSHOT=1 dotnet test --project tests/Oficina.ContractTests` (no PowerShell, `$env:UPDATE_OPENAPI_SNAPSHOT=1` antes do comando).
+O CI roda os três projetos e falha se a cobertura de linhas ficar abaixo de 85%. O relatório de cobertura aparece no resumo de cada execução (aba **Actions**) e no artefato `coverage-report`. Depois de mudar uma rota ou um DTO, atualize o snapshot do OpenAPI com `UPDATE_OPENAPI_SNAPSHOT=1 dotnet test --project tests/Oficina.ContractTests` (no PowerShell, `$env:UPDATE_OPENAPI_SNAPSHOT=1` antes do comando).
+
+---
+
+## CI/CD e análise de vulnerabilidades
+
+| Workflow | Quando roda | O que faz |
+|---|---|---|
+| [CI](.github/workflows/ci.yml): `build-and-test` | Push e PR em `develop`, `develop-new` e `main` | Build com `-warnaserror`, testes unitários, de contrato e funcionais, cobertura mínima de 85% e análise do **SonarQube Cloud** com Quality Gate |
+| [CI](.github/workflows/ci.yml): `vulnerability-scan` | Push e PR em `develop`, `develop-new` e `main` | `dotnet list package --vulnerable --include-transitive`. Falha se algum pacote NuGet tiver vulnerabilidade conhecida |
+| [CD](.github/workflows/cd.yml) | Push em `main` e tags `v*` | Publica a imagem no GHCR e faz o smoke test do `docker compose` com `/health` |
+| [Dependabot](.github/dependabot.yml) | Toda semana | PRs de atualização de NuGet, imagens Docker e GitHub Actions |
+
+O resultado da análise está em [docs/seguranca/analise-vulnerabilidades.md](docs/seguranca/analise-vulnerabilidades.md) e no painel do [SonarQube Cloud](https://sonarcloud.io/project/overview?id=fiap-pos-challenge_mecanicaOS).
+
+**Configuração do SonarQube Cloud (uma vez só):**
+1. Em https://sonarcloud.io, entre com o GitHub e importe a organização `fiap-pos-challenge` e o repositório `mecanicaOS`.
+2. Escolha **With GitHub Actions** como método de análise (desligue a *Automatic Analysis*) e gere o token.
+3. No GitHub, em **Settings → Secrets and variables → Actions**, cadastre o token como secret `SONAR_TOKEN`.
+4. Se a chave do projeto ou a organização forem diferentes de `fiap-pos-challenge_mecanicaOS` e `fiap-pos-challenge`, crie as variables `SONAR_PROJECT_KEY` e `SONAR_ORGANIZATION`.
+
+Sem o secret, o CI pula as etapas do Sonar, e o resto continua rodando.
+
+---
+
+## Documentação DDD
+
+- **Board no Miro (acesso sem pedir permissão):** https://miro.com/app/board/uXjVEVRxgE4=/
+- **Exportação no repositório:** [docs/ddd/](docs/ddd/README.md), com:
+  - o [Event Storming](docs/ddd/event-storming.pdf) da criação da OS, do acompanhamento e da gestão de peças e insumos;
+  - os [diagramas](docs/ddd/diagramas.pdf): subdomínios, mapa de contextos, modelo de domínio, Domain Storytelling e C4;
+  - a [linguagem ubíqua](docs/ddd/linguagem-ubiqua.md);
+  - a [rastreabilidade](docs/ddd/rastreabilidade.md) entre o Event Storming e o código.
 
 ---
 
@@ -218,7 +342,13 @@ tests/
   Oficina.UnitTests/        domínio e casos de uso
   Oficina.ContractTests/    contrato da API (OpenAPI, JSON, erros, autorização)
   Oficina.FunctionalTests/  API e banco de ponta a ponta (SQL Server com Testcontainers)
-docs/                       roteiro do fluxo no Swagger e enunciado
+docs/
+  ddd/                      Event Storming, diagramas, linguagem ubíqua e rastreabilidade (PDF e fontes)
+  seguranca/                resultado da análise de vulnerabilidades
+  entrega/                  PDF de entrega e a fonte HTML
+  postman/                  coleção com o fluxo completo e a suíte de testes
+  enunciado/                enunciado do Tech Challenge
+.github/                    workflows de CI/CD e Dependabot
 instructions/               convenções do grupo (arquitetura e padrão de desenvolvimento)
 ```
 

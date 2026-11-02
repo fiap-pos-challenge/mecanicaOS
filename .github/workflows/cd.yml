@@ -113,6 +113,13 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Create .env with random secrets
+        run: |
+          {
+            echo "MSSQL_SA_PASSWORD=Ci@$(openssl rand -hex 12)"
+            echo "JWT_SECRET=$(openssl rand -base64 48)"
+          } > .env
+
       - name: Start stack with the published image
         run: docker compose up --detach --no-build --wait --wait-timeout 300
 

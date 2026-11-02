@@ -1,6 +1,6 @@
 name: oficina
 
-# Ambiente de desenvolvimento: os valores abaixo são só para uso local e não servem para produção.
+# Ambiente de desenvolvimento. Os segredos vêm do arquivo .env (não versionado): copie .env.example para .env antes de subir.
 services:
   sqlserver:
     image: mcr.microsoft.com/mssql/server:2022-latest
@@ -8,7 +8,7 @@ services:
     environment:
       ACCEPT_EULA: "Y"
       MSSQL_PID: Developer
-      MSSQL_SA_PASSWORD: Oficina@Dev123
+      MSSQL_SA_PASSWORD: ${MSSQL_SA_PASSWORD:?Defina MSSQL_SA_PASSWORD no .env (copie de .env.example)}
     ports:
       - "1433:1433"
     volumes:
@@ -35,7 +35,8 @@ services:
         condition: service_healthy
     environment:
       ASPNETCORE_ENVIRONMENT: Development
-      ConnectionStrings__Oficina: Server=sqlserver,1433;Database=oficina;User Id=sa;Password=Oficina@Dev123;Encrypt=True;TrustServerCertificate=True
+      ConnectionStrings__Oficina: Server=sqlserver,1433;Database=oficina;User Id=sa;Password=${MSSQL_SA_PASSWORD:?Defina MSSQL_SA_PASSWORD no .env};Encrypt=True;TrustServerCertificate=True
+      Jwt__Secret: ${JWT_SECRET:?Defina JWT_SECRET no .env (mínimo de 32 caracteres)}
     ports:
       - "8080:8080"
     networks:
