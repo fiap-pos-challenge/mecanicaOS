@@ -31,17 +31,9 @@ O projeto fornecido `Oficina.UnitTests` não tem nenhum pacote vulnerável, cons
 
 **Nenhum pacote vulnerável** (diretos e transitivos).
 
-SonarQube Cloud, commit final `<preencher hash>`:
+SonarQube Cloud (Quality Gate **Passed**; painel em https://sonarcloud.io/project/overview?id=fiap-pos-challenge_mecanicaOS):
 
-| Métrica | Resultado |
-|---|---|
-| Quality Gate | `<preencher: Passed / Failed>` |
-| Vulnerabilidades | `<preencher>` |
-| Security Hotspots revisados | `<preencher>` |
-| Bugs | `<preencher>` |
-| Cobertura | `<preencher>` |
-
-Copie os números do painel do Sonar depois do CI da versão final e anexe um print no PDF de entrega.
+![Visão geral do SonarQube Cloud](sonarqube-overview.png)
 
 ## Controles de segurança da aplicação
 
