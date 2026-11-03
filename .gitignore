@@ -516,6 +516,7 @@ SummaryGithub.md
 # Secrets and local environment
 .env
 .env.*
+!.env.example
 appsettings.*.local.json
 secrets.json
 *.pfx
