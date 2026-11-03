@@ -327,7 +327,7 @@ Sem o secret, o CI pula as etapas do Sonar, e o resto continua rodando.
   - os [diagramas](docs/ddd/diagramas.pdf): subdomínios, mapa de contextos, modelo de domínio, Domain Storytelling e C4;
   - a [linguagem ubíqua](docs/ddd/linguagem-ubiqua.md);
   - a [rastreabilidade](docs/ddd/rastreabilidade.md) entre o Event Storming e o código.
-
+- **Análise de código e cobertura:** https://sonarcloud.io/project/overview?id=fiap-pos-challenge_mecanicaOS
 ---
 
 ## Estrutura
