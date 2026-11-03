@@ -17,14 +17,14 @@ using Oficina.Application.Inventory.Queries.ListParts;
 namespace Oficina.Api.Controllers.Admin;
 
 [Route("api/admin/parts")]
-[Tags("Parts and Supplies")]
+[Tags("Peças e Insumos")]
 [ProducesResponseType<ProblemDetails>(StatusCodes.Status403Forbidden, ProblemResponses.ContentType)]
 public sealed class PartsController(ISender sender) : ApiControllerBase
 {
     [HttpGet]
     [Authorize(Policy = Policies.Authenticated)]
-    [EndpointSummary("List parts and supplies")]
-    [EndpointDescription("Returns a page of parts and supplies ordered by name, with stock balance. Only active items are listed unless includeInactive is true. belowMinimum=true lists only items with stock below the minimum. Roles: Admin, Attendant, Mechanic.")]
+    [EndpointSummary("Listar peças e insumos")]
+    [EndpointDescription("Retorna uma página de peças e insumos ordenados por nome, com saldo em estoque. Lista apenas itens ativos, a menos que includeInactive seja true. Com belowMinimum=true, lista só os itens abaixo do estoque mínimo. Perfis: Admin, Atendente, Mecânico.")]
     [ProducesResponseType<PagedResult<PartDto>>(StatusCodes.Status200OK)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status400BadRequest, ProblemResponses.ContentType)]
     public async Task<IActionResult> List(
@@ -37,8 +37,8 @@ public sealed class PartsController(ISender sender) : ApiControllerBase
 
     [HttpPost]
     [Authorize(Policy = Policies.AdminOnly)]
-    [EndpointSummary("Create part or supply")]
-    [EndpointDescription("Creates an active part or supply with unique code, name, type (Part or Supply), unit of measure, unit price and minimum stock. The stock starts at zero; use stock entries to add quantity. Role: Admin.")]
+    [EndpointSummary("Cadastrar peça ou insumo")]
+    [EndpointDescription("Cadastra uma peça ou insumo ativo com código único, nome, tipo (Part ou Supply), unidade de medida, preço unitário e estoque mínimo. O estoque começa em zero; use a entrada de estoque para adicionar quantidade. Perfil: Admin.")]
     [ProducesResponseType<PartDto>(StatusCodes.Status201Created)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status400BadRequest, ProblemResponses.ContentType)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status409Conflict, ProblemResponses.ContentType)]
@@ -50,8 +50,8 @@ public sealed class PartsController(ISender sender) : ApiControllerBase
 
     [HttpGet("{id:guid}")]
     [Authorize(Policy = Policies.Authenticated)]
-    [EndpointSummary("Get part or supply")]
-    [EndpointDescription("Returns one part or supply by id, active or inactive, with its stock movements (entries and service order deductions) from the oldest to the newest. Roles: Admin, Attendant, Mechanic.")]
+    [EndpointSummary("Consultar peça ou insumo")]
+    [EndpointDescription("Retorna uma peça ou insumo pelo id (ativo ou inativo), com as movimentações de estoque (entradas e baixas por ordem de serviço) da mais antiga para a mais recente. Perfis: Admin, Atendente, Mecânico.")]
     [ProducesResponseType<PartDetailDto>(StatusCodes.Status200OK)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound, ProblemResponses.ContentType)]
     public async Task<IActionResult> GetById(Guid id, CancellationToken cancellationToken) =>
@@ -59,8 +59,8 @@ public sealed class PartsController(ISender sender) : ApiControllerBase
 
     [HttpPut("{id:guid}")]
     [Authorize(Policy = Policies.AdminOnly)]
-    [EndpointSummary("Update part or supply")]
-    [EndpointDescription("Updates name, type, unit of measure, unit price and minimum stock. The code and the stock balance are not changed here. Items already added to service orders keep their copied price. Role: Admin.")]
+    [EndpointSummary("Atualizar peça ou insumo")]
+    [EndpointDescription("Atualiza nome, tipo, unidade de medida, preço unitário e estoque mínimo. Código e saldo em estoque não são alterados aqui. Itens já adicionados a ordens de serviço mantêm o preço copiado. Perfil: Admin.")]
     [ProducesResponseType<PartDto>(StatusCodes.Status200OK)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status400BadRequest, ProblemResponses.ContentType)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound, ProblemResponses.ContentType)]
@@ -73,8 +73,8 @@ public sealed class PartsController(ISender sender) : ApiControllerBase
 
     [HttpPost("{id:guid}/stock-entries")]
     [Authorize(Policy = Policies.AdminOnly)]
-    [EndpointSummary("Register stock entry")]
-    [EndpointDescription("Adds quantity to the stock of a part or supply and records the movement with the reason and the user. Role: Admin.")]
+    [EndpointSummary("Registrar entrada de estoque")]
+    [EndpointDescription("Adiciona quantidade ao estoque de uma peça ou insumo e registra a movimentação com o motivo e o usuário. Perfil: Admin.")]
     [ProducesResponseType<PartDto>(StatusCodes.Status200OK)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status400BadRequest, ProblemResponses.ContentType)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound, ProblemResponses.ContentType)]
@@ -84,8 +84,8 @@ public sealed class PartsController(ISender sender) : ApiControllerBase
 
     [HttpPost("{id:guid}/deactivate")]
     [Authorize(Policy = Policies.AdminOnly)]
-    [EndpointSummary("Deactivate part or supply")]
-    [EndpointDescription("Hides the item from the default listing and blocks new service order items. Items already added to service orders are kept. Role: Admin.")]
+    [EndpointSummary("Desativar peça ou insumo")]
+    [EndpointDescription("Oculta o item da listagem padrão e impede que seja adicionado a novas ordens de serviço. Itens já adicionados são mantidos. Perfil: Admin.")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound, ProblemResponses.ContentType)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status409Conflict, ProblemResponses.ContentType)]
@@ -94,8 +94,8 @@ public sealed class PartsController(ISender sender) : ApiControllerBase
 
     [HttpPost("{id:guid}/reactivate")]
     [Authorize(Policy = Policies.AdminOnly)]
-    [EndpointSummary("Reactivate part or supply")]
-    [EndpointDescription("Returns an inactive item to the default listing and allows new service order items again. Role: Admin.")]
+    [EndpointSummary("Reativar peça ou insumo")]
+    [EndpointDescription("Volta a exibir um item inativo na listagem padrão e permite adicioná-lo novamente a ordens de serviço. Perfil: Admin.")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound, ProblemResponses.ContentType)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status409Conflict, ProblemResponses.ContentType)]

@@ -18,14 +18,14 @@ using Oficina.Application.Users.Queries.SearchUserByEmail;
 namespace Oficina.Api.Controllers.Admin;
 
 [Route("api/admin/users")]
-[Tags("Users")]
+[Tags("Usuários")]
 [ProducesResponseType<ProblemDetails>(StatusCodes.Status403Forbidden, ProblemResponses.ContentType)]
 public sealed class UsersController(ISender sender) : ApiControllerBase
 {
     [HttpGet]
     [Authorize(Policy = Policies.AdminOnly)]
-    [EndpointSummary("List users")]
-    [EndpointDescription("Returns a page of users ordered by name. Role: Admin.")]
+    [EndpointSummary("Listar usuários")]
+    [EndpointDescription("Retorna uma página de usuários ordenados por nome. Perfil: Admin.")]
     [ProducesResponseType<PagedResult<UserDto>>(StatusCodes.Status200OK)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status400BadRequest, ProblemResponses.ContentType)]
     public async Task<IActionResult> List(
@@ -36,8 +36,8 @@ public sealed class UsersController(ISender sender) : ApiControllerBase
 
     [HttpPost]
     [Authorize(Policy = Policies.AdminOnly)]
-    [EndpointSummary("Create user")]
-    [EndpointDescription("Creates a user with any role (Admin, Attendant or Mechanic), unique e-mail and strong password. Role: Admin.")]
+    [EndpointSummary("Cadastrar usuário")]
+    [EndpointDescription("Cadastra um usuário com qualquer perfil (Admin, Attendant ou Mechanic), e-mail único e senha forte. Perfil: Admin.")]
     [ProducesResponseType<UserDto>(StatusCodes.Status201Created)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status400BadRequest, ProblemResponses.ContentType)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status409Conflict, ProblemResponses.ContentType)]
@@ -49,8 +49,8 @@ public sealed class UsersController(ISender sender) : ApiControllerBase
 
     [HttpGet("{id:guid}")]
     [Authorize(Policy = Policies.AdminOnly)]
-    [EndpointSummary("Get user")]
-    [EndpointDescription("Returns one user by id. Role: Admin.")]
+    [EndpointSummary("Consultar usuário")]
+    [EndpointDescription("Retorna um usuário pelo id. Perfil: Admin.")]
     [ProducesResponseType<UserDto>(StatusCodes.Status200OK)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound, ProblemResponses.ContentType)]
     public async Task<IActionResult> GetById(Guid id, CancellationToken cancellationToken) =>
@@ -58,8 +58,8 @@ public sealed class UsersController(ISender sender) : ApiControllerBase
 
     [HttpPut("{id:guid}")]
     [Authorize(Policy = Policies.AdminOnly)]
-    [EndpointSummary("Update user")]
-    [EndpointDescription("Changes name and role. An Admin cannot demote themselves, and the last active Admin cannot be demoted. Role: Admin.")]
+    [EndpointSummary("Atualizar usuário")]
+    [EndpointDescription("Altera nome e perfil. Um Admin não pode rebaixar a si mesmo, e o último Admin ativo não pode ser rebaixado. Perfil: Admin.")]
     [ProducesResponseType<UserDto>(StatusCodes.Status200OK)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status400BadRequest, ProblemResponses.ContentType)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound, ProblemResponses.ContentType)]
@@ -70,8 +70,8 @@ public sealed class UsersController(ISender sender) : ApiControllerBase
 
     [HttpDelete("{id:guid}")]
     [Authorize(Policy = Policies.AdminOnly)]
-    [EndpointSummary("Delete user")]
-    [EndpointDescription("Deactivates and soft deletes a user. An Admin cannot delete themselves or the last active Admin. Role: Admin.")]
+    [EndpointSummary("Excluir usuário")]
+    [EndpointDescription("Desativa e exclui logicamente um usuário. Um Admin não pode excluir a si mesmo nem o último Admin ativo. Perfil: Admin.")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound, ProblemResponses.ContentType)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status409Conflict, ProblemResponses.ContentType)]
@@ -81,8 +81,8 @@ public sealed class UsersController(ISender sender) : ApiControllerBase
 
     [HttpPost("{id:guid}/deactivate")]
     [Authorize(Policy = Policies.AdminOnly)]
-    [EndpointSummary("Deactivate user")]
-    [EndpointDescription("Blocks the user from signing in. An Admin cannot deactivate themselves or the last active Admin. Role: Admin.")]
+    [EndpointSummary("Desativar usuário")]
+    [EndpointDescription("Impede o usuário de fazer login. Um Admin não pode desativar a si mesmo nem o último Admin ativo. Perfil: Admin.")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound, ProblemResponses.ContentType)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status409Conflict, ProblemResponses.ContentType)]
@@ -92,8 +92,8 @@ public sealed class UsersController(ISender sender) : ApiControllerBase
 
     [HttpPost("{id:guid}/reactivate")]
     [Authorize(Policy = Policies.AdminOnly)]
-    [EndpointSummary("Reactivate user")]
-    [EndpointDescription("Allows an inactive user to sign in again. Role: Admin.")]
+    [EndpointSummary("Reativar usuário")]
+    [EndpointDescription("Permite que um usuário inativo volte a fazer login. Perfil: Admin.")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound, ProblemResponses.ContentType)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status409Conflict, ProblemResponses.ContentType)]
@@ -102,8 +102,8 @@ public sealed class UsersController(ISender sender) : ApiControllerBase
 
     [HttpPost("search")]
     [Authorize(Policy = Policies.AdminOnly)]
-    [EndpointSummary("Search user by e-mail")]
-    [EndpointDescription("Finds a user by e-mail sent in the body (never in the URL). Role: Admin.")]
+    [EndpointSummary("Buscar usuário por e-mail")]
+    [EndpointDescription("Busca um usuário pelo e-mail enviado no corpo da requisição (nunca na URL). Perfil: Admin.")]
     [ProducesResponseType<UserDto>(StatusCodes.Status200OK)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status400BadRequest, ProblemResponses.ContentType)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound, ProblemResponses.ContentType)]
