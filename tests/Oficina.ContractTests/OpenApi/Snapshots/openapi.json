@@ -2,16 +2,17 @@
   "openapi": "3.0.4",
   "info": {
     "title": "Oficina API",
+    "description": "API de gest\u00E3o de oficina mec\u00E2nica: clientes, ve\u00EDculos, cat\u00E1logo de servi\u00E7os, pe\u00E7as e estoque, ordens de servi\u00E7o e or\u00E7amentos. Rotas /api/admin exigem token JWT (obtido em /api/auth/login); rotas /api/public s\u00E3o an\u00F4nimas.",
     "version": "v1"
   },
   "paths": {
     "/api/auth/login": {
       "post": {
         "tags": [
-          "Auth"
+          "Autentica\u00E7\u00E3o"
         ],
-        "summary": "Sign in",
-        "description": "Validates e-mail and password and returns a JWT access token. Inactive or deleted users cannot sign in. Limited to 5 attempts per minute per client IP.",
+        "summary": "Login",
+        "description": "Valida e-mail e senha e retorna um token de acesso JWT. Usu\u00E1rios inativos ou exclu\u00EDdos n\u00E3o conseguem entrar. Limite de 5 tentativas por minuto por IP.",
         "requestBody": {
           "content": {
             "application/json": {
@@ -88,10 +89,10 @@
     "/api/auth/me": {
       "get": {
         "tags": [
-          "Auth"
+          "Autentica\u00E7\u00E3o"
         ],
-        "summary": "Current user",
-        "description": "Returns id, name, e-mail and role of the signed-in user.",
+        "summary": "Usu\u00E1rio atual",
+        "description": "Retorna id, nome, e-mail e perfil do usu\u00E1rio autenticado.",
         "responses": {
           "401": {
             "description": "Unauthorized",
@@ -129,10 +130,10 @@
     "/api/admin/customers": {
       "get": {
         "tags": [
-          "Customers"
+          "Clientes"
         ],
-        "summary": "List customers",
-        "description": "Returns a page of customers ordered by name. Roles: Admin, Attendant.",
+        "summary": "Listar clientes",
+        "description": "Retorna uma p\u00E1gina de clientes ordenados por nome. Perfis: Admin, Atendente.",
         "parameters": [
           {
             "name": "page",
@@ -208,10 +209,10 @@
       },
       "post": {
         "tags": [
-          "Customers"
+          "Clientes"
         ],
-        "summary": "Create customer",
-        "description": "Creates a customer with CPF or CNPJ, phone and optional e-mail and address (all or nothing). Roles: Admin, Attendant.",
+        "summary": "Cadastrar cliente",
+        "description": "Cadastra um cliente com CPF ou CNPJ, telefone e, opcionalmente, e-mail e endere\u00E7o (endere\u00E7o completo ou nenhum). Perfis: Admin, Atendente.",
         "requestBody": {
           "content": {
             "application/json": {
@@ -298,10 +299,10 @@
     "/api/admin/customers/{id}": {
       "get": {
         "tags": [
-          "Customers"
+          "Clientes"
         ],
-        "summary": "Get customer",
-        "description": "Returns one customer by id. Roles: Admin, Attendant.",
+        "summary": "Consultar cliente",
+        "description": "Retorna um cliente pelo id. Perfis: Admin, Atendente.",
         "parameters": [
           {
             "name": "id",
@@ -368,10 +369,10 @@
       },
       "put": {
         "tags": [
-          "Customers"
+          "Clientes"
         ],
-        "summary": "Update customer",
-        "description": "Updates name, contact and address. The document cannot change. Roles: Admin, Attendant.",
+        "summary": "Atualizar cliente",
+        "description": "Atualiza nome, contato e endere\u00E7o. O documento (CPF/CNPJ) n\u00E3o pode ser alterado. Perfis: Admin, Atendente.",
         "parameters": [
           {
             "name": "id",
@@ -477,10 +478,10 @@
       },
       "delete": {
         "tags": [
-          "Customers"
+          "Clientes"
         ],
-        "summary": "Delete customer",
-        "description": "Soft deletes a customer without open service orders or registered vehicles. Role: Admin.",
+        "summary": "Excluir cliente",
+        "description": "Exclui logicamente um cliente sem ordens de servi\u00E7o abertas nem ve\u00EDculos cadastrados. Perfil: Admin.",
         "parameters": [
           {
             "name": "id",
@@ -552,10 +553,10 @@
     "/api/admin/customers/search": {
       "post": {
         "tags": [
-          "Customers"
+          "Clientes"
         ],
-        "summary": "Search customer by document",
-        "description": "Finds a customer by CPF or CNPJ sent in the body (never in the URL). Roles: Admin, Attendant.",
+        "summary": "Buscar cliente por documento",
+        "description": "Busca um cliente pelo CPF ou CNPJ enviado no corpo da requisi\u00E7\u00E3o (nunca na URL). Perfis: Admin, Atendente.",
         "requestBody": {
           "content": {
             "application/json": {
@@ -642,10 +643,10 @@
     "/api/admin/metrics/average-execution-time": {
       "get": {
         "tags": [
-          "Metrics"
+          "M\u00E9tricas"
         ],
-        "summary": "Average execution time",
-        "description": "Returns the average time in minutes from execution start to completion of completed or delivered service orders, optionally filtered by completion date (from and to, inclusive). Role: Admin.",
+        "summary": "Tempo m\u00E9dio de execu\u00E7\u00E3o",
+        "description": "Retorna o tempo m\u00E9dio, em minutos, entre o in\u00EDcio da execu\u00E7\u00E3o e a finaliza\u00E7\u00E3o das ordens de servi\u00E7o finalizadas ou entregues. Filtro opcional por data de finaliza\u00E7\u00E3o (from e to, inclusivos). Perfil: Admin.",
         "parameters": [
           {
             "name": "from",
@@ -718,901 +719,13 @@
         }
       }
     },
-    "/api/admin/parts": {
-      "get": {
-        "tags": [
-          "Parts and Supplies"
-        ],
-        "summary": "List parts and supplies",
-        "description": "Returns a page of parts and supplies ordered by name, with stock balance. Only active items are listed unless includeInactive is true. belowMinimum=true lists only items with stock below the minimum. Roles: Admin, Attendant, Mechanic.",
-        "parameters": [
-          {
-            "name": "page",
-            "in": "query",
-            "schema": {
-              "type": "integer",
-              "format": "int32",
-              "default": 1
-            }
-          },
-          {
-            "name": "pageSize",
-            "in": "query",
-            "schema": {
-              "type": "integer",
-              "format": "int32",
-              "default": 20
-            }
-          },
-          {
-            "name": "includeInactive",
-            "in": "query",
-            "schema": {
-              "type": "boolean",
-              "default": false
-            }
-          },
-          {
-            "name": "belowMinimum",
-            "in": "query",
-            "schema": {
-              "type": "boolean",
-              "default": false
-            }
-          }
-        ],
-        "responses": {
-          "401": {
-            "description": "Unauthorized",
-            "content": {
-              "application/problem\u002Bjson": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Internal Server Error",
-            "content": {
-              "application/problem\u002Bjson": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Forbidden",
-            "content": {
-              "application/problem\u002Bjson": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/PartDtoPagedResult"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Bad Request",
-            "content": {
-              "application/problem\u002Bjson": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          }
-        }
-      },
-      "post": {
-        "tags": [
-          "Parts and Supplies"
-        ],
-        "summary": "Create part or supply",
-        "description": "Creates an active part or supply with unique code, name, type (Part or Supply), unit of measure, unit price and minimum stock. The stock starts at zero; use stock entries to add quantity. Role: Admin.",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreatePartRequest"
-              }
-            },
-            "text/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreatePartRequest"
-              }
-            },
-            "application/*\u002Bjson": {
-              "schema": {
-                "$ref": "#/components/schemas/CreatePartRequest"
-              }
-            }
-          }
-        },
-        "responses": {
-          "401": {
-            "description": "Unauthorized",
-            "content": {
-              "application/problem\u002Bjson": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Internal Server Error",
-            "content": {
-              "application/problem\u002Bjson": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Forbidden",
-            "content": {
-              "application/problem\u002Bjson": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "201": {
-            "description": "Created",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/PartDto"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Bad Request",
-            "content": {
-              "application/problem\u002Bjson": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "409": {
-            "description": "Conflict",
-            "content": {
-              "application/problem\u002Bjson": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/admin/parts/{id}": {
-      "get": {
-        "tags": [
-          "Parts and Supplies"
-        ],
-        "summary": "Get part or supply",
-        "description": "Returns one part or supply by id, active or inactive, with its stock movements (entries and service order deductions) from the oldest to the newest. Roles: Admin, Attendant, Mechanic.",
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          }
-        ],
-        "responses": {
-          "401": {
-            "description": "Unauthorized",
-            "content": {
-              "application/problem\u002Bjson": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Internal Server Error",
-            "content": {
-              "application/problem\u002Bjson": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Forbidden",
-            "content": {
-              "application/problem\u002Bjson": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/PartDetailDto"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Not Found",
-            "content": {
-              "application/problem\u002Bjson": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          }
-        }
-      },
-      "put": {
-        "tags": [
-          "Parts and Supplies"
-        ],
-        "summary": "Update part or supply",
-        "description": "Updates name, type, unit of measure, unit price and minimum stock. The code and the stock balance are not changed here. Items already added to service orders keep their copied price. Role: Admin.",
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/UpdatePartRequest"
-              }
-            },
-            "text/json": {
-              "schema": {
-                "$ref": "#/components/schemas/UpdatePartRequest"
-              }
-            },
-            "application/*\u002Bjson": {
-              "schema": {
-                "$ref": "#/components/schemas/UpdatePartRequest"
-              }
-            }
-          }
-        },
-        "responses": {
-          "401": {
-            "description": "Unauthorized",
-            "content": {
-              "application/problem\u002Bjson": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Internal Server Error",
-            "content": {
-              "application/problem\u002Bjson": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Forbidden",
-            "content": {
-              "application/problem\u002Bjson": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/PartDto"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Bad Request",
-            "content": {
-              "application/problem\u002Bjson": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Not Found",
-            "content": {
-              "application/problem\u002Bjson": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "409": {
-            "description": "Conflict",
-            "content": {
-              "application/problem\u002Bjson": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/admin/parts/{id}/stock-entries": {
-      "post": {
-        "tags": [
-          "Parts and Supplies"
-        ],
-        "summary": "Register stock entry",
-        "description": "Adds quantity to the stock of a part or supply and records the movement with the reason and the user. Role: Admin.",
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/RegisterStockEntryRequest"
-              }
-            },
-            "text/json": {
-              "schema": {
-                "$ref": "#/components/schemas/RegisterStockEntryRequest"
-              }
-            },
-            "application/*\u002Bjson": {
-              "schema": {
-                "$ref": "#/components/schemas/RegisterStockEntryRequest"
-              }
-            }
-          }
-        },
-        "responses": {
-          "401": {
-            "description": "Unauthorized",
-            "content": {
-              "application/problem\u002Bjson": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Internal Server Error",
-            "content": {
-              "application/problem\u002Bjson": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Forbidden",
-            "content": {
-              "application/problem\u002Bjson": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/PartDto"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Bad Request",
-            "content": {
-              "application/problem\u002Bjson": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Not Found",
-            "content": {
-              "application/problem\u002Bjson": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "409": {
-            "description": "Conflict",
-            "content": {
-              "application/problem\u002Bjson": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/admin/parts/{id}/deactivate": {
-      "post": {
-        "tags": [
-          "Parts and Supplies"
-        ],
-        "summary": "Deactivate part or supply",
-        "description": "Hides the item from the default listing and blocks new service order items. Items already added to service orders are kept. Role: Admin.",
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          }
-        ],
-        "responses": {
-          "401": {
-            "description": "Unauthorized",
-            "content": {
-              "application/problem\u002Bjson": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Internal Server Error",
-            "content": {
-              "application/problem\u002Bjson": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Forbidden",
-            "content": {
-              "application/problem\u002Bjson": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "204": {
-            "description": "No Content"
-          },
-          "404": {
-            "description": "Not Found",
-            "content": {
-              "application/problem\u002Bjson": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "409": {
-            "description": "Conflict",
-            "content": {
-              "application/problem\u002Bjson": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/admin/parts/{id}/reactivate": {
-      "post": {
-        "tags": [
-          "Parts and Supplies"
-        ],
-        "summary": "Reactivate part or supply",
-        "description": "Returns an inactive item to the default listing and allows new service order items again. Role: Admin.",
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          }
-        ],
-        "responses": {
-          "401": {
-            "description": "Unauthorized",
-            "content": {
-              "application/problem\u002Bjson": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Internal Server Error",
-            "content": {
-              "application/problem\u002Bjson": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Forbidden",
-            "content": {
-              "application/problem\u002Bjson": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "204": {
-            "description": "No Content"
-          },
-          "404": {
-            "description": "Not Found",
-            "content": {
-              "application/problem\u002Bjson": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "409": {
-            "description": "Conflict",
-            "content": {
-              "application/problem\u002Bjson": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/public/service-orders/lookup": {
-      "post": {
-        "tags": [
-          "Public"
-        ],
-        "summary": "Track service order",
-        "description": "Returns status, items and quote of a service order when the number and the customer CPF or CNPJ sent in the body match. Anonymous.",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/LookupServiceOrderRequest"
-              }
-            },
-            "text/json": {
-              "schema": {
-                "$ref": "#/components/schemas/LookupServiceOrderRequest"
-              }
-            },
-            "application/*\u002Bjson": {
-              "schema": {
-                "$ref": "#/components/schemas/LookupServiceOrderRequest"
-              }
-            }
-          }
-        },
-        "responses": {
-          "401": {
-            "description": "Unauthorized",
-            "content": {
-              "application/problem\u002Bjson": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Internal Server Error",
-            "content": {
-              "application/problem\u002Bjson": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/PublicServiceOrderDto"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Bad Request",
-            "content": {
-              "application/problem\u002Bjson": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Not Found",
-            "content": {
-              "application/problem\u002Bjson": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/public/quotes/{token}/approve": {
-      "post": {
-        "tags": [
-          "Public"
-        ],
-        "summary": "Approve quote by link",
-        "description": "Approves the pending quote identified by the link token, deducts the parts from stock and moves the service order to InProgress in the same transaction. The token is single use. Anonymous.",
-        "parameters": [
-          {
-            "name": "token",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "401": {
-            "description": "Unauthorized",
-            "content": {
-              "application/problem\u002Bjson": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Internal Server Error",
-            "content": {
-              "application/problem\u002Bjson": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/PublicServiceOrderDto"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Bad Request",
-            "content": {
-              "application/problem\u002Bjson": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Not Found",
-            "content": {
-              "application/problem\u002Bjson": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "409": {
-            "description": "Conflict",
-            "content": {
-              "application/problem\u002Bjson": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/public/quotes/{token}/reject": {
-      "post": {
-        "tags": [
-          "Public"
-        ],
-        "summary": "Reject quote by link",
-        "description": "Rejects the pending quote identified by the link token with the reason sent in the body and moves the service order back to InDiagnosis. The token is single use. Anonymous.",
-        "parameters": [
-          {
-            "name": "token",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/RejectQuoteRequest"
-              }
-            },
-            "text/json": {
-              "schema": {
-                "$ref": "#/components/schemas/RejectQuoteRequest"
-              }
-            },
-            "application/*\u002Bjson": {
-              "schema": {
-                "$ref": "#/components/schemas/RejectQuoteRequest"
-              }
-            }
-          }
-        },
-        "responses": {
-          "401": {
-            "description": "Unauthorized",
-            "content": {
-              "application/problem\u002Bjson": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Internal Server Error",
-            "content": {
-              "application/problem\u002Bjson": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/PublicServiceOrderDto"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Bad Request",
-            "content": {
-              "application/problem\u002Bjson": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Not Found",
-            "content": {
-              "application/problem\u002Bjson": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "409": {
-            "description": "Conflict",
-            "content": {
-              "application/problem\u002Bjson": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "/api/admin/service-orders": {
       "get": {
         "tags": [
-          "Service Orders"
+          "Ordens de Servi\u00E7o"
         ],
-        "summary": "List service orders",
-        "description": "Returns a page of service orders from the newest to the oldest, optionally filtered by status and by exact license plate. Roles: Admin, Attendant, Mechanic.",
+        "summary": "Listar ordens de servi\u00E7o",
+        "description": "Retorna uma p\u00E1gina de ordens de servi\u00E7o da mais recente para a mais antiga, com filtro opcional por status e por placa exata. Perfis: Admin, Atendente, Mec\u00E2nico.",
         "parameters": [
           {
             "name": "page",
@@ -1702,10 +815,10 @@
       },
       "post": {
         "tags": [
-          "Service Orders"
+          "Ordens de Servi\u00E7o"
         ],
-        "summary": "Open service order",
-        "description": "Opens a service order in Received status. The customer is identified by CPF or CNPJ and the vehicle by license plate, both sent in the body. The vehicle must belong to the customer and cannot have another open service order. Roles: Admin, Attendant.",
+        "summary": "Abrir ordem de servi\u00E7o",
+        "description": "Abre uma ordem de servi\u00E7o com status Received. Cliente identificado por CPF ou CNPJ e ve\u00EDculo pela placa, ambos no corpo da requisi\u00E7\u00E3o. O ve\u00EDculo deve pertencer ao cliente e n\u00E3o pode ter outra ordem de servi\u00E7o aberta. Perfis: Admin, Atendente.",
         "requestBody": {
           "content": {
             "application/json": {
@@ -1802,10 +915,10 @@
     "/api/admin/service-orders/{id}": {
       "get": {
         "tags": [
-          "Service Orders"
+          "Ordens de Servi\u00E7o"
         ],
-        "summary": "Get service order",
-        "description": "Returns one service order with customer, vehicle, services, parts, current quote, status history and dates. Roles: Admin, Attendant, Mechanic.",
+        "summary": "Consultar ordem de servi\u00E7o",
+        "description": "Retorna uma ordem de servi\u00E7o com cliente, ve\u00EDculo, servi\u00E7os, pe\u00E7as, or\u00E7amento atual, hist\u00F3rico de status e datas. Perfis: Admin, Atendente, Mec\u00E2nico.",
         "parameters": [
           {
             "name": "id",
@@ -1874,10 +987,10 @@
     "/api/admin/service-orders/{id}/diagnosis/start": {
       "post": {
         "tags": [
-          "Service Orders"
+          "Ordens de Servi\u00E7o"
         ],
-        "summary": "Start diagnosis",
-        "description": "Moves a Received service order to InDiagnosis. Services and parts can only be added or removed in this status. Roles: Admin, Mechanic.",
+        "summary": "Iniciar diagn\u00F3stico",
+        "description": "Move uma ordem de servi\u00E7o de Received para InDiagnosis. Servi\u00E7os e pe\u00E7as s\u00F3 podem ser adicionados ou removidos neste status. Perfis: Admin, Mec\u00E2nico.",
         "parameters": [
           {
             "name": "id",
@@ -1956,10 +1069,10 @@
     "/api/admin/service-orders/{id}/services": {
       "post": {
         "tags": [
-          "Service Orders"
+          "Ordens de Servi\u00E7o"
         ],
-        "summary": "Add service",
-        "description": "Adds an active catalog service to a service order in diagnosis, copying its current name and base price. Roles: Admin, Mechanic.",
+        "summary": "Adicionar servi\u00E7o",
+        "description": "Adiciona um servi\u00E7o ativo do cat\u00E1logo a uma ordem de servi\u00E7o em diagn\u00F3stico, copiando o nome e o pre\u00E7o base atuais. Perfis: Admin, Mec\u00E2nico.",
         "parameters": [
           {
             "name": "id",
@@ -2077,10 +1190,10 @@
     "/api/admin/service-orders/{id}/parts": {
       "post": {
         "tags": [
-          "Service Orders"
+          "Ordens de Servi\u00E7o"
         ],
-        "summary": "Add part or supply",
-        "description": "Adds an active part or supply with enough stock to a service order in diagnosis, copying its current name and unit price. The stock is deducted only when the quote is approved. Roles: Admin, Mechanic.",
+        "summary": "Adicionar pe\u00E7a ou insumo",
+        "description": "Adiciona uma pe\u00E7a ou insumo ativo, com estoque suficiente, a uma ordem de servi\u00E7o em diagn\u00F3stico, copiando o nome e o pre\u00E7o unit\u00E1rio atuais. O estoque s\u00F3 \u00E9 baixado quando o or\u00E7amento \u00E9 aprovado. Perfis: Admin, Mec\u00E2nico.",
         "parameters": [
           {
             "name": "id",
@@ -2198,10 +1311,10 @@
     "/api/admin/service-orders/{id}/items/{itemId}": {
       "delete": {
         "tags": [
-          "Service Orders"
+          "Ordens de Servi\u00E7o"
         ],
-        "summary": "Remove item",
-        "description": "Removes a service or part item from a service order in diagnosis. Roles: Admin, Mechanic.",
+        "summary": "Remover item",
+        "description": "Remove um item (servi\u00E7o ou pe\u00E7a) de uma ordem de servi\u00E7o em diagn\u00F3stico. Perfis: Admin, Mec\u00E2nico.",
         "parameters": [
           {
             "name": "id",
@@ -2289,10 +1402,10 @@
     "/api/admin/service-orders/{id}/quote/send": {
       "post": {
         "tags": [
-          "Service Orders"
+          "Ordens de Servi\u00E7o"
         ],
-        "summary": "Send quote",
-        "description": "Generates the quote from the services and parts of a service order in diagnosis and moves it to WaitingApproval. Returns the single-use approval token to share with the customer, who approves or rejects it on the public quote routes. Roles: Admin, Attendant.",
+        "summary": "Enviar or\u00E7amento",
+        "description": "Gera o or\u00E7amento a partir dos servi\u00E7os e pe\u00E7as de uma ordem de servi\u00E7o em diagn\u00F3stico e a move para WaitingApproval. Retorna o token de aprova\u00E7\u00E3o de uso \u00FAnico para enviar ao cliente, que aprova ou recusa pelas rotas p\u00FAblicas. Perfis: Admin, Atendente.",
         "parameters": [
           {
             "name": "id",
@@ -2371,10 +1484,10 @@
     "/api/admin/service-orders/{id}/quote/approve": {
       "post": {
         "tags": [
-          "Service Orders"
+          "Ordens de Servi\u00E7o"
         ],
-        "summary": "Approve quote",
-        "description": "Approves the pending quote in person, deducts the parts from stock and moves the service order to InProgress in the same transaction. Roles: Admin, Attendant.",
+        "summary": "Aprovar or\u00E7amento",
+        "description": "Aprova presencialmente o or\u00E7amento pendente, baixa as pe\u00E7as do estoque e move a ordem de servi\u00E7o para InProgress na mesma transa\u00E7\u00E3o. Perfis: Admin, Atendente.",
         "parameters": [
           {
             "name": "id",
@@ -2453,10 +1566,10 @@
     "/api/admin/service-orders/{id}/quote/reject": {
       "post": {
         "tags": [
-          "Service Orders"
+          "Ordens de Servi\u00E7o"
         ],
-        "summary": "Reject quote",
-        "description": "Registers the customer\u0027s rejection of the pending quote with the reason and moves the service order back to InDiagnosis, so the items can be adjusted and a new quote sent. Roles: Admin, Attendant.",
+        "summary": "Recusar or\u00E7amento",
+        "description": "Registra a recusa do or\u00E7amento pendente pelo cliente, com o motivo, e devolve a ordem de servi\u00E7o para InDiagnosis para ajuste dos itens e envio de novo or\u00E7amento. Perfis: Admin, Atendente.",
         "parameters": [
           {
             "name": "id",
@@ -2564,10 +1677,10 @@
     "/api/admin/service-orders/{id}/complete": {
       "post": {
         "tags": [
-          "Service Orders"
+          "Ordens de Servi\u00E7o"
         ],
-        "summary": "Complete service order",
-        "description": "Moves a service order InProgress to Completed, records the completion time used by the average execution time metric and notifies the customer. Roles: Admin, Mechanic.",
+        "summary": "Finalizar ordem de servi\u00E7o",
+        "description": "Move uma ordem de servi\u00E7o de InProgress para Completed, registra o hor\u00E1rio de finaliza\u00E7\u00E3o (usado na m\u00E9trica de tempo m\u00E9dio de execu\u00E7\u00E3o) e notifica o cliente. Perfis: Admin, Mec\u00E2nico.",
         "parameters": [
           {
             "name": "id",
@@ -2646,10 +1759,10 @@
     "/api/admin/service-orders/{id}/deliver": {
       "post": {
         "tags": [
-          "Service Orders"
+          "Ordens de Servi\u00E7o"
         ],
-        "summary": "Deliver vehicle",
-        "description": "Moves a Completed service order to Delivered. After delivery the vehicle can have a new service order. Roles: Admin, Attendant.",
+        "summary": "Entregar ve\u00EDculo",
+        "description": "Move uma ordem de servi\u00E7o de Completed para Delivered. Ap\u00F3s a entrega, o ve\u00EDculo pode receber uma nova ordem de servi\u00E7o. Perfis: Admin, Atendente.",
         "parameters": [
           {
             "name": "id",
@@ -2725,13 +1838,901 @@
         }
       }
     },
+    "/api/admin/parts": {
+      "get": {
+        "tags": [
+          "Pe\u00E7as e Insumos"
+        ],
+        "summary": "Listar pe\u00E7as e insumos",
+        "description": "Retorna uma p\u00E1gina de pe\u00E7as e insumos ordenados por nome, com saldo em estoque. Lista apenas itens ativos, a menos que includeInactive seja true. Com belowMinimum=true, lista s\u00F3 os itens abaixo do estoque m\u00EDnimo. Perfis: Admin, Atendente, Mec\u00E2nico.",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 1
+            }
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 20
+            }
+          },
+          {
+            "name": "includeInactive",
+            "in": "query",
+            "schema": {
+              "type": "boolean",
+              "default": false
+            }
+          },
+          {
+            "name": "belowMinimum",
+            "in": "query",
+            "schema": {
+              "type": "boolean",
+              "default": false
+            }
+          }
+        ],
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PartDtoPagedResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Pe\u00E7as e Insumos"
+        ],
+        "summary": "Cadastrar pe\u00E7a ou insumo",
+        "description": "Cadastra uma pe\u00E7a ou insumo ativo com c\u00F3digo \u00FAnico, nome, tipo (Part ou Supply), unidade de medida, pre\u00E7o unit\u00E1rio e estoque m\u00EDnimo. O estoque come\u00E7a em zero; use a entrada de estoque para adicionar quantidade. Perfil: Admin.",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreatePartRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreatePartRequest"
+              }
+            },
+            "application/*\u002Bjson": {
+              "schema": {
+                "$ref": "#/components/schemas/CreatePartRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PartDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/parts/{id}": {
+      "get": {
+        "tags": [
+          "Pe\u00E7as e Insumos"
+        ],
+        "summary": "Consultar pe\u00E7a ou insumo",
+        "description": "Retorna uma pe\u00E7a ou insumo pelo id (ativo ou inativo), com as movimenta\u00E7\u00F5es de estoque (entradas e baixas por ordem de servi\u00E7o) da mais antiga para a mais recente. Perfis: Admin, Atendente, Mec\u00E2nico.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PartDetailDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Pe\u00E7as e Insumos"
+        ],
+        "summary": "Atualizar pe\u00E7a ou insumo",
+        "description": "Atualiza nome, tipo, unidade de medida, pre\u00E7o unit\u00E1rio e estoque m\u00EDnimo. C\u00F3digo e saldo em estoque n\u00E3o s\u00E3o alterados aqui. Itens j\u00E1 adicionados a ordens de servi\u00E7o mant\u00EAm o pre\u00E7o copiado. Perfil: Admin.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdatePartRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdatePartRequest"
+              }
+            },
+            "application/*\u002Bjson": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdatePartRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PartDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/parts/{id}/stock-entries": {
+      "post": {
+        "tags": [
+          "Pe\u00E7as e Insumos"
+        ],
+        "summary": "Registrar entrada de estoque",
+        "description": "Adiciona quantidade ao estoque de uma pe\u00E7a ou insumo e registra a movimenta\u00E7\u00E3o com o motivo e o usu\u00E1rio. Perfil: Admin.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegisterStockEntryRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegisterStockEntryRequest"
+              }
+            },
+            "application/*\u002Bjson": {
+              "schema": {
+                "$ref": "#/components/schemas/RegisterStockEntryRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PartDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/parts/{id}/deactivate": {
+      "post": {
+        "tags": [
+          "Pe\u00E7as e Insumos"
+        ],
+        "summary": "Desativar pe\u00E7a ou insumo",
+        "description": "Oculta o item da listagem padr\u00E3o e impede que seja adicionado a novas ordens de servi\u00E7o. Itens j\u00E1 adicionados s\u00E3o mantidos. Perfil: Admin.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "204": {
+            "description": "No Content"
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/parts/{id}/reactivate": {
+      "post": {
+        "tags": [
+          "Pe\u00E7as e Insumos"
+        ],
+        "summary": "Reativar pe\u00E7a ou insumo",
+        "description": "Volta a exibir um item inativo na listagem padr\u00E3o e permite adicion\u00E1-lo novamente a ordens de servi\u00E7o. Perfil: Admin.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "204": {
+            "description": "No Content"
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/public/service-orders/lookup": {
+      "post": {
+        "tags": [
+          "P\u00FAblico"
+        ],
+        "summary": "Acompanhar ordem de servi\u00E7o",
+        "description": "Retorna status, itens e or\u00E7amento de uma ordem de servi\u00E7o quando o n\u00FAmero e o CPF ou CNPJ do cliente enviados no corpo conferem. Acesso an\u00F4nimo.",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LookupServiceOrderRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LookupServiceOrderRequest"
+              }
+            },
+            "application/*\u002Bjson": {
+              "schema": {
+                "$ref": "#/components/schemas/LookupServiceOrderRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicServiceOrderDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/public/quotes/{token}/approve": {
+      "post": {
+        "tags": [
+          "P\u00FAblico"
+        ],
+        "summary": "Aprovar or\u00E7amento pelo link",
+        "description": "Aprova o or\u00E7amento pendente identificado pelo token do link, baixa as pe\u00E7as do estoque e move a ordem de servi\u00E7o para InProgress na mesma transa\u00E7\u00E3o. Token de uso \u00FAnico. Acesso an\u00F4nimo.",
+        "parameters": [
+          {
+            "name": "token",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicServiceOrderDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/public/quotes/{token}/reject": {
+      "post": {
+        "tags": [
+          "P\u00FAblico"
+        ],
+        "summary": "Recusar or\u00E7amento pelo link",
+        "description": "Recusa o or\u00E7amento pendente identificado pelo token do link, com o motivo enviado no corpo, e devolve a ordem de servi\u00E7o para InDiagnosis. Token de uso \u00FAnico. Acesso an\u00F4nimo.",
+        "parameters": [
+          {
+            "name": "token",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RejectQuoteRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RejectQuoteRequest"
+              }
+            },
+            "application/*\u002Bjson": {
+              "schema": {
+                "$ref": "#/components/schemas/RejectQuoteRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicServiceOrderDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/admin/services": {
       "get": {
         "tags": [
-          "Services"
+          "Servi\u00E7os"
         ],
-        "summary": "List services",
-        "description": "Returns a page of services ordered by name. Only active services are listed unless includeInactive is true. Roles: Admin, Attendant, Mechanic.",
+        "summary": "Listar servi\u00E7os",
+        "description": "Retorna uma p\u00E1gina de servi\u00E7os ordenados por nome. Lista apenas servi\u00E7os ativos, a menos que includeInactive seja true. Perfis: Admin, Atendente, Mec\u00E2nico.",
         "parameters": [
           {
             "name": "page",
@@ -2815,10 +2816,10 @@
       },
       "post": {
         "tags": [
-          "Services"
+          "Servi\u00E7os"
         ],
-        "summary": "Create service",
-        "description": "Creates an active catalog service with name, optional description, base price greater than zero and estimated time in minutes greater than zero. Role: Admin.",
+        "summary": "Cadastrar servi\u00E7o",
+        "description": "Cadastra um servi\u00E7o ativo no cat\u00E1logo com nome, descri\u00E7\u00E3o opcional, pre\u00E7o base maior que zero e tempo estimado em minutos maior que zero. Perfil: Admin.",
         "requestBody": {
           "content": {
             "application/json": {
@@ -2895,10 +2896,10 @@
     "/api/admin/services/{id}": {
       "get": {
         "tags": [
-          "Services"
+          "Servi\u00E7os"
         ],
-        "summary": "Get service",
-        "description": "Returns one service by id, active or inactive (see isActive). Roles: Admin, Attendant, Mechanic.",
+        "summary": "Consultar servi\u00E7o",
+        "description": "Retorna um servi\u00E7o pelo id, ativo ou inativo (ver isActive). Perfis: Admin, Atendente, Mec\u00E2nico.",
         "parameters": [
           {
             "name": "id",
@@ -2965,10 +2966,10 @@
       },
       "put": {
         "tags": [
-          "Services"
+          "Servi\u00E7os"
         ],
-        "summary": "Update service",
-        "description": "Updates name, description, base price and estimated time of an active service. Inactive services must be reactivated first. Items already added to service orders keep their copied price. Role: Admin.",
+        "summary": "Atualizar servi\u00E7o",
+        "description": "Atualiza nome, descri\u00E7\u00E3o, pre\u00E7o base e tempo estimado de um servi\u00E7o ativo. Servi\u00E7os inativos precisam ser reativados antes. Itens j\u00E1 adicionados a ordens de servi\u00E7o mant\u00EAm o pre\u00E7o copiado. Perfil: Admin.",
         "parameters": [
           {
             "name": "id",
@@ -3076,10 +3077,10 @@
     "/api/admin/services/{id}/deactivate": {
       "post": {
         "tags": [
-          "Services"
+          "Servi\u00E7os"
         ],
-        "summary": "Deactivate service",
-        "description": "Hides the service from the default listing, blocks changes and blocks new service order items. Items already added to service orders are kept. Role: Admin.",
+        "summary": "Desativar servi\u00E7o",
+        "description": "Oculta o servi\u00E7o da listagem padr\u00E3o, bloqueia altera\u00E7\u00F5es e impede que seja adicionado a novas ordens de servi\u00E7o. Itens j\u00E1 adicionados s\u00E3o mantidos. Perfil: Admin.",
         "parameters": [
           {
             "name": "id",
@@ -3151,10 +3152,10 @@
     "/api/admin/services/{id}/reactivate": {
       "post": {
         "tags": [
-          "Services"
+          "Servi\u00E7os"
         ],
-        "summary": "Reactivate service",
-        "description": "Returns an inactive service to the default listing and allows changes and new service order items again. Role: Admin.",
+        "summary": "Reativar servi\u00E7o",
+        "description": "Volta a exibir um servi\u00E7o inativo na listagem padr\u00E3o e permite novamente altera\u00E7\u00F5es e uso em ordens de servi\u00E7o. Perfil: Admin.",
         "parameters": [
           {
             "name": "id",
@@ -3226,10 +3227,10 @@
     "/api/admin/users": {
       "get": {
         "tags": [
-          "Users"
+          "Usu\u00E1rios"
         ],
-        "summary": "List users",
-        "description": "Returns a page of users ordered by name. Role: Admin.",
+        "summary": "Listar usu\u00E1rios",
+        "description": "Retorna uma p\u00E1gina de usu\u00E1rios ordenados por nome. Perfil: Admin.",
         "parameters": [
           {
             "name": "page",
@@ -3305,10 +3306,10 @@
       },
       "post": {
         "tags": [
-          "Users"
+          "Usu\u00E1rios"
         ],
-        "summary": "Create user",
-        "description": "Creates a user with any role (Admin, Attendant or Mechanic), unique e-mail and strong password. Role: Admin.",
+        "summary": "Cadastrar usu\u00E1rio",
+        "description": "Cadastra um usu\u00E1rio com qualquer perfil (Admin, Attendant ou Mechanic), e-mail \u00FAnico e senha forte. Perfil: Admin.",
         "requestBody": {
           "content": {
             "application/json": {
@@ -3395,10 +3396,10 @@
     "/api/admin/users/{id}": {
       "get": {
         "tags": [
-          "Users"
+          "Usu\u00E1rios"
         ],
-        "summary": "Get user",
-        "description": "Returns one user by id. Role: Admin.",
+        "summary": "Consultar usu\u00E1rio",
+        "description": "Retorna um usu\u00E1rio pelo id. Perfil: Admin.",
         "parameters": [
           {
             "name": "id",
@@ -3465,10 +3466,10 @@
       },
       "put": {
         "tags": [
-          "Users"
+          "Usu\u00E1rios"
         ],
-        "summary": "Update user",
-        "description": "Changes name and role. An Admin cannot demote themselves, and the last active Admin cannot be demoted. Role: Admin.",
+        "summary": "Atualizar usu\u00E1rio",
+        "description": "Altera nome e perfil. Um Admin n\u00E3o pode rebaixar a si mesmo, e o \u00FAltimo Admin ativo n\u00E3o pode ser rebaixado. Perfil: Admin.",
         "parameters": [
           {
             "name": "id",
@@ -3584,10 +3585,10 @@
       },
       "delete": {
         "tags": [
-          "Users"
+          "Usu\u00E1rios"
         ],
-        "summary": "Delete user",
-        "description": "Deactivates and soft deletes a user. An Admin cannot delete themselves or the last active Admin. Role: Admin.",
+        "summary": "Excluir usu\u00E1rio",
+        "description": "Desativa e exclui logicamente um usu\u00E1rio. Um Admin n\u00E3o pode excluir a si mesmo nem o \u00FAltimo Admin ativo. Perfil: Admin.",
         "parameters": [
           {
             "name": "id",
@@ -3669,10 +3670,10 @@
     "/api/admin/users/{id}/deactivate": {
       "post": {
         "tags": [
-          "Users"
+          "Usu\u00E1rios"
         ],
-        "summary": "Deactivate user",
-        "description": "Blocks the user from signing in. An Admin cannot deactivate themselves or the last active Admin. Role: Admin.",
+        "summary": "Desativar usu\u00E1rio",
+        "description": "Impede o usu\u00E1rio de fazer login. Um Admin n\u00E3o pode desativar a si mesmo nem o \u00FAltimo Admin ativo. Perfil: Admin.",
         "parameters": [
           {
             "name": "id",
@@ -3754,10 +3755,10 @@
     "/api/admin/users/{id}/reactivate": {
       "post": {
         "tags": [
-          "Users"
+          "Usu\u00E1rios"
         ],
-        "summary": "Reactivate user",
-        "description": "Allows an inactive user to sign in again. Role: Admin.",
+        "summary": "Reativar usu\u00E1rio",
+        "description": "Permite que um usu\u00E1rio inativo volte a fazer login. Perfil: Admin.",
         "parameters": [
           {
             "name": "id",
@@ -3829,10 +3830,10 @@
     "/api/admin/users/search": {
       "post": {
         "tags": [
-          "Users"
+          "Usu\u00E1rios"
         ],
-        "summary": "Search user by e-mail",
-        "description": "Finds a user by e-mail sent in the body (never in the URL). Role: Admin.",
+        "summary": "Buscar usu\u00E1rio por e-mail",
+        "description": "Busca um usu\u00E1rio pelo e-mail enviado no corpo da requisi\u00E7\u00E3o (nunca na URL). Perfil: Admin.",
         "requestBody": {
           "content": {
             "application/json": {
@@ -3919,10 +3920,10 @@
     "/api/admin/vehicles": {
       "get": {
         "tags": [
-          "Vehicles"
+          "Ve\u00EDculos"
         ],
-        "summary": "List vehicles",
-        "description": "Returns a page of vehicles ordered by brand, optionally filtered by exact license plate. Roles: Admin, Attendant, Mechanic.",
+        "summary": "Listar ve\u00EDculos",
+        "description": "Retorna uma p\u00E1gina de ve\u00EDculos ordenados por marca, com filtro opcional por placa exata. Perfis: Admin, Atendente, Mec\u00E2nico.",
         "parameters": [
           {
             "name": "page",
@@ -4005,10 +4006,10 @@
       },
       "post": {
         "tags": [
-          "Vehicles"
+          "Ve\u00EDculos"
         ],
-        "summary": "Create vehicle",
-        "description": "Creates a vehicle with license plate, brand, model and year for an existing customer. Roles: Admin, Attendant.",
+        "summary": "Cadastrar ve\u00EDculo",
+        "description": "Cadastra um ve\u00EDculo com placa, marca, modelo e ano para um cliente existente. Perfis: Admin, Atendente.",
         "requestBody": {
           "content": {
             "application/json": {
@@ -4105,10 +4106,10 @@
     "/api/admin/vehicles/{id}": {
       "get": {
         "tags": [
-          "Vehicles"
+          "Ve\u00EDculos"
         ],
-        "summary": "Get vehicle",
-        "description": "Returns one vehicle by id, with its owner and service order history. Roles: Admin, Attendant, Mechanic.",
+        "summary": "Consultar ve\u00EDculo",
+        "description": "Retorna um ve\u00EDculo pelo id, com o propriet\u00E1rio e o hist\u00F3rico de ordens de servi\u00E7o. Perfis: Admin, Atendente, Mec\u00E2nico.",
         "parameters": [
           {
             "name": "id",
@@ -4175,10 +4176,10 @@
       },
       "put": {
         "tags": [
-          "Vehicles"
+          "Ve\u00EDculos"
         ],
-        "summary": "Update vehicle",
-        "description": "Updates brand, model and year. The license plate and the owning customer cannot change. Roles: Admin, Attendant.",
+        "summary": "Atualizar ve\u00EDculo",
+        "description": "Atualiza marca, modelo e ano. Placa e cliente propriet\u00E1rio n\u00E3o podem ser alterados. Perfis: Admin, Atendente.",
         "parameters": [
           {
             "name": "id",
@@ -4274,10 +4275,10 @@
       },
       "delete": {
         "tags": [
-          "Vehicles"
+          "Ve\u00EDculos"
         ],
-        "summary": "Delete vehicle",
-        "description": "Soft deletes a vehicle without open service orders. Role: Admin.",
+        "summary": "Excluir ve\u00EDculo",
+        "description": "Exclui logicamente um ve\u00EDculo sem ordens de servi\u00E7o abertas. Perfil: Admin.",
         "parameters": [
           {
             "name": "id",
@@ -5781,31 +5782,31 @@
   ],
   "tags": [
     {
-      "name": "Auth"
+      "name": "Autentica\u00E7\u00E3o"
     },
     {
-      "name": "Customers"
+      "name": "Clientes"
     },
     {
-      "name": "Metrics"
+      "name": "M\u00E9tricas"
     },
     {
-      "name": "Parts and Supplies"
+      "name": "Ordens de Servi\u00E7o"
     },
     {
-      "name": "Public"
+      "name": "Pe\u00E7as e Insumos"
     },
     {
-      "name": "Service Orders"
+      "name": "P\u00FAblico"
     },
     {
-      "name": "Services"
+      "name": "Servi\u00E7os"
     },
     {
-      "name": "Users"
+      "name": "Usu\u00E1rios"
     },
     {
-      "name": "Vehicles"
+      "name": "Ve\u00EDculos"
     }
   ]
 }

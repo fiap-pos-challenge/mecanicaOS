@@ -16,14 +16,14 @@ using Oficina.Application.Common.Pagination;
 namespace Oficina.Api.Controllers.Admin;
 
 [Route("api/admin/services")]
-[Tags("Services")]
+[Tags("Serviços")]
 [ProducesResponseType<ProblemDetails>(StatusCodes.Status403Forbidden, ProblemResponses.ContentType)]
 public sealed class ServicesController(ISender sender) : ApiControllerBase
 {
     [HttpGet]
     [Authorize(Policy = Policies.Authenticated)]
-    [EndpointSummary("List services")]
-    [EndpointDescription("Returns a page of services ordered by name. Only active services are listed unless includeInactive is true. Roles: Admin, Attendant, Mechanic.")]
+    [EndpointSummary("Listar serviços")]
+    [EndpointDescription("Retorna uma página de serviços ordenados por nome. Lista apenas serviços ativos, a menos que includeInactive seja true. Perfis: Admin, Atendente, Mecânico.")]
     [ProducesResponseType<PagedResult<ServiceDto>>(StatusCodes.Status200OK)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status400BadRequest, ProblemResponses.ContentType)]
     public async Task<IActionResult> List(
@@ -35,8 +35,8 @@ public sealed class ServicesController(ISender sender) : ApiControllerBase
 
     [HttpPost]
     [Authorize(Policy = Policies.AdminOnly)]
-    [EndpointSummary("Create service")]
-    [EndpointDescription("Creates an active catalog service with name, optional description, base price greater than zero and estimated time in minutes greater than zero. Role: Admin.")]
+    [EndpointSummary("Cadastrar serviço")]
+    [EndpointDescription("Cadastra um serviço ativo no catálogo com nome, descrição opcional, preço base maior que zero e tempo estimado em minutos maior que zero. Perfil: Admin.")]
     [ProducesResponseType<ServiceDto>(StatusCodes.Status201Created)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status400BadRequest, ProblemResponses.ContentType)]
     public async Task<IActionResult> Create(CreateServiceRequest request, CancellationToken cancellationToken)
@@ -47,8 +47,8 @@ public sealed class ServicesController(ISender sender) : ApiControllerBase
 
     [HttpGet("{id:guid}")]
     [Authorize(Policy = Policies.Authenticated)]
-    [EndpointSummary("Get service")]
-    [EndpointDescription("Returns one service by id, active or inactive (see isActive). Roles: Admin, Attendant, Mechanic.")]
+    [EndpointSummary("Consultar serviço")]
+    [EndpointDescription("Retorna um serviço pelo id, ativo ou inativo (ver isActive). Perfis: Admin, Atendente, Mecânico.")]
     [ProducesResponseType<ServiceDto>(StatusCodes.Status200OK)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound, ProblemResponses.ContentType)]
     public async Task<IActionResult> GetById(Guid id, CancellationToken cancellationToken) =>
@@ -56,8 +56,8 @@ public sealed class ServicesController(ISender sender) : ApiControllerBase
 
     [HttpPut("{id:guid}")]
     [Authorize(Policy = Policies.AdminOnly)]
-    [EndpointSummary("Update service")]
-    [EndpointDescription("Updates name, description, base price and estimated time of an active service. Inactive services must be reactivated first. Items already added to service orders keep their copied price. Role: Admin.")]
+    [EndpointSummary("Atualizar serviço")]
+    [EndpointDescription("Atualiza nome, descrição, preço base e tempo estimado de um serviço ativo. Serviços inativos precisam ser reativados antes. Itens já adicionados a ordens de serviço mantêm o preço copiado. Perfil: Admin.")]
     [ProducesResponseType<ServiceDto>(StatusCodes.Status200OK)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status400BadRequest, ProblemResponses.ContentType)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound, ProblemResponses.ContentType)]
@@ -70,8 +70,8 @@ public sealed class ServicesController(ISender sender) : ApiControllerBase
 
     [HttpPost("{id:guid}/deactivate")]
     [Authorize(Policy = Policies.AdminOnly)]
-    [EndpointSummary("Deactivate service")]
-    [EndpointDescription("Hides the service from the default listing, blocks changes and blocks new service order items. Items already added to service orders are kept. Role: Admin.")]
+    [EndpointSummary("Desativar serviço")]
+    [EndpointDescription("Oculta o serviço da listagem padrão, bloqueia alterações e impede que seja adicionado a novas ordens de serviço. Itens já adicionados são mantidos. Perfil: Admin.")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound, ProblemResponses.ContentType)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status409Conflict, ProblemResponses.ContentType)]
@@ -80,8 +80,8 @@ public sealed class ServicesController(ISender sender) : ApiControllerBase
 
     [HttpPost("{id:guid}/reactivate")]
     [Authorize(Policy = Policies.AdminOnly)]
-    [EndpointSummary("Reactivate service")]
-    [EndpointDescription("Returns an inactive service to the default listing and allows changes and new service order items again. Role: Admin.")]
+    [EndpointSummary("Reativar serviço")]
+    [EndpointDescription("Volta a exibir um serviço inativo na listagem padrão e permite novamente alterações e uso em ordens de serviço. Perfil: Admin.")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound, ProblemResponses.ContentType)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status409Conflict, ProblemResponses.ContentType)]
