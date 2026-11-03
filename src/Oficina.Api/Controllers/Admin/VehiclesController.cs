@@ -15,14 +15,14 @@ using Oficina.Application.Vehicles.Queries.ListVehicles;
 namespace Oficina.Api.Controllers.Admin;
 
 [Route("api/admin/vehicles")]
-[Tags("Vehicles")]
+[Tags("Veículos")]
 [ProducesResponseType<ProblemDetails>(StatusCodes.Status403Forbidden, ProblemResponses.ContentType)]
 public sealed class VehiclesController(ISender sender) : ApiControllerBase
 {
     [HttpGet]
     [Authorize(Policy = Policies.Authenticated)]
-    [EndpointSummary("List vehicles")]
-    [EndpointDescription("Returns a page of vehicles ordered by brand, optionally filtered by exact license plate. Roles: Admin, Attendant, Mechanic.")]
+    [EndpointSummary("Listar veículos")]
+    [EndpointDescription("Retorna uma página de veículos ordenados por marca, com filtro opcional por placa exata. Perfis: Admin, Atendente, Mecânico.")]
     [ProducesResponseType<PagedResult<VehicleDto>>(StatusCodes.Status200OK)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status400BadRequest, ProblemResponses.ContentType)]
     public async Task<IActionResult> List(
@@ -34,8 +34,8 @@ public sealed class VehiclesController(ISender sender) : ApiControllerBase
 
     [HttpGet("{id:guid}")]
     [Authorize(Policy = Policies.Authenticated)]
-    [EndpointSummary("Get vehicle")]
-    [EndpointDescription("Returns one vehicle by id, with its owner and service order history. Roles: Admin, Attendant, Mechanic.")]
+    [EndpointSummary("Consultar veículo")]
+    [EndpointDescription("Retorna um veículo pelo id, com o proprietário e o histórico de ordens de serviço. Perfis: Admin, Atendente, Mecânico.")]
     [ProducesResponseType<VehicleDetailDto>(StatusCodes.Status200OK)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound, ProblemResponses.ContentType)]
     public async Task<IActionResult> GetVehicleById([FromRoute] Guid id, CancellationToken cancellationToken) =>
@@ -43,8 +43,8 @@ public sealed class VehiclesController(ISender sender) : ApiControllerBase
 
     [HttpPost]
     [Authorize(Policy = Policies.AdminOrAttendant)]
-    [EndpointSummary("Create vehicle")]
-    [EndpointDescription("Creates a vehicle with license plate, brand, model and year for an existing customer. Roles: Admin, Attendant.")]
+    [EndpointSummary("Cadastrar veículo")]
+    [EndpointDescription("Cadastra um veículo com placa, marca, modelo e ano para um cliente existente. Perfis: Admin, Atendente.")]
     [ProducesResponseType<VehicleDto>(StatusCodes.Status201Created)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status400BadRequest, ProblemResponses.ContentType)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound, ProblemResponses.ContentType)]
@@ -57,8 +57,8 @@ public sealed class VehiclesController(ISender sender) : ApiControllerBase
 
     [HttpPut("{id:guid}")]
     [Authorize(Policy = Policies.AdminOrAttendant)]
-    [EndpointSummary("Update vehicle")]
-    [EndpointDescription("Updates brand, model and year. The license plate and the owning customer cannot change. Roles: Admin, Attendant.")]
+    [EndpointSummary("Atualizar veículo")]
+    [EndpointDescription("Atualiza marca, modelo e ano. Placa e cliente proprietário não podem ser alterados. Perfis: Admin, Atendente.")]
     [ProducesResponseType<VehicleDto>(StatusCodes.Status200OK)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status400BadRequest, ProblemResponses.ContentType)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound, ProblemResponses.ContentType)]
@@ -70,8 +70,8 @@ public sealed class VehiclesController(ISender sender) : ApiControllerBase
 
     [HttpDelete("{id:guid}")]
     [Authorize(Policy = Policies.AdminOnly)]
-    [EndpointSummary("Delete vehicle")]
-    [EndpointDescription("Soft deletes a vehicle without open service orders. Role: Admin.")]
+    [EndpointSummary("Excluir veículo")]
+    [EndpointDescription("Exclui logicamente um veículo sem ordens de serviço abertas. Perfil: Admin.")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound, ProblemResponses.ContentType)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status409Conflict, ProblemResponses.ContentType)]

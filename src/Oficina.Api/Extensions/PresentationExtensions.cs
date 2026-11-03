@@ -32,7 +32,7 @@ public static class PresentationExtensions
 
         services.AddSwaggerGen(options =>
         {
-            options.SwaggerDoc("v1", new OpenApiInfo { Title = "Oficina API", Version = "v1" });
+            options.SwaggerDoc("v1", new OpenApiInfo { Title = "Oficina API", Version = "v1", Description = "API de gestão de oficina mecânica: clientes, veículos, catálogo de serviços, peças e estoque, ordens de serviço e orçamentos. Rotas /api/admin exigem token JWT (obtido em /api/auth/login); rotas /api/public são anônimas." });
             options.AddSecurityDefinition(BearerSchemeName, new OpenApiSecurityScheme
             {
                 Type = SecuritySchemeType.Http,

@@ -16,14 +16,14 @@ using Oficina.Application.Customers.Queries.SearchCustomerByDocument;
 namespace Oficina.Api.Controllers.Admin;
 
 [Route("api/admin/customers")]
-[Tags("Customers")]
+[Tags("Clientes")]
 [ProducesResponseType<ProblemDetails>(StatusCodes.Status403Forbidden, ProblemResponses.ContentType)]
 public sealed class CustomersController(ISender sender) : ApiControllerBase
 {
     [HttpGet]
     [Authorize(Policy = Policies.AdminOrAttendant)]
-    [EndpointSummary("List customers")]
-    [EndpointDescription("Returns a page of customers ordered by name. Roles: Admin, Attendant.")]
+    [EndpointSummary("Listar clientes")]
+    [EndpointDescription("Retorna uma página de clientes ordenados por nome. Perfis: Admin, Atendente.")]
     [ProducesResponseType<PagedResult<CustomerDto>>(StatusCodes.Status200OK)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status400BadRequest, ProblemResponses.ContentType)]
     public async Task<IActionResult> List(
@@ -34,8 +34,8 @@ public sealed class CustomersController(ISender sender) : ApiControllerBase
 
     [HttpPost]
     [Authorize(Policy = Policies.AdminOrAttendant)]
-    [EndpointSummary("Create customer")]
-    [EndpointDescription("Creates a customer with CPF or CNPJ, phone and optional e-mail and address (all or nothing). Roles: Admin, Attendant.")]
+    [EndpointSummary("Cadastrar cliente")]
+    [EndpointDescription("Cadastra um cliente com CPF ou CNPJ, telefone e, opcionalmente, e-mail e endereço (endereço completo ou nenhum). Perfis: Admin, Atendente.")]
     [ProducesResponseType<CustomerDto>(StatusCodes.Status201Created)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status400BadRequest, ProblemResponses.ContentType)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status409Conflict, ProblemResponses.ContentType)]
@@ -47,8 +47,8 @@ public sealed class CustomersController(ISender sender) : ApiControllerBase
 
     [HttpGet("{id:guid}")]
     [Authorize(Policy = Policies.AdminOrAttendant)]
-    [EndpointSummary("Get customer")]
-    [EndpointDescription("Returns one customer by id. Roles: Admin, Attendant.")]
+    [EndpointSummary("Consultar cliente")]
+    [EndpointDescription("Retorna um cliente pelo id. Perfis: Admin, Atendente.")]
     [ProducesResponseType<CustomerDto>(StatusCodes.Status200OK)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound, ProblemResponses.ContentType)]
     public async Task<IActionResult> GetById(Guid id, CancellationToken cancellationToken) =>
@@ -56,8 +56,8 @@ public sealed class CustomersController(ISender sender) : ApiControllerBase
 
     [HttpPut("{id:guid}")]
     [Authorize(Policy = Policies.AdminOrAttendant)]
-    [EndpointSummary("Update customer")]
-    [EndpointDescription("Updates name, contact and address. The document cannot change. Roles: Admin, Attendant.")]
+    [EndpointSummary("Atualizar cliente")]
+    [EndpointDescription("Atualiza nome, contato e endereço. O documento (CPF/CNPJ) não pode ser alterado. Perfis: Admin, Atendente.")]
     [ProducesResponseType<CustomerDto>(StatusCodes.Status200OK)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status400BadRequest, ProblemResponses.ContentType)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound, ProblemResponses.ContentType)]
@@ -70,8 +70,8 @@ public sealed class CustomersController(ISender sender) : ApiControllerBase
 
     [HttpDelete("{id:guid}")]
     [Authorize(Policy = Policies.AdminOnly)]
-    [EndpointSummary("Delete customer")]
-    [EndpointDescription("Soft deletes a customer without open service orders or registered vehicles. Role: Admin.")]
+    [EndpointSummary("Excluir cliente")]
+    [EndpointDescription("Exclui logicamente um cliente sem ordens de serviço abertas nem veículos cadastrados. Perfil: Admin.")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound, ProblemResponses.ContentType)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status409Conflict, ProblemResponses.ContentType)]
@@ -80,8 +80,8 @@ public sealed class CustomersController(ISender sender) : ApiControllerBase
 
     [HttpPost("search")]
     [Authorize(Policy = Policies.AdminOrAttendant)]
-    [EndpointSummary("Search customer by document")]
-    [EndpointDescription("Finds a customer by CPF or CNPJ sent in the body (never in the URL). Roles: Admin, Attendant.")]
+    [EndpointSummary("Buscar cliente por documento")]
+    [EndpointDescription("Busca um cliente pelo CPF ou CNPJ enviado no corpo da requisição (nunca na URL). Perfis: Admin, Atendente.")]
     [ProducesResponseType<CustomerDto>(StatusCodes.Status200OK)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status400BadRequest, ProblemResponses.ContentType)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound, ProblemResponses.ContentType)]
