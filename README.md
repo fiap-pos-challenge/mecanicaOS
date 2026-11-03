@@ -26,6 +26,8 @@ A API cobre:
 | Alessandro José Dionisio Filho | RM378128 |
 | José Eduardo Lehmam Smith | RM378239 |
 
+**Versão entregue:** branch `main`, commit [`487a1151c8b7bbe41e72d4f625ecb88018d56eb3`](https://github.com/fiap-pos-challenge/mecanicaOS/commit/487a1151c8b7bbe41e72d4f625ecb88018d56eb3)
+
 **Vídeo da entrega:** [https://youtu.be/se4giYdMsEk](https://youtu.be/se4giYdMsEk) · **PDF de entrega:** [docs/entrega/entrega-fase1.pdf](docs/entrega/entrega-fase1.pdf)
 
 ---
