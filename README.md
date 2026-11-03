@@ -26,7 +26,7 @@ A API cobre:
 | Alessandro José Dionisio Filho | RM378128 |
 | José Eduardo Lehmam Smith | RM378239 |
 
-**Vídeo da entrega:** `<link do YouTube>` · **PDF de entrega:** [docs/entrega/entrega-fase1.pdf](docs/entrega/entrega-fase1.pdf)
+**Vídeo da entrega:** [https://youtu.be/se4giYdMsEk](https://youtu.be/se4giYdMsEk) · **PDF de entrega:** [docs/entrega/entrega-fase1.pdf](docs/entrega/entrega-fase1.pdf)
 
 ---
 
